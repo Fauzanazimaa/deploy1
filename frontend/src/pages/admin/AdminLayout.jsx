@@ -1,124 +1,306 @@
 import React, { useState } from 'react'
-import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 
-const navItems = [
-  { to: '/admin', icon: 'bi-speedometer2', label: 'Dashboard', end: true },
-  { to: '/admin/users', icon: 'bi-people-fill', label: 'Kelola Pengguna' },
-  { to: '/admin/data-schema', icon: 'bi-grid-3x3-gap-fill', label: 'Jenis Data & Template' },
-  { to: '/admin/tasks', icon: 'bi-clipboard2-check-fill', label: 'Tugas' },
-  { to: '/admin/submissions', icon: 'bi-inbox-fill', label: 'Verifikasi Data' },
-  { to: '/admin/manual-entries', icon: 'bi-pencil-square', label: 'Entri Manual' },
-  { to: '/admin/penduduk', icon: 'bi-bar-chart-line-fill', label: 'Data Penduduk' },
+const navGroups = [
+  {
+    label: 'ADMIN MENU',
+    items: [
+      { to: '/admin', icon: 'bi-speedometer2', label: 'Dashboard', end: true },
+      { to: '/admin/users', icon: 'bi-people-fill', label: 'Kelola Pengguna' },
+    ],
+  },
+  {
+    label: 'MASTER TABEL',
+    items: [
+      { to: '/admin/data-schema', icon: 'bi-grid-3x3-gap-fill', label: 'Jenis Data & Template' },
+      { to: '/admin/tasks', icon: 'bi-clipboard2-check-fill', label: 'Tugas' },
+      { to: '/admin/submissions', icon: 'bi-inbox-fill', label: 'Verifikasi Data' },
+      { to: '/admin/manual-entries', icon: 'bi-pencil-square', label: 'Entri Manual' },
+      { to: '/admin/penduduk', icon: 'bi-bar-chart-line-fill', label: 'Data Penduduk' },
+    ],
+  },
 ]
+
+const SIDEBAR_BG = '#1a1f2e'
+const ACCENT = '#f5a623'
 
 export default function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const { user, logoutUser } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
 
   const handleLogout = () => {
     logoutUser()
     navigate('/login', { replace: true })
   }
 
+  // derive breadcrumb label from path
+  const pathLabel = {
+    '/admin': 'Dashboard',
+    '/admin/users': 'Kelola Pengguna',
+    '/admin/data-schema': 'Jenis Data & Template',
+    '/admin/tasks': 'Tugas',
+    '/admin/submissions': 'Verifikasi Data',
+    '/admin/manual-entries': 'Entri Manual',
+    '/admin/penduduk': 'Data Penduduk',
+  }
+  const currentLabel = pathLabel[location.pathname] || 'Dashboard'
+
   return (
-    <div className="d-flex vh-100 overflow-hidden">
-      {/* Sidebar */}
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', fontFamily: "'Inter', sans-serif" }}>
+      {/* ── Sidebar ── */}
       <div
-        className="d-flex flex-column flex-shrink-0 text-white"
         style={{
-          width: sidebarOpen ? 240 : 60,
-          background: 'linear-gradient(180deg, #1e3a5f 0%, #1e40af 100%)',
-          transition: 'width 0.25s ease',
+          width: sidebarOpen ? 240 : 64,
+          minWidth: sidebarOpen ? 240 : 64,
+          background: SIDEBAR_BG,
+          display: 'flex',
+          flexDirection: 'column',
+          transition: 'width 0.25s ease, min-width 0.25s ease',
           overflow: 'hidden',
-          zIndex: 100,
+          zIndex: 200,
+          flexShrink: 0,
         }}
       >
         {/* Logo */}
-        <div className="d-flex align-items-center gap-2 px-3 py-3 border-bottom border-white border-opacity-25">
-          <i className="bi bi-database-fill-gear fs-4 text-info flex-shrink-0"></i>
-          {sidebarOpen && <span className="fw-bold fs-6 text-truncate">DataCollect</span>}
+        <div
+          style={{
+            height: 60,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: sidebarOpen ? '0 18px' : '0 16px',
+            borderBottom: '1px solid rgba(255,255,255,0.07)',
+          }}
+        >
+          <div
+            style={{
+              width: 32,
+              height: 32,
+              background: ACCENT,
+              borderRadius: 8,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <i className="bi bi-database-fill-gear" style={{ color: '#fff', fontSize: 16 }}></i>
+          </div>
+          {sidebarOpen && (
+            <span style={{ color: '#fff', fontWeight: 700, fontSize: 16, letterSpacing: 0.3, whiteSpace: 'nowrap' }}>
+              datacollect
+            </span>
+          )}
         </div>
 
         {/* Nav */}
-        <nav className="flex-grow-1 py-2 overflow-y-auto">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              className={({ isActive }) =>
-                `d-flex align-items-center gap-3 px-3 py-2 text-decoration-none text-white-50 rounded mx-2 my-1 sidebar-link ${
-                  isActive ? 'bg-white bg-opacity-25 text-white fw-semibold' : ''
-                }`
-              }
-              title={!sidebarOpen ? item.label : ''}
-            >
-              <i className={`bi ${item.icon} fs-5 flex-shrink-0`}></i>
-              {sidebarOpen && <span className="small text-truncate">{item.label}</span>}
-            </NavLink>
+        <nav style={{ flex: 1, overflowY: 'auto', padding: '12px 0' }}>
+          {navGroups.map((group) => (
+            <div key={group.label}>
+              {sidebarOpen && (
+                <div
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 600,
+                    color: 'rgba(255,255,255,0.3)',
+                    letterSpacing: 1,
+                    padding: '12px 18px 4px',
+                  }}
+                >
+                  {group.label}
+                </div>
+              )}
+              {group.items.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={item.end}
+                  title={!sidebarOpen ? item.label : undefined}
+                  style={({ isActive }) => ({
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    padding: sidebarOpen ? '9px 18px' : '9px 0',
+                    justifyContent: sidebarOpen ? 'flex-start' : 'center',
+                    margin: '1px 8px',
+                    borderRadius: 8,
+                    textDecoration: 'none',
+                    color: isActive ? '#fff' : 'rgba(255,255,255,0.55)',
+                    background: isActive ? ACCENT : 'transparent',
+                    fontWeight: isActive ? 600 : 400,
+                    fontSize: 13,
+                    transition: 'background 0.15s, color 0.15s',
+                  })}
+                  className="sidebar-nav-link"
+                >
+                  <i className={`bi ${item.icon}`} style={{ fontSize: 16, flexShrink: 0 }}></i>
+                  {sidebarOpen && <span style={{ whiteSpace: 'nowrap' }}>{item.label}</span>}
+                </NavLink>
+              ))}
+            </div>
           ))}
         </nav>
 
-        {/* User Info & Logout */}
-        <div className="border-top border-white border-opacity-25 p-3">
+        {/* User + Logout */}
+        <div
+          style={{
+            borderTop: '1px solid rgba(255,255,255,0.07)',
+            padding: sidebarOpen ? '14px 18px' : '14px 8px',
+          }}
+        >
           {sidebarOpen ? (
-            <div className="d-flex align-items-center gap-2 mb-2">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
               <div
-                className="rounded-circle bg-danger d-flex align-items-center justify-content-center flex-shrink-0"
-                style={{ width: 32, height: 32 }}
+                style={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: '50%',
+                  background: ACCENT,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  fontWeight: 700,
+                  color: '#fff',
+                  fontSize: 14,
+                }}
               >
-                <i className="bi bi-person-fill text-white small"></i>
+                {user?.username?.[0]?.toUpperCase() || 'A'}
               </div>
-              <div className="overflow-hidden">
-                <div className="small fw-semibold text-truncate">{user?.username}</div>
-                <div className="text-white-50" style={{ fontSize: 11 }}>Admin</div>
+              <div style={{ overflow: 'hidden' }}>
+                <div style={{ color: '#fff', fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
+                  {user?.username}
+                </div>
+                <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11 }}>Admin</div>
               </div>
             </div>
           ) : null}
           <button
             onClick={handleLogout}
-            className="btn btn-sm btn-outline-light w-100"
             title="Logout"
+            style={{
+              width: '100%',
+              background: 'rgba(255,255,255,0.07)',
+              border: 'none',
+              borderRadius: 8,
+              color: 'rgba(255,255,255,0.6)',
+              padding: '8px 0',
+              fontSize: 12,
+              fontWeight: 500,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
+              transition: 'background 0.15s, color 0.15s',
+            }}
+            className="sidebar-logout-btn"
           >
-            <i className="bi bi-box-arrow-right me-1"></i>
+            <i className="bi bi-box-arrow-right" style={{ fontSize: 15 }}></i>
             {sidebarOpen && 'Logout'}
           </button>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-grow-1 d-flex flex-column overflow-hidden">
-        {/* Top bar */}
+      {/* ── Main ── */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        {/* Topbar */}
         <div
-          className="d-flex align-items-center px-3 py-2 bg-white border-bottom shadow-sm"
-          style={{ minHeight: 52 }}
+          style={{
+            height: 60,
+            background: '#fff',
+            borderBottom: '1px solid #e8eaed',
+            display: 'flex',
+            alignItems: 'center',
+            padding: '0 24px',
+            gap: 12,
+            flexShrink: 0,
+          }}
         >
           <button
-            className="btn btn-sm btn-outline-secondary me-3"
             onClick={() => setSidebarOpen((v) => !v)}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '4px 6px',
+              borderRadius: 6,
+              color: '#6b7280',
+              fontSize: 20,
+              display: 'flex',
+              alignItems: 'center',
+            }}
           >
-            <i className="bi bi-list fs-5"></i>
+            <i className="bi bi-list"></i>
           </button>
-          <span className="fw-semibold text-secondary">
-            <i className="bi bi-shield-lock-fill text-danger me-2"></i>Panel Admin
-          </span>
-          <div className="ms-auto d-flex align-items-center gap-2">
-            <span className="badge bg-danger">Admin</span>
-            <span className="small text-muted">{user?.username}</span>
+
+          {/* Breadcrumb */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#6b7280' }}>
+            <span style={{ fontWeight: 600, color: '#1a1f2e' }}>{currentLabel}</span>
+            <i className="bi bi-chevron-right" style={{ fontSize: 11 }}></i>
+            <span style={{ color: '#9ca3af' }}>
+              <i className="bi bi-house me-1"></i>Dashboard
+            </span>
+            <i className="bi bi-chevron-right" style={{ fontSize: 11 }}></i>
+            <span style={{ color: ACCENT, fontWeight: 500 }}>{currentLabel}</span>
+          </div>
+
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div
+              style={{
+                background: '#fff7ed',
+                border: '1px solid #fed7aa',
+                color: ACCENT,
+                fontSize: 12,
+                fontWeight: 600,
+                padding: '4px 12px',
+                borderRadius: 20,
+              }}
+            >
+              Admin
+            </div>
+            <div
+              style={{
+                width: 34,
+                height: 34,
+                borderRadius: '50%',
+                background: ACCENT,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: 700,
+                color: '#fff',
+                fontSize: 14,
+                cursor: 'default',
+              }}
+              title={user?.username}
+            >
+              {user?.username?.[0]?.toUpperCase() || 'A'}
+            </div>
           </div>
         </div>
 
         {/* Page content */}
-        <div className="flex-grow-1 overflow-y-auto bg-light p-4">
+        <div style={{ flex: 1, overflowY: 'auto', background: '#f5f6fa', padding: 24 }}>
           <Outlet />
         </div>
       </div>
 
       <style>{`
-        .sidebar-link:hover { background: rgba(255,255,255,0.15) !important; color: #fff !important; }
-        .overflow-y-auto { overflow-y: auto; }
+        .sidebar-nav-link:hover {
+          background: rgba(245,166,35,0.15) !important;
+          color: #fff !important;
+        }
+        .sidebar-logout-btn:hover {
+          background: rgba(255,255,255,0.12) !important;
+          color: #fff !important;
+        }
+        nav::-webkit-scrollbar { width: 4px; }
+        nav::-webkit-scrollbar-track { background: transparent; }
+        nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
       `}</style>
     </div>
   )

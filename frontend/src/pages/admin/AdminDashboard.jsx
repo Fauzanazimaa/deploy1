@@ -6,24 +6,50 @@ import { Doughnut, Bar } from 'react-chartjs-2'
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement)
 
+const ACCENT = '#f5a623'
+
 function StatCard({ icon, label, value, color, to }) {
   const content = (
-    <div className={`card border-0 shadow-sm h-100`}>
-      <div className="card-body d-flex align-items-center gap-3">
-        <div
-          className="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0"
-          style={{ width: 52, height: 52, background: color + '20' }}
-        >
-          <i className={`bi ${icon} fs-4`} style={{ color }}></i>
-        </div>
-        <div>
-          <div className="fw-bold fs-3 lh-1">{value}</div>
-          <div className="text-muted small">{label}</div>
-        </div>
+    <div
+      style={{
+        background: '#fff',
+        borderRadius: 12,
+        padding: '18px 20px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 16,
+        boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+        height: '100%',
+        border: '1px solid #f0f0f0',
+        transition: 'box-shadow 0.15s',
+      }}
+      className="stat-card"
+    >
+      <div
+        style={{
+          width: 50,
+          height: 50,
+          borderRadius: 12,
+          background: color + '18',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+        }}
+      >
+        <i className={`bi ${icon}`} style={{ color, fontSize: 22 }}></i>
+      </div>
+      <div>
+        <div style={{ fontWeight: 700, fontSize: 26, lineHeight: 1, color: '#1a1f2e' }}>{value ?? 0}</div>
+        <div style={{ color: '#6b7280', fontSize: 12, marginTop: 3 }}>{label}</div>
       </div>
     </div>
   )
-  return to ? <Link to={to} className="text-decoration-none">{content}</Link> : content
+  return to ? (
+    <Link to={to} style={{ textDecoration: 'none', display: 'block', height: '100%' }}>
+      {content}
+    </Link>
+  ) : content
 }
 
 export default function AdminDashboard() {
@@ -45,8 +71,18 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: 300 }}>
-        <div className="spinner-border text-primary" />
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 300 }}>
+        <div
+          style={{
+            width: 36,
+            height: 36,
+            border: `3px solid ${ACCENT}30`,
+            borderTopColor: ACCENT,
+            borderRadius: '50%',
+            animation: 'spin 0.7s linear infinite',
+          }}
+        />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     )
   }
@@ -60,46 +96,65 @@ export default function AdminDashboard() {
         stats?.task_status?.approved || 0,
         stats?.task_status?.revision || 0,
       ],
-      backgroundColor: ['#f59e0b', '#3b82f6', '#10b981', '#ef4444'],
+      backgroundColor: [ACCENT, '#3b82f6', '#10b981', '#ef4444'],
       borderWidth: 2,
+      borderColor: '#fff',
     }]
   }
 
   const userBarData = {
-    labels: ['Admin', 'Contributor', 'Viewer'],
+    labels: ['Admin', 'Kontributor', 'Viewer'],
     datasets: [{
       label: 'Jumlah Pengguna',
       data: [
-        stats?.total_users - stats?.total_contributors - stats?.total_viewers,
+        (stats?.total_users || 0) - (stats?.total_contributors || 0) - (stats?.total_viewers || 0),
         stats?.total_contributors || 0,
         stats?.total_viewers || 0,
       ],
-      backgroundColor: ['#ef4444', '#3b82f6', '#10b981'],
+      backgroundColor: [ACCENT, '#3b82f6', '#10b981'],
       borderRadius: 6,
+      borderSkipped: false,
     }]
   }
 
-  const statusBadge = {
-    pending: 'warning',
-    submitted: 'primary',
-    approved: 'success',
-    revision: 'danger',
+  const statusBadgeStyle = {
+    pending:   { background: '#fff7ed', color: ACCENT,    border: '1px solid #fed7aa' },
+    submitted: { background: '#eff6ff', color: '#3b82f6', border: '1px solid #bfdbfe' },
+    approved:  { background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0' },
+    revision:  { background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca' },
   }
 
   return (
-    <div>
-      <div className="d-flex justify-content-between align-items-center mb-4">
+    <div style={{ fontFamily: "'Inter', sans-serif" }}>
+      {/* Page header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
         <div>
-          <h4 className="fw-bold mb-0">Dashboard</h4>
-          <p className="text-muted small mb-0">Ringkasan aktivitas sistem pengumpulan data</p>
+          <h4 style={{ fontWeight: 700, fontSize: 20, color: '#1a1f2e', margin: 0 }}>Dashboard</h4>
+          <p style={{ color: '#6b7280', fontSize: 13, margin: '4px 0 0' }}>Ringkasan aktivitas sistem pengumpulan data</p>
         </div>
-        <button className="btn btn-outline-primary btn-sm" onClick={fetchStats}>
-          <i className="bi bi-arrow-clockwise me-1"></i> Refresh
+        <button
+          onClick={fetchStats}
+          style={{
+            background: '#fff',
+            border: '1px solid #e5e7eb',
+            borderRadius: 8,
+            padding: '7px 14px',
+            fontSize: 12,
+            fontWeight: 600,
+            color: '#374151',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            fontFamily: "'Inter', sans-serif",
+          }}
+        >
+          <i className="bi bi-arrow-clockwise"></i> Refresh
         </button>
       </div>
 
-      {/* Stat Cards */}
-      <div className="row g-3 mb-4">
+      {/* Stat Cards Row 1 */}
+      <div className="row g-3 mb-3">
         <div className="col-6 col-md-3">
           <StatCard icon="bi-people-fill" label="Total Pengguna" value={stats?.total_users} color="#3b82f6" to="/admin/users" />
         </div>
@@ -107,13 +162,14 @@ export default function AdminDashboard() {
           <StatCard icon="bi-clipboard2-check-fill" label="Total Tugas" value={stats?.total_tasks} color="#8b5cf6" to="/admin/tasks" />
         </div>
         <div className="col-6 col-md-3">
-          <StatCard icon="bi-inbox-fill" label="Menunggu Verifikasi" value={stats?.pending_verifications} color="#f59e0b" to="/admin/submissions" />
+          <StatCard icon="bi-inbox-fill" label="Menunggu Verifikasi" value={stats?.pending_verifications} color={ACCENT} to="/admin/submissions" />
         </div>
         <div className="col-6 col-md-3">
           <StatCard icon="bi-pencil-square" label="Entri Manual" value={stats?.total_manual_entries} color="#10b981" to="/admin/manual-entries" />
         </div>
       </div>
 
+      {/* Stat Cards Row 2 */}
       <div className="row g-3 mb-4">
         <div className="col-6 col-md-3">
           <StatCard icon="bi-person-badge-fill" label="Kontributor" value={stats?.total_contributors} color="#06b6d4" />
@@ -122,7 +178,7 @@ export default function AdminDashboard() {
           <StatCard icon="bi-eye-fill" label="Viewer" value={stats?.total_viewers} color="#64748b" />
         </div>
         <div className="col-6 col-md-3">
-          <StatCard icon="bi-grid-3x3-gap-fill" label="Jenis Data" value={stats?.total_data_types} color="#f97316" to="/admin/data-types" />
+          <StatCard icon="bi-grid-3x3-gap-fill" label="Jenis Data" value={stats?.total_data_types} color={ACCENT} to="/admin/data-schema" />
         </div>
         <div className="col-6 col-md-3">
           <StatCard icon="bi-check2-circle" label="Tugas Disetujui" value={stats?.task_status?.approved} color="#10b981" />
@@ -132,73 +188,150 @@ export default function AdminDashboard() {
       {/* Charts */}
       <div className="row g-3 mb-4">
         <div className="col-md-5">
-          <div className="card border-0 shadow-sm h-100">
-            <div className="card-body">
-              <h6 className="fw-semibold mb-3">Status Tugas</h6>
-              <div style={{ maxHeight: 220 }}>
-                <Doughnut data={taskDoughnutData} options={{ maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }} />
-              </div>
+          <div
+            style={{
+              background: '#fff',
+              borderRadius: 12,
+              padding: '20px',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+              border: '1px solid #f0f0f0',
+              height: '100%',
+            }}
+          >
+            <h6 style={{ fontWeight: 600, fontSize: 14, color: '#1a1f2e', marginBottom: 16 }}>Status Tugas</h6>
+            <div style={{ maxHeight: 220 }}>
+              <Doughnut
+                data={taskDoughnutData}
+                options={{
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      position: 'bottom',
+                      labels: { font: { family: 'Inter', size: 12 }, padding: 14, boxWidth: 12 }
+                    }
+                  }
+                }}
+              />
             </div>
           </div>
         </div>
         <div className="col-md-7">
-          <div className="card border-0 shadow-sm h-100">
-            <div className="card-body">
-              <h6 className="fw-semibold mb-3">Distribusi Pengguna</h6>
-              <div style={{ maxHeight: 220 }}>
-                <Bar
-                  data={userBarData}
-                  options={{
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
-                  }}
-                />
-              </div>
+          <div
+            style={{
+              background: '#fff',
+              borderRadius: 12,
+              padding: '20px',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+              border: '1px solid #f0f0f0',
+              height: '100%',
+            }}
+          >
+            <h6 style={{ fontWeight: 600, fontSize: 14, color: '#1a1f2e', marginBottom: 16 }}>Distribusi Pengguna</h6>
+            <div style={{ maxHeight: 220 }}>
+              <Bar
+                data={userBarData}
+                options={{
+                  maintainAspectRatio: false,
+                  plugins: { legend: { display: false } },
+                  scales: {
+                    y: { beginAtZero: true, ticks: { stepSize: 1, font: { family: 'Inter' } } },
+                    x: { ticks: { font: { family: 'Inter' } } }
+                  }
+                }}
+              />
             </div>
           </div>
         </div>
       </div>
 
       {/* Recent Submissions */}
-      <div className="card border-0 shadow-sm">
-        <div className="card-header bg-white border-0 d-flex justify-content-between align-items-center">
-          <h6 className="fw-semibold mb-0">Pengiriman Terbaru</h6>
-          <Link to="/admin/submissions" className="btn btn-sm btn-outline-primary">Lihat Semua</Link>
+      <div
+        style={{
+          background: '#fff',
+          borderRadius: 12,
+          boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+          border: '1px solid #f0f0f0',
+          overflow: 'hidden',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '16px 20px',
+            borderBottom: '1px solid #f0f0f0',
+          }}
+        >
+          <h6 style={{ fontWeight: 600, fontSize: 14, color: '#1a1f2e', margin: 0 }}>Pengiriman Terbaru</h6>
+          <Link
+            to="/admin/submissions"
+            style={{
+              background: ACCENT,
+              color: '#fff',
+              textDecoration: 'none',
+              fontSize: 12,
+              fontWeight: 600,
+              padding: '5px 14px',
+              borderRadius: 6,
+            }}
+          >
+            Lihat Semua
+          </Link>
         </div>
-        <div className="card-body p-0">
-          {stats?.recent_submissions?.length === 0 ? (
-            <div className="text-center text-muted py-4">Belum ada pengiriman</div>
-          ) : (
-            <div className="table-responsive">
-              <table className="table table-hover mb-0 small">
-                <thead className="table-light">
-                  <tr>
-                    <th>Kontributor</th>
-                    <th>Tugas</th>
-                    <th>Status</th>
-                    <th>Dikirim</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {stats?.recent_submissions?.map((s) => (
-                    <tr key={s.id}>
-                      <td className="fw-semibold">{s.contributor_username}</td>
-                      <td>{s.task_title}</td>
-                      <td>
-                        <span className={`badge bg-${statusBadge[s.status] || 'secondary'}`}>
+
+        {!stats?.recent_submissions?.length ? (
+          <div style={{ textAlign: 'center', color: '#9ca3af', padding: '32px 0', fontSize: 13 }}>
+            Belum ada pengiriman
+          </div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead>
+                <tr style={{ background: '#fafafa', borderBottom: '1px solid #f0f0f0' }}>
+                  {['Kontributor', 'Tugas', 'Status', 'Dikirim'].map((h) => (
+                    <th key={h} style={{ padding: '10px 20px', textAlign: 'left', fontWeight: 600, color: '#6b7280', fontSize: 12 }}>
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {stats.recent_submissions.map((s) => {
+                  const badge = statusBadgeStyle[s.status] || { background: '#f3f4f6', color: '#374151', border: '1px solid #e5e7eb' }
+                  return (
+                    <tr key={s.id} style={{ borderBottom: '1px solid #f9f9f9' }} className="table-row-hover">
+                      <td style={{ padding: '11px 20px', fontWeight: 600, color: '#1a1f2e' }}>{s.contributor_username}</td>
+                      <td style={{ padding: '11px 20px', color: '#374151' }}>{s.task_title}</td>
+                      <td style={{ padding: '11px 20px' }}>
+                        <span
+                          style={{
+                            ...badge,
+                            borderRadius: 20,
+                            padding: '3px 10px',
+                            fontSize: 11,
+                            fontWeight: 600,
+                          }}
+                        >
                           {s.status === 'pending' ? 'Menunggu' : s.status === 'approved' ? 'Disetujui' : s.status === 'revision' ? 'Revisi' : s.status}
                         </span>
                       </td>
-                      <td className="text-muted">{new Date(s.submitted_at).toLocaleDateString('id-ID')}</td>
+                      <td style={{ padding: '11px 20px', color: '#9ca3af', fontSize: 12 }}>
+                        {new Date(s.submitted_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
+
+      <style>{`
+        .stat-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1) !important; }
+        .table-row-hover:hover { background: #fafafa; }
+      `}</style>
     </div>
   )
 }

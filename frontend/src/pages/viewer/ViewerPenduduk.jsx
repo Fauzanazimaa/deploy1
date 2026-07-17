@@ -605,39 +605,39 @@ export default function ViewerPenduduk() {
   const [activeTab, setActiveTab] = useState('jk')
 
   return (
-    <div>
-      {/* Header */}
-      <div className="mb-4">
-        <h4 className="fw-bold mb-0 d-flex align-items-center gap-2">
-          <i className="bi bi-people-fill text-success"></i>
+    <div style={{ fontFamily: "'Inter', sans-serif" }}>
+      <div style={{ marginBottom: 24 }}>
+        <h4 style={{ fontWeight: 700, fontSize: 20, color: '#1a1f2e', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <i className="bi bi-people-fill" style={{ color: '#f5a623' }}></i>
           Data Penduduk Kabupaten Sijunjung
         </h4>
-        <p className="text-muted small mb-0 mt-1">
-          Statistik kependudukan dari tahun ke tahun — berdasarkan jenis kelamin, kelompok umur, dan kecamatan
+        <p style={{ color: '#6b7280', fontSize: 13, margin: '4px 0 0' }}>
+          Statistik kependudukan — berdasarkan jenis kelamin, kelompok umur, dan kecamatan
         </p>
       </div>
 
       {/* Tab navigation */}
-      <ul className="nav nav-tabs mb-4">
+      <div style={{ display: 'flex', gap: 4, borderBottom: '2px solid #f0f0f0', marginBottom: 24 }}>
         {TABS.map(tab => (
-          <li key={tab.key} className="nav-item">
-            <button
-              className={`nav-link d-flex align-items-center gap-2 ${activeTab === tab.key ? 'active fw-semibold' : ''}`}
-              onClick={() => setActiveTab(tab.key)}
-            >
-              <i className={`bi ${tab.icon}`}></i>
-              {tab.label}
-            </button>
-          </li>
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              padding: '10px 18px', fontSize: 13, fontWeight: 600,
+              color: activeTab === tab.key ? '#f5a623' : '#6b7280',
+              borderBottom: activeTab === tab.key ? '2px solid #f5a623' : '2px solid transparent',
+              marginBottom: -2, display: 'flex', alignItems: 'center', gap: 7,
+              fontFamily: "'Inter',sans-serif", transition: 'color 0.15s',
+            }}>
+            <i className={`bi ${tab.icon}`}></i>{tab.label}
+          </button>
         ))}
-      </ul>
-
-      {/* Tab content */}
-      <div>
-        {activeTab === 'jk'   && <TabJenisKelamin />}
-        {activeTab === 'umur' && <TabKelompokUmur />}
-        {activeTab === 'kec'  && <TabKecamatan />}
       </div>
+
+      {activeTab === 'jk'   && <TabJenisKelamin />}
+      {activeTab === 'umur' && <TabKelompokUmur />}
+      {activeTab === 'kec'  && <TabKecamatan />}
     </div>
   )
 }

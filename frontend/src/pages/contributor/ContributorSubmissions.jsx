@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react'
 import { getMySubmissions } from '../../api'
 
+const ACCENT = '#f5a623'
+
 const STATUS_MAP = {
-  pending:  { label: 'Menunggu Verifikasi', color: 'warning', icon: 'bi-hourglass-split' },
-  approved: { label: 'Disetujui',           color: 'success', icon: 'bi-check-circle-fill' },
-  revision: { label: 'Perlu Revisi',        color: 'danger',  icon: 'bi-exclamation-triangle-fill' },
+  pending:  { label: 'Menunggu Verifikasi', colorHex: ACCENT,    bg: '#fff7ed', border: '#fed7aa', icon: 'bi-hourglass-split' },
+  approved: { label: 'Disetujui',           colorHex: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0', icon: 'bi-check-circle-fill' },
+  revision: { label: 'Perlu Revisi',        colorHex: '#dc2626', bg: '#fef2f2', border: '#fecaca', icon: 'bi-exclamation-triangle-fill' },
 }
 
 export default function ContributorSubmissions() {
@@ -25,28 +27,38 @@ export default function ContributorSubmissions() {
   )
 
   return (
-    <div>
-      <div className="mb-4">
-        <h4 className="fw-bold mb-0">Riwayat Pengiriman</h4>
-        <p className="text-muted small mb-0">Semua file yang pernah kamu kirimkan beserta statusnya</p>
+    <div style={{ fontFamily: "'Inter', sans-serif" }}>
+      <div style={{ marginBottom: 24 }}>
+        <h4 style={{ fontWeight: 700, fontSize: 20, color: '#1a1f2e', margin: 0 }}>Riwayat Pengiriman</h4>
+        <p style={{ color: '#6b7280', fontSize: 13, margin: '4px 0 0' }}>Semua file yang pernah kamu kirimkan beserta statusnya</p>
       </div>
 
       {/* Filter pills */}
-      <div className="d-flex gap-2 flex-wrap mb-4">
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
         <button
-          className={`btn btn-sm ${filterStatus === 'all' ? 'btn-dark' : 'btn-outline-secondary'}`}
           onClick={() => setFilterStatus('all')}
+          style={{
+            background: filterStatus === 'all' ? '#1a1f2e' : '#fff',
+            border: `1px solid ${filterStatus === 'all' ? '#1a1f2e' : '#e5e7eb'}`,
+            color: filterStatus === 'all' ? '#fff' : '#6b7280',
+            borderRadius: 20, padding: '5px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: "'Inter', sans-serif",
+          }}
         >
-          Semua <span className="badge bg-white text-dark ms-1">{submissions.length}</span>
+          Semua <span style={{ background: filterStatus === 'all' ? 'rgba(255,255,255,0.2)' : '#f3f4f6', color: filterStatus === 'all' ? '#fff' : '#374151', borderRadius: 10, padding: '0 6px', marginLeft: 4, fontSize: 11 }}>{submissions.length}</span>
         </button>
         {Object.entries(STATUS_MAP).map(([k, v]) => (
           <button
             key={k}
-            className={`btn btn-sm ${filterStatus === k ? `btn-${v.color}` : `btn-outline-${v.color}`}`}
             onClick={() => setFilterStatus(k)}
+            style={{
+              background: filterStatus === k ? v.bg : '#fff',
+              border: `1px solid ${filterStatus === k ? v.border : '#e5e7eb'}`,
+              color: filterStatus === k ? v.colorHex : '#6b7280',
+              borderRadius: 20, padding: '5px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontFamily: "'Inter', sans-serif",
+            }}
           >
-            <i className={`bi ${v.icon} me-1`}></i>{v.label}
-            <span className={`badge ms-1 ${filterStatus === k ? 'bg-white text-dark' : `bg-${v.color} text-white`}`}>
+            <i className={`bi ${v.icon}`}></i>{v.label}
+            <span style={{ background: filterStatus === k ? v.colorHex + '20' : '#f3f4f6', color: filterStatus === k ? v.colorHex : '#374151', borderRadius: 10, padding: '0 6px', fontSize: 11 }}>
               {submissions.filter(s => s.status === k).length}
             </span>
           </button>
@@ -54,111 +66,108 @@ export default function ContributorSubmissions() {
       </div>
 
       {loading ? (
-        <div className="text-center py-5"><div className="spinner-border text-primary" /></div>
+        <div style={{ textAlign: 'center', padding: '40px 0' }}>
+          <div style={{ width: 36, height: 36, border: `3px solid ${ACCENT}30`, borderTopColor: ACCENT, borderRadius: '50%', animation: 'spin 0.7s linear infinite', display: 'inline-block' }} />
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        </div>
       ) : filtered.length === 0 ? (
-        <div className="card border-0 shadow-sm text-center py-5">
-          <i className="bi bi-inbox display-4 text-muted mb-3"></i>
-          <p className="text-muted">Belum ada riwayat pengiriman.</p>
+        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #f0f0f0', textAlign: 'center', padding: '48px 0', color: '#9ca3af', fontSize: 13 }}>
+          <i className="bi bi-inbox" style={{ fontSize: 40, display: 'block', marginBottom: 12, opacity: 0.4 }}></i>
+          Belum ada riwayat pengiriman.
         </div>
       ) : (
-        <div className="card border-0 shadow-sm">
-          <div className="card-body p-0">
-            <div className="table-responsive">
-              <table className="table table-hover align-middle mb-0 small">
-                <thead className="table-light">
-                  <tr>
-                    <th>#</th>
-                    <th>Tugas</th>
-                    <th>Status</th>
-                    <th>Dikirim</th>
-                    <th>Ditinjau</th>
-                    <th>Catatan</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((s, i) => {
-                    const st = STATUS_MAP[s.status] || { label: s.status, color: 'secondary', icon: 'bi-circle' }
-                    return (
-                      <tr key={s.id}>
-                        <td className="text-muted">{i + 1}</td>
-                        <td className="fw-semibold">{s.task_title}</td>
-                        <td>
-                          <span className={`badge bg-${st.color}`}>
-                            <i className={`bi ${st.icon} me-1`}></i>{st.label}
-                          </span>
-                        </td>
-                        <td className="text-muted">
-                          {new Date(s.submitted_at).toLocaleString('id-ID', {
-                            day: '2-digit', month: 'short', year: 'numeric',
-                            hour: '2-digit', minute: '2-digit'
-                          })}
-                        </td>
-                        <td className="text-muted">
-                          {s.reviewed_at
-                            ? new Date(s.reviewed_at).toLocaleDateString('id-ID', {
-                                day: '2-digit', month: 'short', year: 'numeric'
-                              })
-                            : <span className="text-muted">-</span>}
-                        </td>
-                        <td>
-                          {s.status === 'revision' && s.revision_notes ? (
-                            <button
-                              className="btn btn-sm btn-outline-danger"
-                              onClick={() => setDetailSub(s)}
-                            >
-                              <i className="bi bi-eye me-1"></i>Lihat Catatan
-                            </button>
-                          ) : (
-                            <span className="text-muted">-</span>
-                          )}
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #f0f0f0', overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead>
+                <tr style={{ background: '#fafafa', borderBottom: '1px solid #f0f0f0' }}>
+                  {['#', 'Tugas', 'Status', 'Dikirim', 'Ditinjau', 'Catatan'].map((h) => (
+                    <th key={h} style={{ padding: '10px 20px', textAlign: 'left', fontWeight: 600, color: '#6b7280', fontSize: 12 }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((s, i) => {
+                  const st = STATUS_MAP[s.status] || { label: s.status, colorHex: '#6b7280', bg: '#f3f4f6', border: '#e5e7eb', icon: 'bi-circle' }
+                  return (
+                    <tr key={s.id} style={{ borderBottom: '1px solid #f9f9f9' }} className="table-row-hover">
+                      <td style={{ padding: '11px 20px', color: '#9ca3af', fontSize: 12 }}>{i + 1}</td>
+                      <td style={{ padding: '11px 20px', fontWeight: 600, color: '#1a1f2e' }}>{s.task_title}</td>
+                      <td style={{ padding: '11px 20px' }}>
+                        <span style={{ background: st.bg, border: `1px solid ${st.border}`, color: st.colorHex, borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 600 }}>
+                          <i className={`bi ${st.icon} me-1`}></i>{st.label}
+                        </span>
+                      </td>
+                      <td style={{ padding: '11px 20px', color: '#6b7280', fontSize: 12 }}>
+                        {new Date(s.submitted_at).toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      </td>
+                      <td style={{ padding: '11px 20px', color: '#6b7280', fontSize: 12 }}>
+                        {s.reviewed_at ? new Date(s.reviewed_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}
+                      </td>
+                      <td style={{ padding: '11px 20px' }}>
+                        {s.status === 'revision' && s.revision_notes ? (
+                          <button
+                            onClick={() => setDetailSub(s)}
+                            style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', borderRadius: 7, padding: '5px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontFamily: "'Inter', sans-serif" }}
+                          >
+                            <i className="bi bi-eye"></i>Lihat Catatan
+                          </button>
+                        ) : (
+                          <span style={{ color: '#9ca3af' }}>-</span>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Revision modal */}
+      {detailSub && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1050, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 20px 60px rgba(0,0,0,0.2)', width: '100%', maxWidth: 480, overflow: 'hidden', fontFamily: "'Inter', sans-serif" }}>
+            <div style={{ background: '#fef2f2', borderBottom: '1px solid #fecaca', padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 10 }}>
+              <i className="bi bi-exclamation-triangle-fill" style={{ color: '#dc2626', fontSize: 18 }}></i>
+              <span style={{ fontWeight: 700, fontSize: 15, color: '#dc2626' }}>Catatan Revisi</span>
+              <button
+                onClick={() => setDetailSub(null)}
+                style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: 18, display: 'flex', alignItems: 'center' }}
+              >
+                <i className="bi bi-x"></i>
+              </button>
+            </div>
+            <div style={{ padding: '20px' }}>
+              <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 14 }}>
+                <strong>Tugas:</strong> {detailSub.task_title} &bull; Dikirim {new Date(detailSub.submitted_at).toLocaleDateString('id-ID')}
+              </div>
+              <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, padding: '14px 16px', marginBottom: 14, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                <i className="bi bi-exclamation-triangle-fill" style={{ color: '#dc2626', fontSize: 18, flexShrink: 0, marginTop: 1 }}></i>
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 12, color: '#dc2626', marginBottom: 6 }}>Catatan dari Admin:</div>
+                  <div style={{ fontSize: 13, color: '#374151', whiteSpace: 'pre-line' }}>{detailSub.revision_notes}</div>
+                </div>
+              </div>
+              <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10, padding: '12px 16px', fontSize: 12, color: '#3b82f6' }}>
+                <i className="bi bi-info-circle me-2"></i>
+                Silakan perbaiki data sesuai catatan di atas, lalu upload ulang di halaman <strong>Tugas Saya</strong>.
+              </div>
+            </div>
+            <div style={{ padding: '0 20px 20px', display: 'flex', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setDetailSub(null)}
+                style={{ background: '#f3f4f6', border: '1px solid #e5e7eb', color: '#374151', borderRadius: 8, padding: '8px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Inter', sans-serif" }}
+              >
+                Tutup
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Revision detail modal */}
-      {detailSub && (
-        <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }}>
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content border-0 shadow-lg">
-              <div className="modal-header border-0 pb-0">
-                <h5 className="modal-title fw-bold text-danger">
-                  <i className="bi bi-exclamation-triangle-fill me-2"></i>Catatan Revisi
-                </h5>
-                <button className="btn-close" onClick={() => setDetailSub(null)} />
-              </div>
-              <div className="modal-body">
-                <div className="mb-3 small text-muted">
-                  <strong>Tugas:</strong> {detailSub.task_title} •{' '}
-                  Dikirim {new Date(detailSub.submitted_at).toLocaleDateString('id-ID')}
-                </div>
-                <div className="alert alert-danger d-flex gap-3 align-items-start">
-                  <i className="bi bi-exclamation-triangle-fill text-danger fs-5 flex-shrink-0 mt-1"></i>
-                  <div>
-                    <div className="fw-semibold mb-1 small">Catatan dari Admin:</div>
-                    <div className="small" style={{ whiteSpace: 'pre-line' }}>
-                      {detailSub.revision_notes}
-                    </div>
-                  </div>
-                </div>
-                <div className="alert alert-info small mb-0">
-                  <i className="bi bi-info-circle me-2"></i>
-                  Silakan perbaiki data sesuai catatan di atas, lalu upload ulang di halaman <strong>Tugas Saya</strong>.
-                </div>
-              </div>
-              <div className="modal-footer border-0 pt-0">
-                <button className="btn btn-secondary" onClick={() => setDetailSub(null)}>Tutup</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <style>{`.table-row-hover:hover { background: #fafafa; }`}</style>
     </div>
   )
 }

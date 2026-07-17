@@ -468,6 +468,9 @@ export default function AdminDataSchema() {
   const [showFormModal, setShowFormModal] = useState(false)
   const [editDT, setEditDT] = useState(null)
   const [form, setForm] = useState(emptyForm)
+  // createFile: file Excel untuk Tambah Jenis Data baru
+  const [createFile, setCreateFile] = useState(null)
+  const createFileRef = useRef()
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
   const [uploadFile, setUploadFile] = useState(null)
@@ -498,10 +501,9 @@ export default function AdminDataSchema() {
   // ── Form Modal ────────────────────────────────────────────────────────────
   const openCreate = () => {
     setEditDT(null)
-    setForm(emptyForm)
+    setForm({ name: '', description: '' })
+    setCreateFile(null)
     setFormError('')
-    setParsePreview(null)
-    setParsedApplied(false)
     setShowFormModal(true)
   }
 
@@ -514,14 +516,40 @@ export default function AdminDataSchema() {
     setShowFormModal(true)
   }
 
-  const handleSave = async (e) => {
+  // CREATE: buat data type kosong → upload template (schema dari header Excel)
+  const handleCreate = async (e) => {
+    e.preventDefault()
+    if (!createFile) return setFormError('Pilih file template Excel terlebih dahulu')
+    setSaving(true)
+    setFormError('')
+    try {
+      // 1. Buat jenis data dengan schema kosong
+      const dtRes = await createDataType({ name: form.name, description: form.description, fields_schema: [] })
+      const newDtId = dtRes.data.id
+
+      // 2. Upload template + sync_schema=true → backend parse header jadi field schema
+      const fd = new FormData()
+      fd.append('file', createFile)
+      fd.append('data_type_id', newDtId)
+      fd.append('sync_schema', 'true')
+      await uploadTemplate(fd)
+
+      setShowFormModal(false)
+      setCreateFile(null)
+      fetchAll()
+    } catch (err) {
+      setFormError(err.response?.data?.error || 'Terjadi kesalahan')
+    } finally { setSaving(false) }
+  }
+
+  // EDIT: update nama/deskripsi + schema builder (opsional)
+  const handleEdit = async (e) => {
     e.preventDefault()
     setSaving(true)
     setFormError('')
     try {
       const payload = { name: form.name, description: form.description, fields_schema: serializeSchema(form.schema) }
-      if (editDT) { await updateDataType(editDT.id, payload) }
-      else { await createDataType(payload) }
+      await updateDataType(editDT.id, payload)
       setShowFormModal(false)
       fetchAll()
     } catch (err) {
@@ -608,32 +636,35 @@ export default function AdminDataSchema() {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div>
-      <div className="d-flex justify-content-between align-items-center mb-4">
+    <div style={{ fontFamily: "'Inter', sans-serif" }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
         <div>
-          <h4 className="fw-bold mb-0">Jenis Data & Template</h4>
-          <p className="text-muted small mb-0">Kelola struktur data dan template Excel dalam satu tempat</p>
+          <h4 style={{ fontWeight: 700, fontSize: 20, color: '#1a1f2e', margin: 0 }}>Jenis Data & Template</h4>
+          <p style={{ color: '#6b7280', fontSize: 13, margin: '4px 0 0' }}>Kelola struktur data dan template Excel dalam satu tempat</p>
         </div>
-        <button className="btn btn-primary" onClick={openCreate}>
-          <i className="bi bi-plus-lg me-1"></i>Tambah Jenis Data
+        <button onClick={openCreate} style={{ background: '#f5a623', border: 'none', color: '#fff', borderRadius: 8, padding: '8px 18px', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7, fontFamily: "'Inter',sans-serif" }}>
+          <i className="bi bi-plus-lg"></i>Tambah Jenis Data
         </button>
       </div>
 
       {loading ? (
-        <div className="text-center py-5"><div className="spinner-border text-primary" /></div>
+        <div style={{ textAlign: 'center', padding: '40px 0' }}>
+          <div style={{ width: 36, height: 36, border: '3px solid #f5a62330', borderTopColor: '#f5a623', borderRadius: '50%', animation: 'spin 0.7s linear infinite', display: 'inline-block' }} />
+          <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+        </div>
       ) : dataTypes.length === 0 ? (
-        <div className="card border-0 shadow-sm text-center py-5">
-          <i className="bi bi-grid-3x3-gap display-4 text-muted mb-3"></i>
-          <p className="text-muted">Belum ada jenis data.</p>
-          <button className="btn btn-primary mx-auto" style={{ width: 'fit-content' }} onClick={openCreate}>
-            <i className="bi bi-plus-lg me-1"></i>Tambah Sekarang
+        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #f0f0f0', textAlign: 'center', padding: '48px 0', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+          <i className="bi bi-grid-3x3-gap" style={{ fontSize: 40, color: '#d1d5db', display: 'block', marginBottom: 12 }}></i>
+          <p style={{ color: '#9ca3af', fontSize: 13, marginBottom: 16 }}>Belum ada jenis data.</p>
+          <button onClick={openCreate} style={{ background: '#f5a623', border: 'none', color: '#fff', borderRadius: 8, padding: '8px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Inter',sans-serif" }}>
+            <i className="bi bi-plus-lg me-2"></i>Tambah Sekarang
           </button>
         </div>
       ) : (
         <div className="row g-3">
           {/* Daftar Jenis Data */}
           <div className="col-md-4">
-            <div className="d-flex flex-column gap-2">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {dataTypes.map(dt => {
                 const tmpl = templateByDT[dt.id]
                 const isSelected = selectedDT?.id === dt.id
@@ -641,29 +672,27 @@ export default function AdminDataSchema() {
                 const leafs = getLeafLevel(schema)
                 return (
                   <div key={dt.id}
-                    className={`card border-0 shadow-sm cursor-pointer ${isSelected ? 'border border-primary' : ''}`}
-                    style={{ cursor: 'pointer', borderWidth: isSelected ? 2 : 0 }}
-                    onClick={() => setSelectedDT(isSelected ? null : dt)}>
-                    <div className="card-body py-2 px-3">
-                      <div className="d-flex justify-content-between align-items-start">
-                        <div className="flex-grow-1 overflow-hidden">
-                          <div className="fw-semibold text-truncate">{dt.name}</div>
-                          <div className="small text-muted">
-                            {leafs.length} kolom •{' '}
-                            {tmpl
-                              ? <span className="text-success"><i className="bi bi-file-earmark-check me-1"></i>Ada template</span>
-                              : <span className="text-warning"><i className="bi bi-exclamation-circle me-1"></i>Belum ada template</span>
-                            }
-                          </div>
+                    onClick={() => setSelectedDT(isSelected ? null : dt)}
+                    style={{
+                      background: '#fff', borderRadius: 10, padding: '12px 14px', cursor: 'pointer',
+                      border: isSelected ? '2px solid #f5a623' : '1px solid #f0f0f0',
+                      boxShadow: isSelected ? '0 2px 12px rgba(245,166,35,0.15)' : '0 1px 3px rgba(0,0,0,0.05)',
+                      transition: 'border 0.15s, box-shadow 0.15s',
+                    }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div style={{ flex: 1, overflow: 'hidden' }}>
+                        <div style={{ fontWeight: 600, color: '#1a1f2e', fontSize: 14, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{dt.name}</div>
+                        <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>
+                          {leafs.length} kolom &bull;{' '}
+                          {tmpl
+                            ? <span style={{ color: '#16a34a' }}><i className="bi bi-file-earmark-check me-1"></i>Ada template</span>
+                            : <span style={{ color: '#f5a623' }}><i className="bi bi-exclamation-circle me-1"></i>Belum ada template</span>
+                          }
                         </div>
-                        <div className="d-flex gap-1 ms-2">
-                          <button className="btn btn-sm btn-outline-primary" onClick={e => { e.stopPropagation(); openEdit(dt) }}>
-                            <i className="bi bi-pencil"></i>
-                          </button>
-                          <button className="btn btn-sm btn-outline-danger" onClick={e => { e.stopPropagation(); handleDelete(dt) }}>
-                            <i className="bi bi-trash"></i>
-                          </button>
-                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 4, marginLeft: 8 }}>
+                        <button onClick={e => { e.stopPropagation(); openEdit(dt) }} style={{ background: '#eff6ff', border: '1px solid #bfdbfe', color: '#3b82f6', borderRadius: 6, padding: '4px 8px', fontSize: 13, cursor: 'pointer' }}><i className="bi bi-pencil"></i></button>
+                        <button onClick={e => { e.stopPropagation(); handleDelete(dt) }} style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', borderRadius: 6, padding: '4px 8px', fontSize: 13, cursor: 'pointer' }}><i className="bi bi-trash"></i></button>
                       </div>
                     </div>
                   </div>
@@ -675,26 +704,26 @@ export default function AdminDataSchema() {
           {/* Detail panel kanan */}
           <div className="col-md-8">
             {!selectedDT ? (
-              <div className="card border-0 shadow-sm h-100 d-flex align-items-center justify-content-center text-center py-5">
-                <i className="bi bi-arrow-left-circle display-4 text-muted mb-3"></i>
-                <p className="text-muted">Pilih jenis data di sebelah kiri untuk melihat detail dan template.</p>
+              <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #f0f0f0', textAlign: 'center', padding: '48px 0', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+                <i className="bi bi-arrow-left-circle" style={{ fontSize: 36, color: '#d1d5db', display: 'block', marginBottom: 12 }}></i>
+                <p style={{ color: '#9ca3af', fontSize: 13 }}>Pilih jenis data di sebelah kiri untuk melihat detail dan template.</p>
               </div>
             ) : (() => {
               const dt = selectedDT
               const tmpl = templateByDT[dt.id]
               const schema = normalizeSchema(dt.fields_schema)
               return (
-                <div className="card border-0 shadow-sm">
-                  <div className="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
+                <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #f0f0f0', overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+                  <div style={{ borderBottom: '1px solid #f0f0f0', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                      <h6 className="fw-bold mb-0">{dt.name}</h6>
-                      {dt.description && <div className="small text-muted">{dt.description}</div>}
+                      <h6 style={{ fontWeight: 700, fontSize: 15, color: '#1a1f2e', margin: 0 }}>{dt.name}</h6>
+                      {dt.description && <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>{dt.description}</div>}
                     </div>
-                    <button className="btn btn-sm btn-outline-primary" onClick={() => openEdit(dt)}>
-                      <i className="bi bi-pencil me-1"></i>Edit Schema
+                    <button onClick={() => openEdit(dt)} style={{ background: '#eff6ff', border: '1px solid #bfdbfe', color: '#3b82f6', borderRadius: 8, padding: '6px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontFamily: "'Inter',sans-serif" }}>
+                      <i className="bi bi-pencil"></i>Edit Schema
                     </button>
                   </div>
-                  <div className="card-body">
+                  <div style={{ padding: '20px' }}>
                     {/* Preview Header */}
                     <h6 className="fw-semibold small text-uppercase text-muted mb-2">Preview Struktur</h6>
                     <HeaderPreview schema={schema} />
@@ -715,66 +744,83 @@ export default function AdminDataSchema() {
                               {' '}• {tmpl.creator_username}
                             </div>
                           </div>
-                          <div className="d-flex gap-1 flex-shrink-0">
-                            <button className="btn btn-sm btn-outline-success" onClick={() => handleDownload(tmpl)} title="Unduh">
+                          <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                            <button onClick={() => handleDownload(tmpl)} title="Unduh" style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#16a34a', borderRadius: 7, padding: '5px 10px', fontSize: 14, cursor: 'pointer' }}>
                               <i className="bi bi-download"></i>
                             </button>
-                            <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteTemplate(tmpl)} title="Hapus">
+                            <button onClick={() => handleDeleteTemplate(tmpl)} title="Hapus" style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', borderRadius: 7, padding: '5px 10px', fontSize: 14, cursor: 'pointer' }}>
                               <i className="bi bi-trash"></i>
                             </button>
                           </div>
                         </div>
                       ) : (
-                        <div className="alert alert-warning small py-2 mb-3">
-                          <i className="bi bi-exclamation-triangle me-1"></i>
-                          Belum ada template untuk jenis data ini.
+                        <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#92400e', marginBottom: 14 }}>
+                          <i className="bi bi-exclamation-triangle me-2"></i>Belum ada template untuk jenis data ini.
                         </div>
                       )}
 
                       {/* Upload / Generate */}
-                      <div className="row g-2 mt-2">
-                        <div className="col-md-8">
-                          <div className="input-group input-group-sm">
-                            <input type="file" className="form-control" accept=".xlsx,.xls" ref={fileRef}
-                              onChange={async e => {
-                                const f = e.target.files[0]
-                                setUploadFile(f)
+                      <div style={{ marginTop: 14 }}>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: '#6b7280', marginBottom: 8, letterSpacing: 0.5 }}>UPLOAD TEMPLATE BARU</div>
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                          <label style={{
+                            display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer',
+                            background: '#f9fafb', border: '1.5px dashed #d1d5db', borderRadius: 8,
+                            padding: '8px 14px', fontSize: 13, color: '#374151', flex: 1, minWidth: 200,
+                          }}>
+                            <i className="bi bi-file-earmark-arrow-up" style={{ color: '#f5a623', fontSize: 18 }}></i>
+                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {uploadFile ? uploadFile.name : 'Pilih file .xlsx / .xls'}
+                            </span>
+                            <input type="file" accept=".xlsx,.xls" ref={fileRef} style={{ display: 'none' }}
+                              onChange={e => {
+                                setUploadFile(e.target.files[0] || null)
                                 setUploadError('')
                                 setParsePreview(null)
-                                if (f) await handleParseFile(f)
                               }} />
-                            <button className="btn btn-primary" disabled={!uploadFile || uploading}
-                              onClick={() => handleUploadTemplate(dt.id)}>
-                              {uploading ? <span className="spinner-border spinner-border-sm" /> : <><i className="bi bi-upload me-1"></i>Upload</>}
-                            </button>
-                          </div>
-                          {uploadError && <div className="text-danger small mt-1">{uploadError}</div>}
-                        </div>
-                        <div className="col-md-4">
-                          <button className="btn btn-sm btn-outline-secondary w-100"
-                            onClick={() => handleGenerate(dt.id)}
-                            disabled={getLeafLevel(schema).length === 0}
-                            title={getLeafLevel(schema).length === 0 ? 'Tambah kolom dulu di schema' : ''}>
-                            <i className="bi bi-magic me-1"></i>Generate dari Schema
+                          </label>
+                          <button
+                            style={{
+                              background: uploadFile && !uploading ? '#f5a623' : '#e5e7eb',
+                              border: 'none', color: uploadFile && !uploading ? '#fff' : '#9ca3af',
+                              borderRadius: 8, padding: '8px 18px', fontSize: 13, fontWeight: 600,
+                              cursor: uploadFile && !uploading ? 'pointer' : 'not-allowed',
+                              display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0,
+                              fontFamily: "'Inter',sans-serif",
+                            }}
+                            disabled={!uploadFile || uploading}
+                            onClick={() => handleUploadTemplate(dt.id)}>
+                            {uploading
+                              ? <><span className="spinner-border spinner-border-sm" style={{ width: 14, height: 14, borderWidth: 2 }} />Mengupload...</>
+                              : <><i className="bi bi-upload"></i>Upload</>}
                           </button>
+                          <button
+                            style={{
+                              background: '#fff', border: '1px solid #e5e7eb', color: '#374151',
+                              borderRadius: 8, padding: '8px 14px', fontSize: 12, fontWeight: 500,
+                              cursor: getLeafLevel(schema).length === 0 ? 'not-allowed' : 'pointer',
+                              opacity: getLeafLevel(schema).length === 0 ? 0.5 : 1,
+                              display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0,
+                              fontFamily: "'Inter',sans-serif",
+                            }}
+                            disabled={getLeafLevel(schema).length === 0}
+                            title={getLeafLevel(schema).length === 0 ? 'Edit schema dulu untuk menambah kolom' : 'Generate template dari schema yang ada'}
+                            onClick={() => handleGenerate(dt.id)}>
+                            <i className="bi bi-magic"></i>Generate dari Schema
+                          </button>
+                        </div>
+                        {uploadError && (
+                          <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 7, padding: '7px 12px', fontSize: 12, color: '#dc2626', marginTop: 8 }}>
+                            <i className="bi bi-exclamation-triangle me-2"></i>{uploadError}
+                          </div>
+                        )}
+                        <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 6 }}>
+                          <i className="bi bi-info-circle me-1"></i>
+                          Upload file Excel — header baris pertama otomatis disinkronkan sebagai kolom jenis data ini.
                         </div>
                       </div>
 
-                      {/* Parse preview */}
-                      {parsePreview && (
-                        <div className="border rounded p-3 mt-3 bg-light">
-                          <div className="d-flex justify-content-between align-items-center mb-2">
-                            <span className="fw-semibold small"><i className="bi bi-eye me-1"></i>Struktur terdeteksi dari file Excel</span>
-                            {!parsedApplied && (
-                              <button className="btn btn-sm btn-success" onClick={applyParsedSchema}>
-                                <i className="bi bi-check-lg me-1"></i>Terapkan ke Schema
-                              </button>
-                            )}
-                            {parsedApplied && <span className="text-success small"><i className="bi bi-check-circle-fill me-1"></i>Diterapkan</span>}
-                          </div>
-                          <HeaderPreview schema={normalizeSchema(parsePreview)} />
-                        </div>
-                      )}
+                      {/* Parse preview — hapus di panel kanan, tidak diperlukan lagi */}
                     </div>
                   </div>
                 </div>
@@ -786,94 +832,157 @@ export default function AdminDataSchema() {
 
       {/* Form Modal */}
       {showFormModal && (
-        <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }}>
-          <div className="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
-            <div className="modal-content border-0 shadow-lg">
-              <div className="modal-header">
-                <h5 className="modal-title fw-bold">
-                  {editDT ? `Edit: ${editDT.name}` : 'Tambah Jenis Data Baru'}
-                </h5>
-                <button className="btn-close" onClick={() => setShowFormModal(false)} />
-              </div>
-              <form onSubmit={handleSave}>
-                <div className="modal-body">
-                  {formError && <div className="alert alert-danger small py-2">{formError}</div>}
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1050, overflowY: 'auto', padding: '20px' }}>
+          <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 20px 60px rgba(0,0,0,0.2)', width: '100%', maxWidth: editDT ? 1000 : 480, margin: '0 auto', fontFamily: "'Inter',sans-serif" }}>
+            
+            {/* Header */}
+            <div style={{ borderBottom: '1px solid #f0f0f0', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontWeight: 700, fontSize: 15, color: '#1a1f2e' }}>
+                {editDT ? `Edit: ${editDT.name}` : 'Tambah Jenis Data Baru'}
+              </span>
+              <button onClick={() => setShowFormModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: 20 }}><i className="bi bi-x"></i></button>
+            </div>
+
+            {/* ── MODE CREATE: nama + deskripsi + upload template ── */}
+            {!editDT && (
+              <form onSubmit={handleCreate}>
+                <div style={{ padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  {formError && (
+                    <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', borderRadius: 8, padding: '8px 12px', fontSize: 12 }}>
+                      <i className="bi bi-exclamation-triangle me-2"></i>{formError}
+                    </div>
+                  )}
+
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 5, letterSpacing: 0.5 }}>
+                      NAMA JENIS DATA <span style={{ color: '#dc2626' }}>*</span>
+                    </label>
+                    <input
+                      className="form-control"
+                      required
+                      placeholder="contoh: Data Kependudukan"
+                      value={form.name}
+                      onChange={e => setForm({ ...form, name: e.target.value })}
+                      style={{ fontSize: 13, fontFamily: "'Inter',sans-serif" }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 5, letterSpacing: 0.5 }}>DESKRIPSI</label>
+                    <input
+                      className="form-control"
+                      placeholder="Deskripsi singkat (opsional)"
+                      value={form.description}
+                      onChange={e => setForm({ ...form, description: e.target.value })}
+                      style={{ fontSize: 13, fontFamily: "'Inter',sans-serif" }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 5, letterSpacing: 0.5 }}>
+                      FILE TEMPLATE EXCEL <span style={{ color: '#dc2626' }}>*</span>
+                    </label>
+                    <label style={{
+                      display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer',
+                      background: createFile ? '#f0fdf4' : '#fafafa',
+                      border: `2px dashed ${createFile ? '#86efac' : '#d1d5db'}`,
+                      borderRadius: 10, padding: '14px 18px', transition: 'all 0.15s',
+                    }}>
+                      <i className="bi bi-file-earmark-arrow-up" style={{ color: createFile ? '#16a34a' : '#f5a623', fontSize: 22, flexShrink: 0 }}></i>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 600, fontSize: 13, color: createFile ? '#16a34a' : '#374151' }}>
+                          {createFile ? createFile.name : 'Klik untuk pilih file Excel'}
+                        </div>
+                        <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>
+                          {createFile
+                            ? 'Header baris pertama akan otomatis jadi kolom jenis data ini'
+                            : 'Format .xlsx atau .xls — header baris pertama = kolom data'}
+                        </div>
+                      </div>
+                      {createFile && (
+                        <i className="bi bi-check-circle-fill" style={{ color: '#16a34a', fontSize: 18, flexShrink: 0 }}></i>
+                      )}
+                      <input
+                        ref={createFileRef}
+                        type="file"
+                        accept=".xlsx,.xls"
+                        style={{ display: 'none' }}
+                        required
+                        onChange={e => setCreateFile(e.target.files[0] || null)}
+                      />
+                    </label>
+                    {createFile && (
+                      <button
+                        type="button"
+                        onClick={() => { setCreateFile(null); if (createFileRef.current) createFileRef.current.value = '' }}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: 12, marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}
+                      >
+                        <i className="bi bi-x"></i> Hapus file
+                      </button>
+                    )}
+                  </div>
+
+                  <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#3b82f6' }}>
+                    <i className="bi bi-info-circle me-2"></i>
+                    Sistem akan membaca <strong>baris pertama</strong> file Excel sebagai nama kolom jenis data ini secara otomatis.
+                  </div>
+                </div>
+
+                <div style={{ borderTop: '1px solid #f0f0f0', padding: '14px 20px', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                  <button type="button" onClick={() => setShowFormModal(false)} style={{ background: '#f3f4f6', border: '1px solid #e5e7eb', color: '#374151', borderRadius: 8, padding: '8px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Inter',sans-serif" }}>Batal</button>
+                  <button type="submit" disabled={saving || !createFile} style={{ background: saving || !createFile ? '#e5e7eb' : '#f5a623', border: 'none', color: saving || !createFile ? '#9ca3af' : '#fff', borderRadius: 8, padding: '8px 20px', fontSize: 13, fontWeight: 600, cursor: saving || !createFile ? 'not-allowed' : 'pointer', fontFamily: "'Inter',sans-serif", display: 'flex', alignItems: 'center', gap: 6 }}>
+                    {saving
+                      ? <><span className="spinner-border spinner-border-sm" style={{ width: 14, height: 14, borderWidth: 2 }} />Menyimpan...</>
+                      : <><i className="bi bi-plus-lg"></i>Buat Jenis Data</>}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* ── MODE EDIT: schema builder ── */}
+            {editDT && (
+              <form onSubmit={handleEdit} style={{ display: 'flex', flexDirection: 'column' }}>
+                <div style={{ padding: '20px' }}>
+                  {formError && (
+                    <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', borderRadius: 8, padding: '8px 12px', fontSize: 12, marginBottom: 14 }}>
+                      {formError}
+                    </div>
+                  )}
                   <div className="row g-3 mb-4">
                     <div className="col-md-5">
-                      <label className="form-label fw-semibold small">Nama Jenis Data <span className="text-danger">*</span></label>
-                      <input className="form-control" required placeholder="contoh: Data Pertanahan"
-                        value={form.name}
-                        onChange={e => setForm({ ...form, name: e.target.value })} />
+                      <label style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 5, letterSpacing: 0.5 }}>NAMA JENIS DATA <span style={{ color: '#dc2626' }}>*</span></label>
+                      <input className="form-control" required placeholder="contoh: Data Pertanahan" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} style={{ fontSize: 13, fontFamily: "'Inter',sans-serif" }} />
                     </div>
                     <div className="col-md-7">
-                      <label className="form-label fw-semibold small">Deskripsi</label>
-                      <input className="form-control" placeholder="Deskripsi singkat (opsional)"
-                        value={form.description}
-                        onChange={e => setForm({ ...form, description: e.target.value })} />
+                      <label style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 5, letterSpacing: 0.5 }}>DESKRIPSI</label>
+                      <input className="form-control" placeholder="Deskripsi singkat (opsional)" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} style={{ fontSize: 13, fontFamily: "'Inter',sans-serif" }} />
                     </div>
                   </div>
 
-                  {/* Upload Excel untuk deteksi otomatis */}
-                  <div className="alert alert-info small py-2 mb-3">
-                    <i className="bi bi-lightbulb me-1"></i>
-                    <strong>Tip:</strong> Upload file Excel untuk otomatis mendeteksi struktur header (1, 2, atau 3 level),
-                    atau bangun struktur manual di bawah.
-                  </div>
-                  <div className="mb-4">
-                    <div className="input-group input-group-sm" style={{ maxWidth: 500 }}>
-                      <input type="file" className="form-control" accept=".xlsx,.xls"
-                        onChange={async e => {
-                          const f = e.target.files[0]
-                          if (!f) return
-                          setUploadError('')
-                          setParsePreview(null)
-                          setParsedApplied(false)
-                          try {
-                            const fd = new FormData()
-                            fd.append('file', f)
-                            const res = await parseTemplateStructure(fd)
-                            setParsePreview(res.data.schema)
-                          } catch (err) {
-                            setUploadError(err.response?.data?.error || 'Gagal membaca struktur')
-                          }
-                        }} />
-                      <span className="input-group-text bg-light text-muted small">Deteksi otomatis</span>
-                    </div>
-                    {uploadError && <div className="text-danger small mt-1">{uploadError}</div>}
-                    {parsePreview && !parsedApplied && (
-                      <div className="mt-2 p-2 border rounded bg-light">
-                        <div className="d-flex justify-content-between align-items-center mb-2">
-                          <span className="small fw-semibold"><i className="bi bi-eye me-1"></i>Struktur terdeteksi:</span>
-                          <button type="button" className="btn btn-sm btn-success"
-                            onClick={() => { setForm(f => ({ ...f, schema: normalizeSchema(parsePreview) })); setParsedApplied(true) }}>
-                            <i className="bi bi-check-lg me-1"></i>Terapkan
-                          </button>
-                        </div>
-                        <HeaderPreview schema={normalizeSchema(parsePreview)} />
-                      </div>
-                    )}
-                    {parsedApplied && <div className="text-success small mt-1"><i className="bi bi-check-circle-fill me-1"></i>Schema diterapkan dari Excel</div>}
+                  <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#92400e', marginBottom: 16 }}>
+                    <i className="bi bi-info-circle me-2"></i>
+                    Untuk mengubah kolom, upload ulang template Excel dari panel detail. Schema builder di bawah untuk penyesuaian manual.
                   </div>
 
                   <div className="row g-4">
                     <div className="col-md-6">
-                      <h6 className="fw-semibold mb-3 small text-uppercase text-muted">Builder Schema</h6>
+                      <h6 style={{ fontWeight: 600, fontSize: 12, color: '#6b7280', letterSpacing: 1, marginBottom: 12 }}>BUILDER SCHEMA</h6>
                       <SchemaBuilder schema={form.schema} onChange={s => setForm(f => ({ ...f, schema: s }))} />
                     </div>
                     <div className="col-md-6">
-                      <h6 className="fw-semibold mb-3 small text-uppercase text-muted">Preview</h6>
+                      <h6 style={{ fontWeight: 600, fontSize: 12, color: '#6b7280', letterSpacing: 1, marginBottom: 12 }}>PREVIEW</h6>
                       <HeaderPreview schema={form.schema} />
                     </div>
                   </div>
                 </div>
-                <div className="modal-footer">
-                  <button type="button" className="btn btn-secondary" onClick={() => setShowFormModal(false)}>Batal</button>
-                  <button type="submit" className="btn btn-primary" disabled={saving}>
-                    {saving ? <><span className="spinner-border spinner-border-sm me-1" />Menyimpan...</> : 'Simpan'}
+                <div style={{ borderTop: '1px solid #f0f0f0', padding: '14px 20px', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                  <button type="button" onClick={() => setShowFormModal(false)} style={{ background: '#f3f4f6', border: '1px solid #e5e7eb', color: '#374151', borderRadius: 8, padding: '8px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Inter',sans-serif" }}>Batal</button>
+                  <button type="submit" disabled={saving} style={{ background: saving ? '#e5e7eb' : '#f5a623', border: 'none', color: saving ? '#9ca3af' : '#fff', borderRadius: 8, padding: '8px 20px', fontSize: 13, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', fontFamily: "'Inter',sans-serif", display: 'flex', alignItems: 'center', gap: 6 }}>
+                    {saving ? <><span className="spinner-border spinner-border-sm" style={{ width: 14, height: 14, borderWidth: 2 }} />Menyimpan...</> : 'Simpan'}
                   </button>
                 </div>
               </form>
-            </div>
+            )}
           </div>
         </div>
       )}

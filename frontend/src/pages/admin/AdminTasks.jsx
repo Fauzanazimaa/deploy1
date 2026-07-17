@@ -10,11 +10,13 @@ const emptyForm = {
 }
 
 const STATUS_LABEL = {
-  pending: { label: 'Menunggu', color: 'warning' },
-  submitted: { label: 'Dikirim', color: 'primary' },
-  revision: { label: 'Revisi', color: 'danger' },
-  approved: { label: 'Disetujui', color: 'success' },
+  pending:   { label: 'Menunggu',  colorHex: '#f5a623', bg: '#fff7ed', border: '#fed7aa' },
+  submitted: { label: 'Dikirim',  colorHex: '#3b82f6', bg: '#eff6ff', border: '#bfdbfe' },
+  revision:  { label: 'Revisi',   colorHex: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
+  approved:  { label: 'Disetujui',colorHex: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0' },
 }
+
+const ACCENT = '#f5a623'
 
 export default function AdminTasks() {
   const [tasks, setTasks] = useState([])
@@ -127,316 +129,204 @@ export default function AdminTasks() {
   })
 
   return (
-    <div>
-      <div className="d-flex justify-content-between align-items-center mb-4">
+    <div style={{ fontFamily: "'Inter', sans-serif" }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
         <div>
-          <h4 className="fw-bold mb-0">Manajemen Tugas</h4>
-          <p className="text-muted small mb-0">Buat dan tugaskan pekerjaan kepada kontributor</p>
+          <h4 style={{ fontWeight: 700, fontSize: 20, color: '#1a1f2e', margin: 0 }}>Manajemen Tugas</h4>
+          <p style={{ color: '#6b7280', fontSize: 13, margin: '4px 0 0' }}>Buat dan tugaskan pekerjaan kepada kontributor</p>
         </div>
-        <button className="btn btn-primary" onClick={openCreate}>
-          <i className="bi bi-plus-lg me-1"></i> Buat Tugas
+        <button
+          onClick={openCreate}
+          style={{ background: ACCENT, border: 'none', color: '#fff', borderRadius: 8, padding: '8px 18px', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7, fontFamily: "'Inter', sans-serif" }}
+        >
+          <i className="bi bi-plus-lg"></i> Buat Tugas
         </button>
       </div>
 
       {/* Filters */}
-      <div className="card border-0 shadow-sm mb-4">
-        <div className="card-body">
-          <div className="row g-2">
-            <div className="col-md-5">
-              <div className="input-group">
-                <span className="input-group-text bg-light">
-                  <i className="bi bi-search text-muted"></i>
-                </span>
-                <input
-                  className="form-control"
-                  placeholder="Cari judul tugas atau kontributor..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-              </div>
+      <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #f0f0f0', padding: '16px 20px', marginBottom: 20, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+        <div className="row g-2">
+          <div className="col-md-5">
+            <div style={{ display: 'flex', alignItems: 'center', border: '1.5px solid #e5e7eb', borderRadius: 8, overflow: 'hidden', background: '#fff' }}>
+              <span style={{ padding: '0 12px', color: '#9ca3af', background: '#f9fafb', borderRight: '1px solid #e5e7eb', height: 38, display: 'flex', alignItems: 'center' }}><i className="bi bi-search"></i></span>
+              <input style={{ flex: 1, border: 'none', outline: 'none', padding: '0 12px', fontSize: 13, height: 38, fontFamily: "'Inter', sans-serif" }} placeholder="Cari judul tugas atau kontributor..." value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
-            <div className="col-md-3">
-              <select
-                className="form-select"
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-              >
-                <option value="all">Semua Status</option>
-                {Object.entries(STATUS_LABEL).map(([k, v]) => (
-                  <option key={k} value={k}>{v.label}</option>
-                ))}
-              </select>
-            </div>
-            <div className="col-md-4 d-flex align-items-center gap-3">
-              {Object.entries(STATUS_LABEL).map(([k, v]) => (
-                <span key={k} className="small text-muted">
-                  <span className={`badge bg-${v.color} me-1`}>{tasks.filter((t) => t.status === k).length}</span>
-                  {v.label}
-                </span>
-              ))}
-            </div>
+          </div>
+          <div className="col-md-3">
+            <select className="form-select" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} style={{ fontSize: 13, height: 38, fontFamily: "'Inter', sans-serif" }}>
+              <option value="all">Semua Status</option>
+              {Object.entries(STATUS_LABEL).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+            </select>
+          </div>
+          <div className="col-md-4 d-flex align-items-center gap-3">
+            {Object.entries(STATUS_LABEL).map(([k, v]) => (
+              <span key={k} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12 }}>
+                <span style={{ background: v.bg, border: `1px solid ${v.border}`, color: v.colorHex, borderRadius: 20, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>{tasks.filter(t => t.status === k).length}</span>
+                <span style={{ color: '#6b7280' }}>{v.label}</span>
+              </span>
+            ))}
           </div>
         </div>
       </div>
 
       {/* Table */}
-      <div className="card border-0 shadow-sm">
-        <div className="card-body p-0">
-          {loading ? (
-            <div className="text-center py-5"><div className="spinner-border text-primary" /></div>
-          ) : (
-            <div className="table-responsive">
-              <table className="table table-hover align-middle mb-0 small">
-                <thead className="table-light">
-                  <tr>
-                    <th>#</th>
-                    <th>Judul Tugas</th>
-                    <th>Jenis Data</th>
-                    <th>Kontributor</th>
-                    <th>Status</th>
-                    <th>Deadline</th>
-                    <th className="text-end">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="text-center text-muted py-4">
-                        Tidak ada tugas ditemukan
-                      </td>
-                    </tr>
-                  ) : (
-                    filtered.map((t, i) => {
-                      const s = STATUS_LABEL[t.status] || { label: t.status, color: 'secondary' }
-                      const isOverdue = t.deadline && new Date(t.deadline) < new Date() && t.status !== 'approved'
-                      return (
-                        <tr key={t.id}>
-                          <td className="text-muted">{i + 1}</td>
-                          <td>
-                            <div className="fw-semibold">{t.title}</div>
-                            {t.description && (
-                              <div className="text-muted" style={{ fontSize: 12 }}>
-                                {t.description.slice(0, 60)}{t.description.length > 60 ? '...' : ''}
-                              </div>
-                            )}
-                          </td>
-                          <td>
-                            <span className="badge bg-light text-dark border">
-                              {t.data_type_name || '-'}
-                            </span>
-                          </td>
-                          <td>
-                            <div className="d-flex align-items-center gap-1">
-                              <i className="bi bi-person-circle text-primary"></i>
-                              {t.assignee_username}
-                            </div>
-                          </td>
-                          <td>
-                            <span className={`badge bg-${s.color}`}>{s.label}</span>
-                          </td>
-                          <td>
-                            {t.deadline ? (
-                              <span className={isOverdue ? 'text-danger fw-semibold' : 'text-muted'}>
-                                {isOverdue && <i className="bi bi-exclamation-triangle me-1"></i>}
-                                {new Date(t.deadline).toLocaleDateString('id-ID')}
-                              </span>
-                            ) : (
-                              <span className="text-muted">-</span>
-                            )}
-                          </td>
-                          <td className="text-end">
-                            <div className="dropdown">
-                              <button
-                                className="btn btn-sm btn-outline-secondary dropdown-toggle"
-                                data-bs-toggle="dropdown"
-                              >
-                                Aksi
-                              </button>
-                              <ul className="dropdown-menu dropdown-menu-end">
-                                <li>
-                                  <button className="dropdown-item" onClick={() => openEdit(t)}>
-                                    <i className="bi bi-pencil me-2 text-primary"></i>Edit
+      <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #f0f0f0', overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '40px 0' }}>
+            <div style={{ width: 36, height: 36, border: `3px solid ${ACCENT}30`, borderTopColor: ACCENT, borderRadius: '50%', animation: 'spin 0.7s linear infinite', display: 'inline-block' }} />
+            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+          </div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead>
+                <tr style={{ background: '#fafafa', borderBottom: '1px solid #f0f0f0' }}>
+                  {['#', 'Judul Tugas', 'Jenis Data', 'Kontributor', 'Status', 'Deadline', ''].map((h) => (
+                    <th key={h} style={{ padding: '10px 20px', textAlign: h === '' ? 'right' : 'left', fontWeight: 600, color: '#6b7280', fontSize: 12 }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.length === 0 ? (
+                  <tr><td colSpan={7} style={{ textAlign: 'center', padding: '32px 0', color: '#9ca3af', fontSize: 13 }}>Tidak ada tugas ditemukan</td></tr>
+                ) : (
+                  filtered.map((t, i) => {
+                    const s = STATUS_LABEL[t.status] || { label: t.status, colorHex: '#6b7280', bg: '#f3f4f6', border: '#e5e7eb' }
+                    const isOverdue = t.deadline && new Date(t.deadline) < new Date() && t.status !== 'approved'
+                    return (
+                      <tr key={t.id} style={{ borderBottom: '1px solid #f9f9f9' }} className="table-row-hover">
+                        <td style={{ padding: '11px 20px', color: '#9ca3af', fontSize: 12 }}>{i + 1}</td>
+                        <td style={{ padding: '11px 20px' }}>
+                          <div style={{ fontWeight: 600, color: '#1a1f2e' }}>{t.title}</div>
+                          {t.description && <div style={{ color: '#6b7280', fontSize: 12, marginTop: 2 }}>{t.description.slice(0, 60)}{t.description.length > 60 ? '...' : ''}</div>}
+                        </td>
+                        <td style={{ padding: '11px 20px' }}>
+                          <span style={{ background: '#f3f4f6', border: '1px solid #e5e7eb', color: '#374151', borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 500 }}>{t.data_type_name || '-'}</span>
+                        </td>
+                        <td style={{ padding: '11px 20px', color: '#374151' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <i className="bi bi-person-circle" style={{ color: '#3b82f6' }}></i>
+                            {t.assignee_username}
+                          </div>
+                        </td>
+                        <td style={{ padding: '11px 20px' }}>
+                          <span style={{ background: s.bg, border: `1px solid ${s.border}`, color: s.colorHex, borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 600 }}>{s.label}</span>
+                        </td>
+                        <td style={{ padding: '11px 20px', color: isOverdue ? '#dc2626' : '#6b7280', fontWeight: isOverdue ? 600 : 400, fontSize: 12 }}>
+                          {t.deadline ? <>{isOverdue && <i className="bi bi-exclamation-triangle me-1"></i>}{new Date(t.deadline).toLocaleDateString('id-ID')}</> : <span style={{ color: '#9ca3af' }}>-</span>}
+                        </td>
+                        <td style={{ padding: '11px 20px', textAlign: 'right' }}>
+                          <div className="dropdown">
+                            <button className="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" style={{ fontSize: 12, fontFamily: "'Inter', sans-serif" }}>Aksi</button>
+                            <ul className="dropdown-menu dropdown-menu-end" style={{ fontSize: 13, fontFamily: "'Inter', sans-serif" }}>
+                              <li><button className="dropdown-item" onClick={() => openEdit(t)}><i className="bi bi-pencil me-2 text-primary"></i>Edit</button></li>
+                              <li><hr className="dropdown-divider" /></li>
+                              {Object.entries(STATUS_LABEL).map(([k, v]) => t.status !== k && (
+                                <li key={k}>
+                                  <button className="dropdown-item" onClick={() => handleChangeStatus(t, k)}>
+                                    <span style={{ background: v.bg, border: `1px solid ${v.border}`, color: v.colorHex, borderRadius: 10, padding: '1px 7px', fontSize: 11, fontWeight: 600, marginRight: 8 }}>{v.label}</span>
+                                    Ubah ke {v.label}
                                   </button>
                                 </li>
-                                <li><hr className="dropdown-divider" /></li>
-                                {Object.entries(STATUS_LABEL).map(([k, v]) => (
-                                  t.status !== k && (
-                                    <li key={k}>
-                                      <button
-                                        className="dropdown-item"
-                                        onClick={() => handleChangeStatus(t, k)}
-                                      >
-                                        <span className={`badge bg-${v.color} me-2`}>{v.label}</span>
-                                        Ubah ke {v.label}
-                                      </button>
-                                    </li>
-                                  )
-                                ))}
-                                <li><hr className="dropdown-divider" /></li>
-                                <li>
-                                  <button
-                                    className="dropdown-item text-danger"
-                                    onClick={() => setDeleteConfirm(t)}
-                                  >
-                                    <i className="bi bi-trash me-2"></i>Hapus Tugas
-                                  </button>
-                                </li>
-                              </ul>
-                            </div>
-                          </td>
-                        </tr>
-                      )
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+                              ))}
+                              <li><hr className="dropdown-divider" /></li>
+                              <li><button className="dropdown-item text-danger" onClick={() => setDeleteConfirm(t)}><i className="bi bi-trash me-2"></i>Hapus Tugas</button></li>
+                            </ul>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Form Modal */}
       {showModal && (
-        <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }}>
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content border-0 shadow-lg">
-              <div className="modal-header">
-                <h5 className="modal-title fw-bold">
-                  {editTask ? 'Edit Tugas' : 'Buat Tugas Baru'}
-                </h5>
-                <button className="btn-close" onClick={() => setShowModal(false)} />
-              </div>
-              <form onSubmit={handleSave}>
-                <div className="modal-body">
-                  {error && <div className="alert alert-danger small py-2">{error}</div>}
-                  <div className="mb-3">
-                    <label className="form-label fw-semibold small">
-                      Judul Tugas <span className="text-danger">*</span>
-                    </label>
-                    <input
-                      className="form-control"
-                      value={form.title}
-                      onChange={(e) => setForm({ ...form, title: e.target.value })}
-                      required
-                      placeholder="contoh: Pengumpulan Data Penduduk RT 01"
-                    />
-                  </div>
-                  <div className="mb-3">
-                    <label className="form-label fw-semibold small">Deskripsi</label>
-                    <textarea
-                      className="form-control"
-                      rows={2}
-                      value={form.description}
-                      onChange={(e) => setForm({ ...form, description: e.target.value })}
-                      placeholder="Instruksi atau keterangan tambahan..."
-                    />
-                  </div>
-                  <div className="mb-3">
-                    <label className="form-label fw-semibold small">
-                      Jenis Data <span className="text-danger">*</span>
-                    </label>
-                    <select
-                      className="form-select"
-                      value={form.data_type_id}
-                      onChange={(e) => setForm({ ...form, data_type_id: e.target.value })}
-                      required
-                    >
-                      <option value="">-- Pilih jenis data --</option>
-                      {dataTypes.map((dt) => (
-                        <option key={dt.id} value={dt.id}>{dt.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="mb-3">
-                    <label className="form-label fw-semibold small">
-                      Kontributor <span className="text-danger">*</span>
-                    </label>
-                    <select
-                      className="form-select"
-                      value={form.assigned_to}
-                      onChange={(e) => setForm({ ...form, assigned_to: e.target.value })}
-                      required
-                    >
-                      <option value="">-- Pilih kontributor --</option>
-                      {contributors.map((c) => (
-                        <option key={c.id} value={c.id}>{c.username} ({c.email})</option>
-                      ))}
-                    </select>
-                    {contributors.length === 0 && (
-                      <div className="form-text text-warning">
-                        <i className="bi bi-exclamation-triangle me-1"></i>
-                        Belum ada kontributor. Tambahkan di menu Pengguna terlebih dahulu.
-                      </div>
-                    )}
-                  </div>
-                  <div className="mb-3">
-                    <label className="form-label fw-semibold small">Deadline</label>
-                    <input
-                      type="date"
-                      className="form-control"
-                      value={form.deadline}
-                      onChange={(e) => setForm({ ...form, deadline: e.target.value })}
-                    />
-                  </div>
-                </div>
-                <div className="modal-footer">
-                  <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
-                    Batal
-                  </button>
-                  <button type="submit" className="btn btn-primary" disabled={saving}>
-                    {saving
-                      ? <><span className="spinner-border spinner-border-sm me-1" /> Menyimpan...</>
-                      : 'Simpan'}
-                  </button>
-                </div>
-              </form>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1050, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 20px 60px rgba(0,0,0,0.2)', width: '100%', maxWidth: 480, overflow: 'hidden', fontFamily: "'Inter', sans-serif" }}>
+            <div style={{ borderBottom: '1px solid #f0f0f0', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontWeight: 700, fontSize: 15, color: '#1a1f2e' }}>{editTask ? 'Edit Tugas' : 'Buat Tugas Baru'}</span>
+              <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: 20 }}><i className="bi bi-x"></i></button>
             </div>
+            <form onSubmit={handleSave}>
+              <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 14, maxHeight: '65vh', overflowY: 'auto' }}>
+                {error && <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', borderRadius: 8, padding: '8px 12px', fontSize: 12 }}>{error}</div>}
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 5, letterSpacing: 0.5 }}>JUDUL TUGAS <span style={{ color: '#dc2626' }}>*</span></label>
+                  <input style={{ width: '100%', border: '1.5px solid #e5e7eb', borderRadius: 8, padding: '8px 12px', fontSize: 13, outline: 'none', fontFamily: "'Inter', sans-serif" }} value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} required placeholder="contoh: Pengumpulan Data Penduduk RT 01" />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 5, letterSpacing: 0.5 }}>DESKRIPSI</label>
+                  <textarea style={{ width: '100%', border: '1.5px solid #e5e7eb', borderRadius: 8, padding: '8px 12px', fontSize: 13, outline: 'none', fontFamily: "'Inter', sans-serif", resize: 'vertical' }} rows={2} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Instruksi atau keterangan tambahan..." />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 5, letterSpacing: 0.5 }}>JENIS DATA <span style={{ color: '#dc2626' }}>*</span></label>
+                  <select className="form-select" style={{ fontSize: 13 }} value={form.data_type_id} onChange={e => setForm({ ...form, data_type_id: e.target.value })} required>
+                    <option value="">-- Pilih jenis data --</option>
+                    {dataTypes.map(dt => <option key={dt.id} value={dt.id}>{dt.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 5, letterSpacing: 0.5 }}>KONTRIBUTOR <span style={{ color: '#dc2626' }}>*</span></label>
+                  <select className="form-select" style={{ fontSize: 13 }} value={form.assigned_to} onChange={e => setForm({ ...form, assigned_to: e.target.value })} required>
+                    <option value="">-- Pilih kontributor --</option>
+                    {contributors.map(c => <option key={c.id} value={c.id}>{c.username} ({c.email})</option>)}
+                  </select>
+                  {contributors.length === 0 && <div style={{ fontSize: 11, color: '#f5a623', marginTop: 4 }}><i className="bi bi-exclamation-triangle me-1"></i>Belum ada kontributor. Tambahkan di menu Pengguna.</div>}
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 5, letterSpacing: 0.5 }}>DEADLINE</label>
+                  <input type="date" style={{ width: '100%', border: '1.5px solid #e5e7eb', borderRadius: 8, padding: '8px 12px', fontSize: 13, outline: 'none', fontFamily: "'Inter', sans-serif" }} value={form.deadline} onChange={e => setForm({ ...form, deadline: e.target.value })} />
+                </div>
+              </div>
+              <div style={{ borderTop: '1px solid #f0f0f0', padding: '14px 20px', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                <button type="button" onClick={() => setShowModal(false)} style={{ background: '#f3f4f6', border: '1px solid #e5e7eb', color: '#374151', borderRadius: 8, padding: '8px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Inter', sans-serif" }}>Batal</button>
+                <button type="submit" disabled={saving} style={{ background: ACCENT, border: 'none', color: '#fff', borderRadius: 8, padding: '8px 20px', fontSize: 13, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', fontFamily: "'Inter', sans-serif", opacity: saving ? 0.8 : 1, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  {saving ? <><span className="spinner-border spinner-border-sm" style={{ width: 14, height: 14, borderWidth: 2 }} /> Menyimpan...</> : 'Simpan'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
 
       {/* Delete Confirmation Modal */}
       {deleteConfirm && (
-        <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }}>
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content border-0 shadow-lg">
-              <div className="modal-header border-0 pb-0">
-                <h5 className="modal-title fw-bold text-danger">
-                  <i className="bi bi-trash me-2"></i>Hapus Tugas
-                </h5>
-                <button className="btn-close" onClick={() => setDeleteConfirm(null)} />
-              </div>
-              <div className="modal-body">
-                <p className="mb-3">Yakin ingin menghapus tugas ini?</p>
-                <div className="border rounded p-3 bg-light small">
-                  <div className="fw-semibold">{deleteConfirm.title}</div>
-                  <div className="text-muted mt-1">
-                    <i className="bi bi-person me-1"></i>{deleteConfirm.assignee_username}
-                    <span className="mx-2">•</span>
-                    <span className={`badge bg-${STATUS_LABEL[deleteConfirm.status]?.color || 'secondary'}`}>
-                      {STATUS_LABEL[deleteConfirm.status]?.label || deleteConfirm.status}
-                    </span>
-                  </div>
-                </div>
-                <div className="alert alert-warning small mt-3 mb-0 py-2">
-                  <i className="bi bi-exclamation-triangle me-1"></i>
-                  Semua submission yang terkait tugas ini juga akan ikut terhapus. Tindakan ini tidak dapat dibatalkan.
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1050, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 20px 60px rgba(0,0,0,0.2)', width: '100%', maxWidth: 420, overflow: 'hidden', fontFamily: "'Inter', sans-serif" }}>
+            <div style={{ background: '#fef2f2', borderBottom: '1px solid #fecaca', padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 10 }}>
+              <i className="bi bi-trash" style={{ color: '#dc2626', fontSize: 18 }}></i>
+              <span style={{ fontWeight: 700, fontSize: 15, color: '#dc2626' }}>Hapus Tugas</span>
+              <button onClick={() => setDeleteConfirm(null)} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: 18 }}><i className="bi bi-x"></i></button>
+            </div>
+            <div style={{ padding: '20px' }}>
+              <p style={{ fontSize: 14, color: '#374151', marginBottom: 14 }}>Yakin ingin menghapus tugas ini?</p>
+              <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 8, padding: '12px 14px', fontSize: 13 }}>
+                <div style={{ fontWeight: 600, color: '#1a1f2e' }}>{deleteConfirm.title}</div>
+                <div style={{ color: '#6b7280', marginTop: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <i className="bi bi-person"></i>{deleteConfirm.assignee_username}
+                  <span style={{ background: STATUS_LABEL[deleteConfirm.status]?.bg, border: `1px solid ${STATUS_LABEL[deleteConfirm.status]?.border}`, color: STATUS_LABEL[deleteConfirm.status]?.colorHex, borderRadius: 20, padding: '1px 8px', fontSize: 11, fontWeight: 600 }}>{STATUS_LABEL[deleteConfirm.status]?.label || deleteConfirm.status}</span>
                 </div>
               </div>
-              <div className="modal-footer border-0">
-                <button className="btn btn-secondary" onClick={() => setDeleteConfirm(null)}>
-                  Batal
-                </button>
-                <button className="btn btn-danger" onClick={handleDelete} disabled={deleting}>
-                  {deleting
-                    ? <><span className="spinner-border spinner-border-sm me-1" />Menghapus...</>
-                    : <><i className="bi bi-trash me-1"></i>Ya, Hapus</>}
-                </button>
+              <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 8, padding: '10px 12px', fontSize: 12, color: '#92400e', marginTop: 12 }}>
+                <i className="bi bi-exclamation-triangle me-2"></i>
+                Semua submission yang terkait juga akan terhapus. Tindakan ini tidak dapat dibatalkan.
               </div>
+            </div>
+            <div style={{ borderTop: '1px solid #f0f0f0', padding: '14px 20px', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+              <button onClick={() => setDeleteConfirm(null)} style={{ background: '#f3f4f6', border: '1px solid #e5e7eb', color: '#374151', borderRadius: 8, padding: '8px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Inter', sans-serif" }}>Batal</button>
+              <button onClick={handleDelete} disabled={deleting} style={{ background: '#dc2626', border: 'none', color: '#fff', borderRadius: 8, padding: '8px 20px', fontSize: 13, fontWeight: 600, cursor: deleting ? 'not-allowed' : 'pointer', fontFamily: "'Inter', sans-serif", display: 'flex', alignItems: 'center', gap: 6, opacity: deleting ? 0.8 : 1 }}>
+                {deleting ? <><span className="spinner-border spinner-border-sm" style={{ width: 14, height: 14, borderWidth: 2 }} />Menghapus...</> : <><i className="bi bi-trash"></i>Ya, Hapus</>}
+              </button>
             </div>
           </div>
         </div>
       )}
+      <style>{`.table-row-hover:hover { background: #fafafa; }`}</style>
     </div>
   )
 }

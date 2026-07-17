@@ -1,11 +1,13 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { getMyTasks, downloadTemplate, submitTask } from '../../api'
 
+const ACCENT = '#f5a623'
+
 const STATUS_MAP = {
-  pending:   { label: 'Belum Upload',  color: 'warning',  icon: 'bi-clock',                    bg: '#fffbeb' },
-  submitted: { label: 'Diverifikasi', color: 'primary',  icon: 'bi-hourglass-split',           bg: '#eff6ff' },
-  revision:  { label: 'Perlu Revisi', color: 'danger',   icon: 'bi-exclamation-triangle-fill', bg: '#fef2f2' },
-  approved:  { label: 'Disetujui',    color: 'success',  icon: 'bi-check-circle-fill',         bg: '#f0fdf4' },
+  pending:   { label: 'Belum Upload',  color: 'warning',  colorHex: ACCENT,    border: '#fed7aa', icon: 'bi-clock',                    bg: '#fff7ed' },
+  submitted: { label: 'Diverifikasi', color: 'primary',  colorHex: '#3b82f6', border: '#bfdbfe', icon: 'bi-hourglass-split',           bg: '#eff6ff' },
+  revision:  { label: 'Perlu Revisi', color: 'danger',   colorHex: '#dc2626', border: '#fecaca', icon: 'bi-exclamation-triangle-fill', bg: '#fef2f2' },
+  approved:  { label: 'Disetujui',    color: 'success',  colorHex: '#16a34a', border: '#bbf7d0', icon: 'bi-check-circle-fill',         bg: '#f0fdf4' },
 }
 
 function RevisionNote({ notes }) {
@@ -21,7 +23,7 @@ function RevisionNote({ notes }) {
 }
 
 function TaskCard({ task, onUpload }) {
-  const s = STATUS_MAP[task.status] || { label: task.status, color: 'secondary', icon: 'bi-circle', bg: '#f9f9f9' }
+  const s = STATUS_MAP[task.status] || { label: task.status, color: 'secondary', colorHex: '#6b7280', border: '#e5e7eb', icon: 'bi-circle', bg: '#f9f9f9' }
   const isOverdue = task.deadline && new Date(task.deadline) < new Date() && task.status !== 'approved'
   const fileRef = useRef()
   const [uploading, setUploading] = useState(false)
@@ -65,69 +67,70 @@ function TaskCard({ task, onUpload }) {
   const canUpload = task.status === 'pending' || task.status === 'revision'
 
   return (
-    <div className="card border-0 shadow-sm mb-3" style={{ borderLeft: `4px solid var(--bs-${s.color}) !important` }}>
-      <div className="card-body">
-        <div className="d-flex justify-content-between align-items-start flex-wrap gap-2">
-          {/* Left: info */}
-          <div className="flex-grow-1">
-            <div className="d-flex align-items-center gap-2 mb-1">
-              <span className={`badge bg-${s.color}`}>
+    <div
+      style={{
+        background: '#fff',
+        borderRadius: 12,
+        border: '1px solid #f0f0f0',
+        borderLeft: `4px solid ${s.colorHex}`,
+        boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+        marginBottom: 12,
+        overflow: 'hidden',
+        fontFamily: "'Inter', sans-serif",
+      }}
+    >
+      <div style={{ padding: '18px 20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
+          {/* Left */}
+          <div style={{ flex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <span style={{ background: s.bg, border: `1px solid ${s.border}`, color: s.colorHex, borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 600 }}>
                 <i className={`bi ${s.icon} me-1`}></i>{s.label}
               </span>
               {isOverdue && (
-                <span className="badge bg-danger bg-opacity-10 text-danger border border-danger small">
+                <span style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 600 }}>
                   <i className="bi bi-exclamation-circle me-1"></i>Terlambat
                 </span>
               )}
             </div>
-            <h5 className="fw-bold mb-1">{task.title}</h5>
+            <h5 style={{ fontWeight: 700, fontSize: 15, color: '#1a1f2e', marginBottom: 6 }}>{task.title}</h5>
             {task.description && (
-              <p className="text-muted small mb-2">{task.description}</p>
+              <p style={{ color: '#6b7280', fontSize: 13, marginBottom: 8 }}>{task.description}</p>
             )}
-            <div className="d-flex flex-wrap gap-3 small text-muted">
-              <span>
-                <i className="bi bi-grid-3x3-gap me-1"></i>
-                <strong>Jenis Data:</strong> {task.data_type_name || '-'}
-              </span>
-              <span className={isOverdue ? 'text-danger fw-semibold' : ''}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, fontSize: 12, color: '#6b7280' }}>
+              <span><i className="bi bi-grid-3x3-gap me-1"></i><strong>Jenis Data:</strong> {task.data_type_name || '-'}</span>
+              <span style={{ color: isOverdue ? '#dc2626' : '#6b7280', fontWeight: isOverdue ? 600 : 400 }}>
                 <i className="bi bi-calendar-event me-1"></i>
                 <strong>Deadline:</strong>{' '}
-                {task.deadline
-                  ? new Date(task.deadline).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
-                  : 'Tidak ada'}
+                {task.deadline ? new Date(task.deadline).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Tidak ada'}
               </span>
-              <span>
-                <i className="bi bi-person me-1"></i>
-                <strong>Ditugaskan oleh:</strong> {task.creator_username || 'Admin'}
-              </span>
+              <span><i className="bi bi-person me-1"></i><strong>Ditugaskan oleh:</strong> {task.creator_username || 'Admin'}</span>
             </div>
-
-            {/* Revision note */}
             {task.status === 'revision' && task.latest_submission?.revision_notes && (
               <RevisionNote notes={task.latest_submission.revision_notes} />
             )}
           </div>
 
-          {/* Right: actions */}
-          <div className="d-flex flex-column gap-2 flex-shrink-0">
+          {/* Right: Actions */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0 }}>
             <button
-              className="btn btn-sm btn-outline-success"
               onClick={handleDownloadTemplate}
+              style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#16a34a', borderRadius: 8, padding: '7px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontFamily: "'Inter', sans-serif" }}
             >
-              <i className="bi bi-download me-1"></i>Unduh Template
+              <i className="bi bi-download"></i>Unduh Template
             </button>
             {canUpload && (
               <button
-                className="btn btn-sm btn-primary"
                 onClick={() => setShowUpload(v => !v)}
+                style={{ background: ACCENT, border: 'none', color: '#fff', borderRadius: 8, padding: '7px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontFamily: "'Inter', sans-serif" }}
               >
-                <i className="bi bi-upload me-1"></i>
+                <i className="bi bi-upload"></i>
                 {task.status === 'revision' ? 'Upload Ulang' : 'Upload Data'}
               </button>
             )}
             {task.status === 'approved' && (
-              <button className="btn btn-sm btn-success" disabled>
-                <i className="bi bi-check2-all me-1"></i>Selesai
+              <button disabled style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#16a34a', borderRadius: 8, padding: '7px 14px', fontSize: 12, fontWeight: 600, cursor: 'not-allowed', display: 'flex', alignItems: 'center', gap: 6, fontFamily: "'Inter', sans-serif" }}>
+                <i className="bi bi-check2-all"></i>Selesai
               </button>
             )}
           </div>
@@ -135,12 +138,12 @@ function TaskCard({ task, onUpload }) {
 
         {/* Upload form */}
         {showUpload && canUpload && (
-          <div className="mt-3 p-3 rounded" style={{ background: '#f8fafc', border: '1px dashed #cbd5e1' }}>
-            <div className="fw-semibold small mb-2">
-              <i className="bi bi-cloud-upload me-1 text-primary"></i>
+          <div style={{ marginTop: 16, padding: '14px 16px', borderRadius: 8, background: '#f8fafc', border: '1px dashed #cbd5e1' }}>
+            <div style={{ fontWeight: 600, fontSize: 12, color: '#374151', marginBottom: 10 }}>
+              <i className="bi bi-cloud-upload me-1" style={{ color: ACCENT }}></i>
               Upload File Data{task.status === 'revision' ? ' (Revisi)' : ''}
             </div>
-            <form onSubmit={handleSubmit} className="d-flex align-items-center gap-2 flex-wrap">
+            <form onSubmit={handleSubmit} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               <input
                 type="file"
                 className="form-control form-control-sm"
@@ -148,20 +151,24 @@ function TaskCard({ task, onUpload }) {
                 ref={fileRef}
                 onChange={e => setSelectedFile(e.target.files[0])}
                 required
-                style={{ maxWidth: 300 }}
+                style={{ maxWidth: 300, fontSize: 12 }}
               />
-              <button type="submit" className="btn btn-sm btn-primary" disabled={uploading || !selectedFile}>
-                {uploading
-                  ? <><span className="spinner-border spinner-border-sm me-1" />Mengupload...</>
-                  : <><i className="bi bi-send me-1"></i>Kirim</>}
+              <button
+                type="submit"
+                disabled={uploading || !selectedFile}
+                style={{ background: ACCENT, border: 'none', color: '#fff', borderRadius: 7, padding: '6px 14px', fontSize: 12, fontWeight: 600, cursor: uploading || !selectedFile ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontFamily: "'Inter', sans-serif", opacity: uploading || !selectedFile ? 0.7 : 1 }}
+              >
+                {uploading ? <><span className="spinner-border spinner-border-sm me-1" />Mengupload...</> : <><i className="bi bi-send"></i>Kirim</>}
               </button>
-              <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => setShowUpload(false)}>
+              <button
+                type="button"
+                onClick={() => setShowUpload(false)}
+                style={{ background: '#f3f4f6', border: '1px solid #e5e7eb', color: '#374151', borderRadius: 7, padding: '6px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: "'Inter', sans-serif" }}
+              >
                 Batal
               </button>
             </form>
-            <div className="text-muted mt-1" style={{ fontSize: 11 }}>
-              Format yang didukung: .xlsx, .xls, .csv
-            </div>
+            <div style={{ color: '#9ca3af', fontSize: 11, marginTop: 6 }}>Format yang didukung: .xlsx, .xls, .csv</div>
           </div>
         )}
       </div>
@@ -202,47 +209,58 @@ export default function ContributorTasks() {
   )
 
   return (
-    <div>
-      <div className="d-flex justify-content-between align-items-center mb-4">
+    <div style={{ fontFamily: "'Inter', sans-serif" }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
         <div>
-          <h4 className="fw-bold mb-0">Tugas Saya</h4>
-          <p className="text-muted small mb-0">Daftar semua tugas pengumpulan data yang ditugaskan kepadamu</p>
+          <h4 style={{ fontWeight: 700, fontSize: 20, color: '#1a1f2e', margin: 0 }}>Tugas Saya</h4>
+          <p style={{ color: '#6b7280', fontSize: 13, margin: '4px 0 0' }}>Daftar semua tugas pengumpulan data yang ditugaskan kepadamu</p>
         </div>
-        <button className="btn btn-sm btn-outline-primary" onClick={fetchTasks}>
-          <i className="bi bi-arrow-clockwise me-1"></i>Refresh
+        <button
+          onClick={fetchTasks}
+          style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: '7px 14px', fontSize: 12, fontWeight: 600, color: '#374151', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontFamily: "'Inter', sans-serif" }}
+        >
+          <i className="bi bi-arrow-clockwise"></i> Refresh
         </button>
       </div>
 
-      {/* Status summary pills */}
-      <div className="d-flex gap-2 flex-wrap mb-4">
+      {/* Status filter pills */}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
         <button
-          className={`btn btn-sm ${filterStatus === 'all' ? 'btn-dark' : 'btn-outline-secondary'}`}
           onClick={() => setFilterStatus('all')}
+          style={{
+            background: filterStatus === 'all' ? '#1a1f2e' : '#fff',
+            border: `1px solid ${filterStatus === 'all' ? '#1a1f2e' : '#e5e7eb'}`,
+            color: filterStatus === 'all' ? '#fff' : '#6b7280',
+            borderRadius: 20, padding: '5px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: "'Inter', sans-serif",
+          }}
         >
-          Semua <span className="badge bg-white text-dark ms-1">{tasks.length}</span>
+          Semua <span style={{ background: filterStatus === 'all' ? 'rgba(255,255,255,0.2)' : '#f3f4f6', color: filterStatus === 'all' ? '#fff' : '#374151', borderRadius: 10, padding: '0 6px', marginLeft: 4, fontSize: 11 }}>{tasks.length}</span>
         </button>
         {Object.entries(STATUS_MAP).map(([k, v]) => (
           <button
             key={k}
-            className={`btn btn-sm ${filterStatus === k ? `btn-${v.color}` : `btn-outline-${v.color}`}`}
             onClick={() => setFilterStatus(k)}
+            style={{
+              background: filterStatus === k ? v.bg : '#fff',
+              border: `1px solid ${filterStatus === k ? v.border : '#e5e7eb'}`,
+              color: filterStatus === k ? v.colorHex : '#6b7280',
+              borderRadius: 20, padding: '5px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontFamily: "'Inter', sans-serif",
+            }}
           >
-            <i className={`bi ${v.icon} me-1`}></i>{v.label}
-            <span className={`badge ms-1 ${filterStatus === k ? 'bg-white text-dark' : `bg-${v.color} text-white`}`}>
-              {counts[k] || 0}
-            </span>
+            <i className={`bi ${v.icon}`}></i>{v.label}
+            <span style={{ background: filterStatus === k ? v.colorHex + '20' : '#f3f4f6', color: filterStatus === k ? v.colorHex : '#374151', borderRadius: 10, padding: '0 6px', fontSize: 11 }}>{counts[k] || 0}</span>
           </button>
         ))}
       </div>
 
       {/* Search */}
-      <div className="mb-4">
-        <div className="input-group" style={{ maxWidth: 400 }}>
-          <span className="input-group-text bg-white">
-            <i className="bi bi-search text-muted"></i>
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', border: '1.5px solid #e5e7eb', borderRadius: 8, overflow: 'hidden', background: '#fff', maxWidth: 400 }}>
+          <span style={{ padding: '0 12px', color: '#9ca3af', background: '#f9fafb', borderRight: '1px solid #e5e7eb', height: 38, display: 'flex', alignItems: 'center' }}>
+            <i className="bi bi-search"></i>
           </span>
           <input
-            className="form-control"
+            style={{ flex: 1, border: 'none', outline: 'none', padding: '0 12px', fontSize: 13, height: 38, fontFamily: "'Inter', sans-serif" }}
             placeholder="Cari tugas atau jenis data..."
             value={search}
             onChange={e => setSearch(e.target.value)}
@@ -252,13 +270,14 @@ export default function ContributorTasks() {
 
       {/* Task list */}
       {loading ? (
-        <div className="text-center py-5"><div className="spinner-border text-primary" /></div>
+        <div style={{ textAlign: 'center', padding: '40px 0' }}>
+          <div style={{ width: 36, height: 36, border: `3px solid ${ACCENT}30`, borderTopColor: ACCENT, borderRadius: '50%', animation: 'spin 0.7s linear infinite', display: 'inline-block' }} />
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        </div>
       ) : filtered.length === 0 ? (
-        <div className="card border-0 shadow-sm text-center py-5">
-          <i className="bi bi-clipboard2 display-4 text-muted mb-3"></i>
-          <p className="text-muted">
-            {filterStatus === 'all' ? 'Belum ada tugas yang diberikan.' : `Tidak ada tugas dengan status "${STATUS_MAP[filterStatus]?.label}".`}
-          </p>
+        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #f0f0f0', textAlign: 'center', padding: '48px 0', color: '#9ca3af', fontSize: 13 }}>
+          <i className="bi bi-clipboard2" style={{ fontSize: 40, display: 'block', marginBottom: 12, opacity: 0.4 }}></i>
+          {filterStatus === 'all' ? 'Belum ada tugas yang diberikan.' : `Tidak ada tugas dengan status "${STATUS_MAP[filterStatus]?.label}".`}
         </div>
       ) : (
         filtered.map(task => (

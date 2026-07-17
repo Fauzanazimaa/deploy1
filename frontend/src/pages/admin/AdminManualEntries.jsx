@@ -111,233 +111,176 @@ export default function AdminManualEntries() {
   }
 
   return (
-    <div>
-      <div className="d-flex justify-content-between align-items-center mb-4">
+    <div style={{ fontFamily: "'Inter', sans-serif" }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
         <div>
-          <h4 className="fw-bold mb-0">Entri Data Manual</h4>
-          <p className="text-muted small mb-0">Tambahkan data secara langsung tanpa melalui pengiriman file</p>
+          <h4 style={{ fontWeight: 700, fontSize: 20, color: '#1a1f2e', margin: 0 }}>Entri Data Manual</h4>
+          <p style={{ color: '#6b7280', fontSize: 13, margin: '4px 0 0' }}>Tambahkan data secara langsung tanpa melalui pengiriman file</p>
         </div>
-        <button className="btn btn-primary" onClick={openCreate}>
-          <i className="bi bi-plus-lg me-1"></i> Tambah Entri
+        <button onClick={openCreate} style={{ background: '#f5a623', border: 'none', color: '#fff', borderRadius: 8, padding: '8px 18px', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7, fontFamily: "'Inter',sans-serif" }}>
+          <i className="bi bi-plus-lg"></i> Tambah Entri
         </button>
       </div>
 
       {/* Filter */}
-      <div className="card border-0 shadow-sm mb-4">
-        <div className="card-body">
-          <div className="row g-2 align-items-center">
-            <div className="col-md-4">
-              <select
-                className="form-select"
-                value={filterDT}
-                onChange={(e) => setFilterDT(e.target.value)}
-              >
-                <option value="all">Semua Jenis Data</option>
-                {dataTypes.map((dt) => (
-                  <option key={dt.id} value={dt.id}>{dt.name}</option>
-                ))}
-              </select>
-            </div>
-            <div className="col-md-8 text-muted small">
-              Menampilkan {filtered.length} entri
-            </div>
+      <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #f0f0f0', padding: '16px 20px', marginBottom: 20, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+        <div className="row g-2 align-items-center">
+          <div className="col-md-4">
+            <select className="form-select" value={filterDT} onChange={(e) => setFilterDT(e.target.value)} style={{ fontSize: 13, fontFamily: "'Inter',sans-serif" }}>
+              <option value="all">Semua Jenis Data</option>
+              {dataTypes.map((dt) => <option key={dt.id} value={dt.id}>{dt.name}</option>)}
+            </select>
           </div>
+          <div className="col-md-8" style={{ color: '#6b7280', fontSize: 13 }}>Menampilkan {filtered.length} entri</div>
         </div>
       </div>
 
       {/* Table */}
-      <div className="card border-0 shadow-sm">
-        <div className="card-body p-0">
-          {loading ? (
-            <div className="text-center py-5"><div className="spinner-border text-primary" /></div>
-          ) : (
-            <div className="table-responsive">
-              <table className="table table-hover align-middle mb-0 small">
-                <thead className="table-light">
-                  <tr>
-                    <th>#</th>
-                    <th>Jenis Data</th>
-                    <th>Data</th>
-                    <th>Diinput Oleh</th>
-                    <th>Tanggal</th>
-                    <th className="text-end">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="text-center text-muted py-4">
-                        Belum ada entri data manual
+      <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #f0f0f0', overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '40px 0' }}>
+            <div style={{ width: 36, height: 36, border: '3px solid #f5a62330', borderTopColor: '#f5a623', borderRadius: '50%', animation: 'spin 0.7s linear infinite', display: 'inline-block' }} />
+            <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+          </div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead>
+                <tr style={{ background: '#fafafa', borderBottom: '1px solid #f0f0f0' }}>
+                  {['#','Jenis Data','Data','Diinput Oleh','Tanggal',''].map(h => (
+                    <th key={h} style={{ padding: '10px 20px', textAlign: h===''?'right':'left', fontWeight: 600, color: '#6b7280', fontSize: 12 }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.length === 0 ? (
+                  <tr><td colSpan={6} style={{ textAlign: 'center', padding: '32px 0', color: '#9ca3af', fontSize: 13 }}>Belum ada entri data manual</td></tr>
+                ) : filtered.map((entry, i) => {
+                  const dataKeys = Object.keys(entry.data || {})
+                  const preview = dataKeys.slice(0, 2).map(k => `${k}: ${entry.data[k]}`).join(', ')
+                  return (
+                    <tr key={entry.id} style={{ borderBottom: '1px solid #f9f9f9' }} className="tr-hover">
+                      <td style={{ padding: '11px 20px', color: '#9ca3af', fontSize: 12 }}>{i + 1}</td>
+                      <td style={{ padding: '11px 20px' }}>
+                        <span style={{ background: '#f3f4f6', border: '1px solid #e5e7eb', color: '#374151', borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 500 }}>{entry.data_type_name}</span>
+                      </td>
+                      <td style={{ padding: '11px 20px', color: '#374151', maxWidth: 300 }}>
+                        <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {preview || <span style={{ color: '#9ca3af' }}>-</span>}
+                          {dataKeys.length > 2 && <span style={{ color: '#9ca3af', marginLeft: 6, fontSize: 12 }}>+{dataKeys.length - 2} lainnya</span>}
+                        </div>
+                      </td>
+                      <td style={{ padding: '11px 20px', color: '#374151' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
+                          <i className="bi bi-shield-lock-fill" style={{ color: '#f5a623' }}></i>{entry.entered_by_username}
+                        </div>
+                      </td>
+                      <td style={{ padding: '11px 20px', color: '#6b7280', fontSize: 12 }}>{new Date(entry.created_at).toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' })}</td>
+                      <td style={{ padding: '11px 20px', textAlign: 'right' }}>
+                        <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                          <button onClick={() => setDetailEntry(entry)} title="Lihat Detail" style={{ background: '#eff6ff', border: '1px solid #bfdbfe', color: '#3b82f6', borderRadius: 7, padding: '5px 10px', fontSize: 14, cursor: 'pointer' }}><i className="bi bi-eye"></i></button>
+                          <button onClick={() => handleDelete(entry.id)} title="Hapus" style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', borderRadius: 7, padding: '5px 10px', fontSize: 14, cursor: 'pointer' }}><i className="bi bi-trash"></i></button>
+                        </div>
                       </td>
                     </tr>
-                  ) : (
-                    filtered.map((entry, i) => {
-                      const dataKeys = Object.keys(entry.data || {})
-                      const preview = dataKeys.slice(0, 2).map((k) => `${k}: ${entry.data[k]}`).join(', ')
-                      return (
-                        <tr key={entry.id}>
-                          <td className="text-muted">{i + 1}</td>
-                          <td>
-                            <span className="badge bg-light text-dark border">
-                              {entry.data_type_name}
-                            </span>
-                          </td>
-                          <td>
-                            <div className="text-truncate" style={{ maxWidth: 300 }}>
-                              {preview || <span className="text-muted">-</span>}
-                              {dataKeys.length > 2 && (
-                                <span className="text-muted ms-1">+{dataKeys.length - 2} lainnya</span>
-                              )}
-                            </div>
-                          </td>
-                          <td>
-                            <div className="d-flex align-items-center gap-1">
-                              <i className="bi bi-shield-lock-fill text-danger small"></i>
-                              {entry.entered_by_username}
-                            </div>
-                          </td>
-                          <td className="text-muted">
-                            {new Date(entry.created_at).toLocaleDateString('id-ID', {
-                              day: '2-digit', month: 'short', year: 'numeric'
-                            })}
-                          </td>
-                          <td className="text-end">
-                            <button
-                              className="btn btn-sm btn-outline-primary me-1"
-                              onClick={() => setDetailEntry(entry)}
-                              title="Lihat Detail"
-                            >
-                              <i className="bi bi-eye"></i>
-                            </button>
-                            <button
-                              className="btn btn-sm btn-outline-danger"
-                              onClick={() => handleDelete(entry.id)}
-                              title="Hapus"
-                            >
-                              <i className="bi bi-trash"></i>
-                            </button>
-                          </td>
-                        </tr>
-                      )
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Create Modal */}
       {showModal && (
-        <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }}>
-          <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-            <div className="modal-content border-0 shadow-lg">
-              <div className="modal-header">
-                <h5 className="modal-title fw-bold">Tambah Entri Data Manual</h5>
-                <button className="btn-close" onClick={() => setShowModal(false)} />
-              </div>
-              <form onSubmit={handleSave}>
-                <div className="modal-body">
-                  {error && <div className="alert alert-danger small py-2">{error}</div>}
-                  <div className="mb-4">
-                    <label className="form-label fw-semibold small">
-                      Jenis Data <span className="text-danger">*</span>
-                    </label>
-                    <select
-                      className="form-select"
-                      value={selectedDT}
-                      onChange={(e) => handleDTChange(e.target.value)}
-                      required
-                    >
-                      <option value="">-- Pilih jenis data --</option>
-                      {dataTypes.map((dt) => (
-                        <option key={dt.id} value={dt.id}>{dt.name}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {currentDT && (
-                    <div>
-                      <div className="d-flex align-items-center mb-3">
-                        <span className="fw-semibold small">Isi Data</span>
-                        <span className="badge bg-light text-dark border ms-2 small">{currentDT.name}</span>
-                      </div>
-                      {currentDT.fields_schema.length === 0 ? (
-                        <div className="alert alert-warning small">
-                          Jenis data ini belum memiliki field. Tambahkan field di menu Jenis Data.
-                        </div>
-                      ) : (
-                        <div className="row g-3">
-                          {currentDT.fields_schema.map((field) => (
-                            <div className="col-md-6" key={field.name}>
-                              <label htmlFor={`field-${field.name}`} className="form-label small fw-semibold">
-                                {field.label || field.name}
-                                {field.required && <span className="text-danger ms-1">*</span>}
-                              </label>
-                              {renderFieldInput(field)}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-                <div className="modal-footer">
-                  <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
-                    Batal
-                  </button>
-                  <button type="submit" className="btn btn-primary" disabled={saving || !currentDT}>
-                    {saving
-                      ? <><span className="spinner-border spinner-border-sm me-1" />Menyimpan...</>
-                      : 'Simpan Entri'}
-                  </button>
-                </div>
-              </form>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1050, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 20px 60px rgba(0,0,0,0.2)', width: '100%', maxWidth: 520, maxHeight: '85vh', display: 'flex', flexDirection: 'column', fontFamily: "'Inter',sans-serif" }}>
+            <div style={{ borderBottom: '1px solid #f0f0f0', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+              <span style={{ fontWeight: 700, fontSize: 15, color: '#1a1f2e' }}>Tambah Entri Data Manual</span>
+              <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: 20 }}><i className="bi bi-x"></i></button>
             </div>
+            <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+              <div style={{ padding: '20px', overflowY: 'auto', flex: 1 }}>
+                {error && <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', borderRadius: 8, padding: '8px 12px', fontSize: 12, marginBottom: 14 }}>{error}</div>}
+                <div style={{ marginBottom: 18 }}>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 5, letterSpacing: 0.5 }}>JENIS DATA <span style={{ color: '#dc2626' }}>*</span></label>
+                  <select className="form-select" value={selectedDT} onChange={(e) => handleDTChange(e.target.value)} required style={{ fontSize: 13, fontFamily: "'Inter',sans-serif" }}>
+                    <option value="">-- Pilih jenis data --</option>
+                    {dataTypes.map((dt) => <option key={dt.id} value={dt.id}>{dt.name}</option>)}
+                  </select>
+                </div>
+                {currentDT && (
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: 14, gap: 8 }}>
+                      <span style={{ fontWeight: 600, fontSize: 13, color: '#1a1f2e' }}>Isi Data</span>
+                      <span style={{ background: '#f3f4f6', border: '1px solid #e5e7eb', color: '#374151', borderRadius: 6, padding: '2px 8px', fontSize: 11 }}>{currentDT.name}</span>
+                    </div>
+                    {currentDT.fields_schema.length === 0 ? (
+                      <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#92400e' }}>Jenis data ini belum memiliki field. Tambahkan di menu Jenis Data.</div>
+                    ) : (
+                      <div className="row g-3">
+                        {currentDT.fields_schema.map((field) => (
+                          <div className="col-md-6" key={field.name}>
+                            <label htmlFor={`field-${field.name}`} style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 4, letterSpacing: 0.5 }}>
+                              {(field.label || field.name).toUpperCase()}{field.required && <span style={{ color: '#dc2626' }}> *</span>}
+                            </label>
+                            {renderFieldInput(field)}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              <div style={{ borderTop: '1px solid #f0f0f0', padding: '14px 20px', display: 'flex', justifyContent: 'flex-end', gap: 8, flexShrink: 0 }}>
+                <button type="button" onClick={() => setShowModal(false)} style={{ background: '#f3f4f6', border: '1px solid #e5e7eb', color: '#374151', borderRadius: 8, padding: '8px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Inter',sans-serif" }}>Batal</button>
+                <button type="submit" disabled={saving || !currentDT} style={{ background: '#f5a623', border: 'none', color: '#fff', borderRadius: 8, padding: '8px 20px', fontSize: 13, fontWeight: 600, cursor: (saving||!currentDT)?'not-allowed':'pointer', fontFamily: "'Inter',sans-serif", opacity: (saving||!currentDT)?0.7:1, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  {saving ? <><span className="spinner-border spinner-border-sm" style={{ width:14, height:14, borderWidth:2 }} />Menyimpan...</> : 'Simpan Entri'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
 
       {/* Detail Modal */}
       {detailEntry && (
-        <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }}>
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content border-0 shadow-lg">
-              <div className="modal-header">
-                <h5 className="modal-title fw-bold">Detail Entri #{detailEntry.id}</h5>
-                <button className="btn-close" onClick={() => setDetailEntry(null)} />
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1050, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 20px 60px rgba(0,0,0,0.2)', width: '100%', maxWidth: 480, overflow: 'hidden', fontFamily: "'Inter',sans-serif" }}>
+            <div style={{ borderBottom: '1px solid #f0f0f0', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontWeight: 700, fontSize: 15, color: '#1a1f2e' }}>Detail Entri #{detailEntry.id}</span>
+              <button onClick={() => setDetailEntry(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: 20 }}><i className="bi bi-x"></i></button>
+            </div>
+            <div style={{ padding: '20px' }}>
+              <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 14 }}>
+                <strong>Jenis Data:</strong> {detailEntry.data_type_name} &bull; <strong>Diinput:</strong> {detailEntry.entered_by_username} &bull; {new Date(detailEntry.created_at).toLocaleString('id-ID')}
               </div>
-              <div className="modal-body">
-                <div className="mb-3 small text-muted">
-                  <strong>Jenis Data:</strong> {detailEntry.data_type_name} •{' '}
-                  <strong>Diinput:</strong> {detailEntry.entered_by_username} •{' '}
-                  {new Date(detailEntry.created_at).toLocaleString('id-ID')}
-                </div>
-                <table className="table table-sm table-bordered small mb-0">
-                  <thead className="table-light">
+              <div style={{ overflowX: 'auto', border: '1px solid #e5e7eb', borderRadius: 8 }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                  <thead style={{ background: '#fafafa', borderBottom: '1px solid #f0f0f0' }}>
                     <tr>
-                      <th>Field</th>
-                      <th>Nilai</th>
+                      <th style={{ padding: '8px 14px', fontWeight: 600, color: '#6b7280', fontSize: 12 }}>Field</th>
+                      <th style={{ padding: '8px 14px', fontWeight: 600, color: '#6b7280', fontSize: 12 }}>Nilai</th>
                     </tr>
                   </thead>
                   <tbody>
                     {Object.entries(detailEntry.data || {}).map(([k, v]) => (
-                      <tr key={k}>
-                        <td className="fw-semibold text-capitalize">{k.replace(/_/g, ' ')}</td>
-                        <td>{v ?? '-'}</td>
+                      <tr key={k} style={{ borderBottom: '1px solid #f9f9f9' }}>
+                        <td style={{ padding: '9px 14px', fontWeight: 600, color: '#1a1f2e', textTransform: 'capitalize' }}>{k.replace(/_/g, ' ')}</td>
+                        <td style={{ padding: '9px 14px', color: '#374151' }}>{v ?? '-'}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-              <div className="modal-footer">
-                <button className="btn btn-secondary" onClick={() => setDetailEntry(null)}>Tutup</button>
-              </div>
+            </div>
+            <div style={{ borderTop: '1px solid #f0f0f0', padding: '14px 20px', display: 'flex', justifyContent: 'flex-end' }}>
+              <button onClick={() => setDetailEntry(null)} style={{ background: '#f3f4f6', border: '1px solid #e5e7eb', color: '#374151', borderRadius: 8, padding: '8px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Inter',sans-serif" }}>Tutup</button>
             </div>
           </div>
         </div>
       )}
+      <style>{`.tr-hover:hover{background:#fafafa}`}</style>
     </div>
   )
 }

@@ -462,44 +462,42 @@ function TabKec() {
   )
 }
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
 export default function AdminPenduduk() {
   const [activeTab, setActiveTab] = useState('jk')
 
   return (
-    <div>
-      <div className="mb-4">
-        <h4 className="fw-bold mb-0 d-flex align-items-center gap-2">
-          <i className="bi bi-people-fill text-danger"></i>
+    <div style={{ fontFamily: "'Inter', sans-serif" }}>
+      <div style={{ marginBottom: 24 }}>
+        <h4 style={{ fontWeight: 700, fontSize: 20, color: '#1a1f2e', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <i className="bi bi-people-fill" style={{ color: '#f5a623' }}></i>
           Data Penduduk Kabupaten Sijunjung
         </h4>
-        <p className="text-muted small mb-0 mt-1">
+        <p style={{ color: '#6b7280', fontSize: 13, margin: '4px 0 0' }}>
           Kelola data kependudukan — jenis kelamin, kelompok umur, dan per kecamatan dari tahun ke tahun
         </p>
       </div>
 
-      {/* Info kecamatan */}
-      <div className="alert alert-info border-0 shadow-sm d-flex gap-3 align-items-start mb-4">
-        <i className="bi bi-info-circle-fill fs-5 flex-shrink-0 mt-1"></i>
-        <div className="small">
-          <strong>8 Kecamatan Kabupaten Sijunjung:</strong>{' '}
-          {KECAMATAN_LIST.join(' · ')}
+      {/* Info */}
+      <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 12, padding: '12px 18px', display: 'flex', gap: 12, alignItems: 'flex-start', marginBottom: 24 }}>
+        <i className="bi bi-info-circle-fill" style={{ color: '#f5a623', fontSize: 18, flexShrink: 0, marginTop: 1 }}></i>
+        <div style={{ fontSize: 13, color: '#92400e' }}>
+          <strong>8 Kecamatan Kabupaten Sijunjung:</strong>{' '}{KECAMATAN_LIST.join(' · ')}
         </div>
       </div>
 
       {/* Tabs */}
-      <ul className="nav nav-tabs mb-4">
+      <div style={{ display: 'flex', gap: 4, marginBottom: 24, borderBottom: '2px solid #f0f0f0', paddingBottom: 0 }}>
         {TABS.map(tab => (
-          <li key={tab.key} className="nav-item">
-            <button
-              className={`nav-link d-flex align-items-center gap-2 ${activeTab === tab.key ? 'active fw-semibold' : ''}`}
-              onClick={() => setActiveTab(tab.key)}>
-              <i className={`bi ${tab.icon}`}></i>
-              {tab.label}
-            </button>
-          </li>
+          <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
+            background: 'none', border: 'none', cursor: 'pointer', padding: '10px 18px', fontSize: 13, fontWeight: 600,
+            color: activeTab === tab.key ? '#f5a623' : '#6b7280', fontFamily: "'Inter',sans-serif",
+            borderBottom: activeTab === tab.key ? '2px solid #f5a623' : '2px solid transparent',
+            marginBottom: -2, display: 'flex', alignItems: 'center', gap: 7,
+          }}>
+            <i className={`bi ${tab.icon}`}></i>{tab.label}
+          </button>
         ))}
-      </ul>
+      </div>
 
       {activeTab === 'jk'   && <TabJK />}
       {activeTab === 'umur' && <TabUmur />}

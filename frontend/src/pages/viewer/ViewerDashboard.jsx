@@ -6,19 +6,41 @@ import { Doughnut } from 'react-chartjs-2'
 
 ChartJS.register(ArcElement, Tooltip, Legend)
 
+const ACCENT = '#f5a623'
+
 function StatCard({ icon, label, value, color, description }) {
   return (
-    <div className="card border-0 shadow-sm h-100">
-      <div className="card-body d-flex align-items-center gap-3">
-        <div className="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0"
-          style={{ width: 52, height: 52, background: color + '20' }}>
-          <i className={`bi ${icon} fs-4`} style={{ color }}></i>
-        </div>
-        <div>
-          <div className="fw-bold fs-3 lh-1">{value ?? 0}</div>
-          <div className="text-muted small">{label}</div>
-          {description && <div className="text-muted" style={{ fontSize: 11 }}>{description}</div>}
-        </div>
+    <div
+      style={{
+        background: '#fff',
+        borderRadius: 12,
+        padding: '18px 20px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 16,
+        boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+        border: '1px solid #f0f0f0',
+        height: '100%',
+      }}
+    >
+      <div
+        style={{
+          width: 50,
+          height: 50,
+          borderRadius: 12,
+          background: color + '18',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+        }}
+      >
+        <i className={`bi ${icon}`} style={{ color, fontSize: 22 }}></i>
+      </div>
+      <div>
+        <div style={{ fontWeight: 700, fontSize: 26, lineHeight: 1, color: '#1a1f2e' }}>{value ?? 0}</div>
+        <div style={{ color: '#6b7280', fontSize: 12, marginTop: 3 }}>{label}</div>
+        {description && <div style={{ color: '#9ca3af', fontSize: 11, marginTop: 1 }}>{description}</div>}
       </div>
     </div>
   )
@@ -36,8 +58,9 @@ export default function ViewerDashboard() {
   }, [])
 
   if (loading) return (
-    <div className="d-flex justify-content-center align-items-center" style={{ minHeight: 300 }}>
-      <div className="spinner-border text-success" />
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 300 }}>
+      <div style={{ width: 36, height: 36, border: `3px solid ${ACCENT}30`, borderTopColor: ACCENT, borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   )
 
@@ -46,7 +69,7 @@ export default function ViewerDashboard() {
     datasets: [{
       data: dashboard?.data_type_stats?.map(dt => dt.total) || [],
       backgroundColor: [
-        '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', 
+        ACCENT, '#3b82f6', '#10b981', '#ef4444', '#8b5cf6',
         '#06b6d4', '#f97316', '#ec4899', '#14b8a6', '#a855f7'
       ],
       borderWidth: 2,
@@ -57,138 +80,118 @@ export default function ViewerDashboard() {
   const hasData = dashboard?.data_type_stats?.some(dt => dt.total > 0)
 
   return (
-    <div>
-      <div className="mb-4">
-        <h4 className="fw-bold mb-0">Dashboard Data Terkini</h4>
-        <p className="text-muted small mb-0">Ringkasan data yang sudah disetujui dan siap digunakan</p>
+    <div style={{ fontFamily: "'Inter', sans-serif" }}>
+      <div style={{ marginBottom: 24 }}>
+        <h4 style={{ fontWeight: 700, fontSize: 20, color: '#1a1f2e', margin: 0 }}>Dashboard Data Terkini</h4>
+        <p style={{ color: '#6b7280', fontSize: 13, margin: '4px 0 0' }}>Ringkasan data yang sudah disetujui dan siap digunakan</p>
       </div>
 
       {/* Stat Cards */}
       <div className="row g-3 mb-4">
         <div className="col-6 col-md-3">
-          <StatCard 
-            icon="bi-check-circle-fill" 
-            label="Data Disetujui" 
-            value={dashboard?.approved_tasks} 
-            color="#10b981"
-            description="Dari kontributor"
-          />
+          <StatCard icon="bi-check-circle-fill" label="Data Disetujui" value={dashboard?.approved_tasks} color="#10b981" description="Dari kontributor" />
         </div>
         <div className="col-6 col-md-3">
-          <StatCard 
-            icon="bi-pencil-square" 
-            label="Entri Manual" 
-            value={dashboard?.total_manual_entries} 
-            color="#3b82f6"
-            description="Input langsung admin"
-          />
+          <StatCard icon="bi-pencil-square" label="Entri Manual" value={dashboard?.total_manual_entries} color="#3b82f6" description="Input langsung admin" />
         </div>
         <div className="col-6 col-md-3">
-          <StatCard 
-            icon="bi-grid-3x3-gap-fill" 
-            label="Jenis Data" 
-            value={dashboard?.total_data_types} 
-            color="#8b5cf6"
-            description="Kategori tersedia"
-          />
+          <StatCard icon="bi-grid-3x3-gap-fill" label="Jenis Data" value={dashboard?.total_data_types} color="#8b5cf6" description="Kategori tersedia" />
         </div>
         <div className="col-6 col-md-3">
-          <StatCard 
-            icon="bi-inbox-fill" 
-            label="Total Pengiriman" 
-            value={dashboard?.approved_submissions} 
-            color="#f59e0b"
-            description="File disetujui"
-          />
+          <StatCard icon="bi-inbox-fill" label="Total Pengiriman" value={dashboard?.approved_submissions} color={ACCENT} description="File disetujui" />
         </div>
       </div>
 
-      {/* Data breakdown */}
+      {/* Charts + Table */}
       <div className="row g-3 mb-4">
         <div className="col-md-5">
-          <div className="card border-0 shadow-sm h-100">
-            <div className="card-body">
-              <h6 className="fw-semibold mb-3">Distribusi Data per Jenis</h6>
-              {!hasData ? (
-                <div className="text-center text-muted py-5">
-                  <i className="bi bi-inbox display-4 mb-3"></i>
-                  <p className="small">Belum ada data tersedia</p>
-                </div>
-              ) : (
-                <div style={{ maxHeight: 240 }}>
-                  <Doughnut 
-                    data={chartData} 
-                    options={{ 
-                      maintainAspectRatio: false,
-                      plugins: { 
-                        legend: { position: 'bottom', labels: { font: { size: 11 } } } 
-                      }
-                    }} 
-                  />
-                </div>
-              )}
-            </div>
+          <div style={{ background: '#fff', borderRadius: 12, padding: '20px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', border: '1px solid #f0f0f0', height: '100%' }}>
+            <h6 style={{ fontWeight: 600, fontSize: 14, color: '#1a1f2e', marginBottom: 16 }}>Distribusi Data per Jenis</h6>
+            {!hasData ? (
+              <div style={{ textAlign: 'center', color: '#9ca3af', padding: '40px 0', fontSize: 13 }}>
+                <i className="bi bi-inbox" style={{ fontSize: 36, display: 'block', marginBottom: 10, opacity: 0.4 }}></i>
+                Belum ada data tersedia
+              </div>
+            ) : (
+              <div style={{ maxHeight: 240 }}>
+                <Doughnut
+                  data={chartData}
+                  options={{
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { font: { family: 'Inter', size: 11 }, padding: 12, boxWidth: 12 } } }
+                  }}
+                />
+              </div>
+            )}
           </div>
         </div>
 
         <div className="col-md-7">
-          <div className="card border-0 shadow-sm h-100">
-            <div className="card-header bg-white border-0 d-flex justify-content-between align-items-center pt-3">
-              <h6 className="fw-semibold mb-0">Rincian per Jenis Data</h6>
-              <Link to="/viewer/data" className="btn btn-sm btn-outline-success">
-                Lihat Semua Data <i className="bi bi-arrow-right ms-1"></i>
+          <div style={{ background: '#fff', borderRadius: 12, boxShadow: '0 1px 4px rgba(0,0,0,0.06)', border: '1px solid #f0f0f0', height: '100%', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid #f0f0f0' }}>
+              <h6 style={{ fontWeight: 600, fontSize: 14, color: '#1a1f2e', margin: 0 }}>Rincian per Jenis Data</h6>
+              <Link to="/viewer/data" style={{ background: ACCENT, color: '#fff', textDecoration: 'none', fontSize: 12, fontWeight: 600, padding: '5px 14px', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 5 }}>
+                Lihat Semua <i className="bi bi-arrow-right"></i>
               </Link>
             </div>
-            <div className="card-body p-0">
-              {!dashboard?.data_type_stats?.length ? (
-                <div className="text-center text-muted py-4">Belum ada jenis data</div>
-              ) : (
-                <div className="table-responsive">
-                  <table className="table table-hover align-middle mb-0 small">
-                    <thead className="table-light">
-                      <tr>
-                        <th>Jenis Data</th>
-                        <th className="text-center">Data Disetujui</th>
-                        <th className="text-center">Entri Manual</th>
-                        <th className="text-center">Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {dashboard.data_type_stats.map(dt => (
-                        <tr key={dt.id}>
-                          <td className="fw-semibold">{dt.name}</td>
-                          <td className="text-center">
-                            <span className="badge bg-success bg-opacity-10 text-success border border-success">
-                              {dt.approved_tasks}
-                            </span>
-                          </td>
-                          <td className="text-center">
-                            <span className="badge bg-primary bg-opacity-10 text-primary border border-primary">
-                              {dt.manual_entries}
-                            </span>
-                          </td>
-                          <td className="text-center">
-                            <span className="badge bg-dark">{dt.total}</span>
-                          </td>
-                        </tr>
+            {!dashboard?.data_type_stats?.length ? (
+              <div style={{ textAlign: 'center', color: '#9ca3af', padding: '32px 0', fontSize: 13 }}>Belum ada jenis data</div>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ background: '#fafafa', borderBottom: '1px solid #f0f0f0' }}>
+                      {['Jenis Data', 'Disetujui', 'Entri Manual', 'Total'].map((h) => (
+                        <th key={h} style={{ padding: '10px 20px', textAlign: h === 'Jenis Data' ? 'left' : 'center', fontWeight: 600, color: '#6b7280', fontSize: 12 }}>{h}</th>
                       ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dashboard.data_type_stats.map(dt => (
+                      <tr key={dt.id} style={{ borderBottom: '1px solid #f9f9f9' }} className="table-row-hover">
+                        <td style={{ padding: '11px 20px', fontWeight: 600, color: '#1a1f2e' }}>{dt.name}</td>
+                        <td style={{ padding: '11px 20px', textAlign: 'center' }}>
+                          <span style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#16a34a', borderRadius: 20, padding: '2px 10px', fontSize: 11, fontWeight: 600 }}>{dt.approved_tasks}</span>
+                        </td>
+                        <td style={{ padding: '11px 20px', textAlign: 'center' }}>
+                          <span style={{ background: '#eff6ff', border: '1px solid #bfdbfe', color: '#3b82f6', borderRadius: 20, padding: '2px 10px', fontSize: 11, fontWeight: 600 }}>{dt.manual_entries}</span>
+                        </td>
+                        <td style={{ padding: '11px 20px', textAlign: 'center' }}>
+                          <span style={{ background: '#1a1f2e', color: '#fff', borderRadius: 20, padding: '2px 10px', fontSize: 11, fontWeight: 600 }}>{dt.total}</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Info card */}
-      <div className="alert alert-info d-flex gap-3 align-items-start border-0 shadow-sm">
-        <i className="bi bi-info-circle-fill fs-4 flex-shrink-0 mt-1"></i>
-        <div className="small">
-          <strong>Catatan:</strong> Data yang ditampilkan di sini adalah data yang telah diverifikasi dan disetujui oleh admin. 
-          Anda dapat melihat detail dan mengunduh data di halaman <Link to="/viewer/data" className="alert-link fw-semibold">Lihat Data</Link>.
+      {/* Info banner */}
+      <div
+        style={{
+          background: '#fff7ed',
+          border: '1px solid #fed7aa',
+          borderRadius: 12,
+          padding: '14px 20px',
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: 12,
+          fontSize: 13,
+          color: '#92400e',
+        }}
+      >
+        <i className="bi bi-info-circle-fill" style={{ color: ACCENT, fontSize: 18, flexShrink: 0, marginTop: 1 }}></i>
+        <div>
+          <strong>Catatan:</strong> Data yang ditampilkan adalah data yang telah diverifikasi dan disetujui oleh admin.
+          Anda dapat melihat detail dan mengunduh data di halaman{' '}
+          <Link to="/viewer/data" style={{ color: ACCENT, fontWeight: 600 }}>Lihat Data</Link>.
         </div>
       </div>
+
+      <style>{`.table-row-hover:hover { background: #fafafa; }`}</style>
     </div>
   )
 }
