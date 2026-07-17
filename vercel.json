@@ -25,13 +25,5 @@
       "src": "/(.*)",
       "dest": "frontend/$1"
     }
-  ],
-  "env": {
-    "DATABASE_URL":              "@database_url",
-    "JWT_SECRET_KEY":            "@jwt_secret_key",
-    "SUPABASE_URL":              "@supabase_url",
-    "SUPABASE_SERVICE_KEY":      "@supabase_service_key",
-    "SUPABASE_UPLOADS_BUCKET":   "@supabase_uploads_bucket",
-    "SUPABASE_TEMPLATES_BUCKET": "@supabase_templates_bucket"
-  }
+  ]
 }
