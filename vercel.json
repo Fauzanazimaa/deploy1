@@ -22,11 +22,16 @@
       "dest": "/api/index.py"
     },
     {
-      "handle": "filesystem"
+      "src": "/assets/(.*)",
+      "dest": "/assets/$1"
+    },
+    {
+      "src": "^/(.*\\.(js|css|ico|png|jpg|jpeg|svg|woff|woff2|ttf|eot|map|json))$",
+      "dest": "/$1"
     },
     {
       "src": "/(.*)",
-      "dest": "/frontend/index.html"
+      "dest": "/index.html"
     }
   ]
 }
