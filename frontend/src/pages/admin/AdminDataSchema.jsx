@@ -133,7 +133,15 @@ function HeaderPreview({ schema }) {
   }
 
   return (
-    <div className="table-responsive border rounded" style={{ fontSize: '0.75rem' }}>
+    <div
+      className="table-responsive border rounded"
+      style={{
+        fontSize: '0.75rem',
+        maxHeight: 400,
+        overflowY: 'auto',
+        overflowX: 'auto',
+      }}
+    >
       <table
         style={{
           borderCollapse: 'collapse',
@@ -142,7 +150,7 @@ function HeaderPreview({ schema }) {
           tableLayout: 'auto',
         }}
       >
-        <thead>
+        <thead style={{ position: 'sticky', top: 0, zIndex: 2 }}>
           {levels.map((level, li) => {
             const isLeaf = li === numLevels - 1
             const bgColor = PREVIEW_COLORS[Math.min(li, PREVIEW_COLORS.length - 1)]
