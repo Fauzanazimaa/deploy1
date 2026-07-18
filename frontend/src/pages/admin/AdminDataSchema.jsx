@@ -965,12 +965,8 @@ export default function AdminDataSchema() {
                   </div>
 
                   <div className="row g-4">
-                    <div className="col-md-6">
-                      <h6 style={{ fontWeight: 600, fontSize: 12, color: '#6b7280', letterSpacing: 1, marginBottom: 12 }}>BUILDER SCHEMA</h6>
-                      <SchemaBuilder schema={form.schema} onChange={s => setForm(f => ({ ...f, schema: s }))} />
-                    </div>
-                    <div className="col-md-6">
-                      <h6 style={{ fontWeight: 600, fontSize: 12, color: '#6b7280', letterSpacing: 1, marginBottom: 12 }}>PREVIEW</h6>
+                    <div className="col-md-12">
+                      <h6 style={{ fontWeight: 600, fontSize: 12, color: '#6b7280', letterSpacing: 1, marginBottom: 12 }}>PREVIEW SCHEMA</h6>
                       <HeaderPreview schema={form.schema} />
                     </div>
                   </div>
