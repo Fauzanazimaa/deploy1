@@ -14,11 +14,13 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-// Handle 401 globally
+// Handle 401 globally — jangan redirect jika request ke public endpoint
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401) {
+    const url = err.config?.url || ''
+    const isPublic = url.startsWith('/public/') || url === '/auth/login'
+    if (err.response?.status === 401 && !isPublic) {
       localStorage.removeItem('token')
       localStorage.removeItem('user')
       window.location.href = '/login'
@@ -66,6 +68,7 @@ export const approveSubmission = (id) => api.put(`/admin/submissions/${id}/appro
 export const revisionSubmission = (id, data) => api.put(`/admin/submissions/${id}/revision`, data)
 export const downloadSubmission = (id) =>
   api.get(`/admin/submissions/${id}/download`, { responseType: 'blob' })
+export const previewSubmission = (id) => api.get(`/admin/submissions/${id}/preview`)
 
 // ─── Admin – Manual Entries ───────────────────────────────────────────────────
 export const getManualEntries = () => api.get('/admin/manual-entries')
@@ -84,6 +87,10 @@ export const submitTask = (taskId, formData) =>
   api.post(`/contributor/tasks/${taskId}/submit`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   })
+export const submitTaskForm = (taskId, formData) =>
+  api.post(`/contributor/tasks/${taskId}/submit-form`, { form_data: formData })
+export const getTaskTemplateGrid = (taskId) =>
+  api.get(`/contributor/tasks/${taskId}/template-grid`)
 export const getMySubmissions = () => api.get('/contributor/submissions')
 export const getContributorStats = () => api.get('/contributor/dashboard/stats')
 
@@ -99,5 +106,20 @@ export const exportViewerData = (data) =>
 export const getPendudukJK   = ()       => api.get('/public/penduduk/jk')
 export const getPendudukUmur = (tahun)  => api.get('/public/penduduk/umur',  { params: tahun ? { tahun } : {} })
 export const getPendudukKec  = ()       => api.get('/public/penduduk/kecamatan')
+
+// ─── Public Dashboard Widgets ─────────────────────────────────────────────────
+export const getPublicWidgets = () => api.get('/public/widgets')
+export const downloadPublicWidget = (id) =>
+  api.get(`/public/widgets/${id}/download`, { responseType: 'blob' })
+
+// ─── Admin – Public Dashboard Widgets ────────────────────────────────────────
+export const getAdminWidgets = () => api.get('/admin/widgets')
+export const createWidget = (data) => api.post('/admin/widgets', data)
+export const updateWidget = (id, data) => api.put(`/admin/widgets/${id}`, data)
+export const deleteWidget = (id) => api.delete(`/admin/widgets/${id}`)
+export const toggleWidgetVisibility = (id) => api.put(`/admin/widgets/${id}/toggle-visibility`)
+export const previewWidget = (id) => api.get(`/admin/widgets/${id}/preview`)
+export const getVerifiedSubmissions = () => api.get('/admin/verified-submissions')
+export const getAdminDataTypes = () => api.get('/admin/data-types')
 
 export default api

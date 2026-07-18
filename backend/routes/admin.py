@@ -557,62 +557,209 @@ def revision_submission(sub_id):
 @admin_bp.route('/submissions/<int:sub_id>/preview', methods=['GET'])
 @jwt_required()
 def preview_submission_by_id(sub_id):
-    """Preview data submission langsung by ID, dengan schema yang benar."""
+    """
+    Preview submission sebagai grid 2D — persis seperti file Excel asli.
+    Membaca semua sel termasuk merged cells dan mengembalikan:
+    - grid: list of rows, setiap row = list of cell objects
+      { value, rowspan, colspan, is_header, bg_color }
+    - num_header_rows: berapa baris yang dianggap header
+    - total_cols: jumlah kolom
+    """
     user, err, code = require_admin()
     if err:
         return err, code
 
     submission = Submission.query.get_or_404(sub_id)
 
-    # ── Preview submission dari form (JSON) ───────────────────────────────────
+    # ── Form submission → konversi ke format grid sederhana ──────────────────
     if submission.source == 'form' and submission.form_data:
         try:
             import json as _json
             form_data = _json.loads(submission.form_data)
+            rows_data = form_data if isinstance(form_data, list) else []
+
             dt = submission.task.data_type if submission.task else None
+
+            # ── Coba baca header langsung dari file template (paling akurat) ─
+            template = None
+            if dt:
+                from models import ExcelTemplate as _ET
+                template = (_ET.query
+                            .filter_by(data_type_id=dt.id)
+                            .order_by(_ET.created_at.desc())
+                            .first())
+
+            grid_rows = []
+
+            if template:
+                # Baca header dari Excel template → hasilkan grid header
+                try:
+                    tmpl_bytes = download_file(TEMPLATES_BUCKET(), template.file_path)
+                    _wb = openpyxl.load_workbook(io.BytesIO(tmpl_bytes), data_only=True)
+                    _ws = _wb.active
+                    _max_col = _ws.max_column or 1
+
+                    # Merge map
+                    _merge_info = {}
+                    _merged_skip = set()
+                    for _mr in _ws.merged_cells.ranges:
+                        _rs = _mr.max_row - _mr.min_row + 1
+                        _cs = _mr.max_col - _mr.min_col + 1
+                        _merge_info[(_mr.min_row, _mr.min_col)] = {'rowspan': _rs, 'colspan': _cs}
+                        for _r in range(_mr.min_row, _mr.max_row + 1):
+                            for _c in range(_mr.min_col, _mr.max_col + 1):
+                                if (_r, _c) != (_mr.min_row, _mr.min_col):
+                                    _merged_skip.add((_r, _c))
+
+                    # Jumlah baris header
+                    _num_header_rows = 1
+                    for _mr in _ws.merged_cells.ranges:
+                        if _mr.min_row == 1 and _mr.max_row > _num_header_rows:
+                            _num_header_rows = _mr.max_row
+                        if _num_header_rows >= 5:
+                            break
+
+                    HEADER_COLORS = ['#1e3a5f', '#2563eb', '#3b82f6', '#60a5fa']
+
+                    def _cv(r, c):
+                        v = _ws.cell(r, c).value
+                        if v is None: return ''
+                        if hasattr(v, 'isoformat'): return v.isoformat()
+                        return str(v).strip()
+
+                    for _r in range(1, _num_header_rows + 1):
+                        _row_cells = []
+                        for _c in range(1, _max_col + 1):
+                            if (_r, _c) in _merged_skip:
+                                continue
+                            _mi = _merge_info.get((_r, _c), {'rowspan': 1, 'colspan': 1})
+                            _cidx = min(_r - 1, len(HEADER_COLORS) - 1)
+                            if _mi['rowspan'] >= _num_header_rows and _num_header_rows > 1:
+                                _cidx = 0
+                            _row_cells.append({
+                                'value': _cv(_r, _c),
+                                'rowspan': _mi['rowspan'],
+                                'colspan': _mi['colspan'],
+                                'is_header': True,
+                                'bg': HEADER_COLORS[_cidx],
+                            })
+                        grid_rows.append(_row_cells)
+
+                    _wb.close()
+
+                    # Deteksi first_col dari template
+                    _has_first_col = False
+                    if _num_header_rows > 1:
+                        _mi1 = _merge_info.get((1, 1))
+                        if _mi1 and _mi1['rowspan'] >= _num_header_rows:
+                            _has_first_col = True
+                    else:
+                        # Single header: cek baris data kolom 1
+                        _data_start = _num_header_rows + 1
+                        _fc_vals = [str(_ws.cell(_r2, 1).value or '').strip()
+                                    for _r2 in range(_data_start, min(_data_start+5, _ws.max_row+1))
+                                    if _ws.cell(_r2, 1).value]
+                        _has_first_col = bool(_fc_vals)
+
+                    # Baris data — pakai key __col_0, __col_1, ... atau nama field
+                    _num_data_cols = _max_col - (1 if _has_first_col else 0)
+                    for row_obj in rows_data:
+                        _row_cells = []
+                        if _has_first_col:
+                            _row_cells.append({
+                                'value': str(row_obj.get('__row_label', '') or ''),
+                                'rowspan': 1, 'colspan': 1,
+                                'is_header': False, 'is_first_col': True
+                            })
+                        for _i in range(_num_data_cols):
+                            # Coba key posisi dulu, lalu fallback ke key lama
+                            _v = row_obj.get(f'__col_{_i}',
+                                 row_obj.get(f'col_{_i}', ''))
+                            _row_cells.append({
+                                'value': '' if _v is None else str(_v),
+                                'rowspan': 1, 'colspan': 1,
+                                'is_header': False
+                            })
+                        grid_rows.append(_row_cells)
+
+                    return jsonify({
+                        'grid': grid_rows,
+                        'num_header_rows': _num_header_rows,
+                        'total_cols': _max_col,
+                        'source': 'form'
+                    }), 200
+
+                except Exception:
+                    pass  # fallback ke schema di bawah
+
+            # ── Fallback: gunakan fields_schema ───────────────────────────────
             schema_raw = dt.get_fields_schema() if dt else {}
             from utils.excel import normalize_schema, get_leaf_columns
             schema    = normalize_schema(schema_raw)
             first_col = schema.get('first_column', {})
             has_first = first_col.get('enabled', False)
             leaf_cols = get_leaf_columns(schema)
+            levels    = schema.get('header_levels', [[]])
+            num_levels = len(levels)
 
-            # Bangun headers: [fc_label, col1, col2, ...]
-            headers = []
-            if has_first:
-                headers.append(first_col.get('label', 'Baris'))
-            headers += [f.get('label', f.get('name', f'Kol')) for f in leaf_cols]
+            # Bangun header rows sebagai grid
+            for li, level in enumerate(levels):
+                is_last = (li == num_levels - 1)
+                row_cells = []
+                if has_first and li == 0:
+                    row_cells.append({
+                        'value': first_col.get('label', 'Baris'),
+                        'rowspan': num_levels, 'colspan': 1,
+                        'is_header': True, 'level': 0
+                    })
+                if not is_last:
+                    for grp in level:
+                        row_cells.append({
+                            'value': grp.get('label', ''),
+                            'rowspan': 1, 'colspan': grp.get('span', 1),
+                            'is_header': True, 'level': li
+                        })
+                else:
+                    for f in level:
+                        row_cells.append({
+                            'value': f.get('label', f.get('name', '')),
+                            'rowspan': 1, 'colspan': 1,
+                            'is_header': True, 'level': li
+                        })
+                grid_rows.append(row_cells)
 
-            # Bangun group_headers untuk tampilan multi-level
-            levels = schema.get('header_levels', [[]])
-            group_levels = []
-            if len(levels) > 1:
-                for li in range(len(levels) - 1):
-                    group_levels.append(levels[li])
-
-            rows_out = []
-            for row_obj in (form_data if isinstance(form_data, list) else []):
-                row = {}
+            # Baris data — support __col_N, col_N, dan nama field asli
+            num_leaf = len(leaf_cols)
+            for row_obj in rows_data:
+                row_cells = []
                 if has_first:
-                    row[first_col.get('label', 'Baris')] = row_obj.get('__row_label', '')
-                for f in leaf_cols:
+                    row_cells.append({
+                        'value': str(row_obj.get('__row_label', '') or ''),
+                        'rowspan': 1, 'colspan': 1,
+                        'is_header': False, 'is_first_col': True
+                    })
+                for _i, f in enumerate(leaf_cols):
                     fname = f.get('name', '')
-                    row[f.get('label', fname)] = row_obj.get(fname, '')
-                rows_out.append(row)
+                    v = row_obj.get(f'__col_{_i}',
+                        row_obj.get(f'col_{_i}',
+                        row_obj.get(fname, '')))
+                    row_cells.append({
+                        'value': '' if v is None else str(v),
+                        'rowspan': 1, 'colspan': 1,
+                        'is_header': False
+                    })
+                grid_rows.append(row_cells)
 
             return jsonify({
-                'rows': rows_out,
-                'headers': headers,
-                'group_levels': group_levels,
-                'has_first_col': has_first,
-                'first_col_label': first_col.get('label', '') if has_first else '',
-                'total': len(rows_out),
+                'grid': grid_rows,
+                'num_header_rows': num_levels,
+                'total_cols': (1 if has_first else 0) + num_leaf,
                 'source': 'form'
             }), 200
         except Exception as e:
             return jsonify({'error': f'Gagal membaca form data: {str(e)}'}), 400
 
-    # ── Preview submission dari Excel ─────────────────────────────────────────
+    # ── Excel submission → baca file mentah sebagai grid 2D ──────────────────
     if not submission.file_path:
         return jsonify({'error': 'Submission tidak memiliki file'}), 404
 
@@ -622,89 +769,103 @@ def preview_submission_by_id(sub_id):
         return jsonify({'error': 'File tidak ditemukan di storage'}), 404
 
     try:
-        # Gunakan fields_schema dari DataType jika ada, untuk parse yang benar
-        dt = submission.task.data_type if submission.task else None
-        schema_raw = dt.get_fields_schema() if dt else None
+        wb = openpyxl.load_workbook(io.BytesIO(file_bytes), data_only=True)
+        ws = wb.active
 
-        if schema_raw:
-            from utils.excel import normalize_schema, get_leaf_columns, read_excel_data
-            schema    = normalize_schema(schema_raw)
-            first_col = schema.get('first_column', {})
-            has_first = first_col.get('enabled', False)
-            leaf_cols = get_leaf_columns(schema)
-            levels    = schema.get('header_levels', [[]])
+        max_row = ws.max_row or 1
+        max_col = ws.max_column or 1
 
-            # Baca data dengan schema
-            raw_rows = read_excel_data(file_bytes, schema_raw)
+        # ── Bangun merge map ──────────────────────────────────────────────────
+        # merge_info[(r,c)] = {'rowspan': N, 'colspan': M}  hanya untuk top-left
+        # merged_skip = set of (r,c) yang bukan top-left (harus di-skip saat render)
+        merge_info = {}
+        merged_skip = set()
+        for mr in ws.merged_cells.ranges:
+            rs = mr.max_row - mr.min_row + 1
+            cs = mr.max_col - mr.min_col + 1
+            merge_info[(mr.min_row, mr.min_col)] = {'rowspan': rs, 'colspan': cs}
+            for r in range(mr.min_row, mr.max_row + 1):
+                for c in range(mr.min_col, mr.max_col + 1):
+                    if (r, c) != (mr.min_row, mr.min_col):
+                        merged_skip.add((r, c))
 
-            # Konversi ke format dengan label kolom (bukan nama field)
-            fc_key = None
-            if has_first:
-                from utils.excel import _to_field_name
-                fc_key = _to_field_name(first_col.get('label', 'kolom_1'))
+        # ── Deteksi baris header ──────────────────────────────────────────────
+        # Hitung baris header: lihat berapa baris dari atas yang punya background gelap
+        # atau mengandung merge vertikal
+        num_header_rows = 1
+        for mr in ws.merged_cells.ranges:
+            if mr.min_row == 1 and mr.max_row > num_header_rows:
+                num_header_rows = mr.max_row
+            if num_header_rows >= 5:
+                break
 
-            headers = []
-            if has_first:
-                headers.append(first_col.get('label', 'Baris'))
-            headers += [f.get('label', f.get('name', '')) for f in leaf_cols]
+        # ── Deteksi warna background dari sel header baris 1 ─────────────────
+        # Pakai warna dari sel (1,1) sebagai referensi header color
+        header_fill = None
+        try:
+            cell_00 = ws.cell(1, 1)
+            if cell_00.fill and cell_00.fill.fgColor and cell_00.fill.fgColor.type == 'rgb':
+                header_fill = '#' + cell_00.fill.fgColor.rgb[2:]  # strip alpha
+        except Exception:
+            pass
 
-            rows_out = []
-            for rd in raw_rows:
-                row = {}
-                if has_first and fc_key:
-                    row[first_col.get('label', 'Baris')] = rd.get(fc_key, '')
-                for f in leaf_cols:
-                    fname = f.get('name', '')
-                    flabel = f.get('label', fname)
-                    val = rd.get(fname, '')
-                    row[flabel] = '' if val is None else (val.isoformat() if hasattr(val, 'isoformat') else val)
-                rows_out.append(row)
+        # ── Build grid ────────────────────────────────────────────────────────
+        HEADER_COLORS = ['#1e3a5f', '#2563eb', '#3b82f6', '#60a5fa']
+        grid_rows = []
 
-            # Group levels untuk header multi-level
-            group_levels = []
-            if len(levels) > 1:
-                for li in range(len(levels) - 1):
-                    group_levels.append(levels[li])
+        for r in range(1, max_row + 1):
+            row_cells = []
+            for c in range(1, max_col + 1):
+                if (r, c) in merged_skip:
+                    continue  # skip non-top-left cells
 
-            return jsonify({
-                'rows': rows_out,
-                'headers': headers,
-                'group_levels': group_levels,
-                'has_first_col': has_first,
-                'first_col_label': first_col.get('label', '') if has_first else '',
-                'total': len(rows_out),
-                'source': 'excel'
-            }), 200
+                cell = ws.cell(r, c)
+                val  = cell.value
 
-        else:
-            # Fallback: baca sebagai plain Excel tanpa schema
-            wb = openpyxl.load_workbook(io.BytesIO(file_bytes), data_only=True)
-            ws = wb.active
-            rows_out = []
-            headers_list = None
-            for row in ws.iter_rows(values_only=True):
-                if all(v is None for v in row):
+                # Nilai
+                if val is None:
+                    str_val = ''
+                elif hasattr(val, 'isoformat'):
+                    str_val = val.isoformat()
+                else:
+                    str_val = str(val).strip()
+
+                # Merge info
+                mi = merge_info.get((r, c), {'rowspan': 1, 'colspan': 1})
+
+                # Warna background
+                bg = None
+                is_header = (r <= num_header_rows)
+                if is_header:
+                    level_idx = min(r - 1, len(HEADER_COLORS) - 1)
+                    bg = HEADER_COLORS[level_idx]
+                    # Cek apakah sel ini full-rowspan (first column)
+                    if mi['rowspan'] >= num_header_rows and num_header_rows > 1:
+                        bg = HEADER_COLORS[0]
+
+                row_cells.append({
+                    'value': str_val,
+                    'rowspan': mi['rowspan'],
+                    'colspan': mi['colspan'],
+                    'is_header': is_header,
+                    'bg': bg,
+                })
+
+            # Skip baris yang semua kosong (kecuali dalam area header)
+            if r > num_header_rows:
+                if all(c['value'] == '' for c in row_cells):
                     continue
-                if headers_list is None:
-                    headers_list = [str(h).strip() if h is not None else f'Kolom_{i+1}'
-                                    for i, h in enumerate(row)]
-                    continue
-                rd = {}
-                for i, val in enumerate(row):
-                    if i < len(headers_list):
-                        rd[headers_list[i]] = '' if val is None else (val.isoformat() if hasattr(val, 'isoformat') else val)
-                if any(v != '' for v in rd.values()):
-                    rows_out.append(rd)
-            wb.close()
-            return jsonify({
-                'rows': rows_out,
-                'headers': headers_list or [],
-                'group_levels': [],
-                'has_first_col': False,
-                'first_col_label': '',
-                'total': len(rows_out),
-                'source': 'excel'
-            }), 200
+
+            grid_rows.append(row_cells)
+
+        wb.close()
+        return jsonify({
+            'grid': grid_rows,
+            'num_header_rows': num_header_rows,
+            'total_cols': max_col,
+            'source': 'excel'
+        }), 200
+
     except Exception as e:
         return jsonify({'error': f'Gagal membaca file: {str(e)}'}), 400
 
@@ -764,16 +925,35 @@ def download_submission(sub_id):
     # ── Jika submission dari form, konversi form_data ke Excel ────────────────
     if submission.source == 'form' and submission.form_data:
         try:
-            from utils.excel import normalize_schema, _build_excel
             import json as _json
 
             form_data = _json.loads(submission.form_data)
             dt = submission.task.data_type if submission.task else None
-            schema_raw = dt.get_fields_schema() if dt else {}
-            schema = normalize_schema(schema_raw)
 
-            # Bangun Excel dari form_data
-            file_bytes = _form_data_to_excel(form_data, schema, dt.name if dt else 'Data')
+            # Coba pakai template Excel langsung sebagai struktur header
+            template = None
+            if dt:
+                from models import ExcelTemplate as _ET2
+                template = (_ET2.query
+                            .filter_by(data_type_id=dt.id)
+                            .order_by(_ET2.created_at.desc())
+                            .first())
+
+            if template:
+                try:
+                    tmpl_bytes = download_file(TEMPLATES_BUCKET(), template.file_path)
+                    file_bytes = _form_data_to_excel_from_template(form_data, tmpl_bytes, dt.name if dt else 'Data')
+                except Exception:
+                    schema_raw = dt.get_fields_schema() if dt else {}
+                    from utils.excel import normalize_schema as _ns
+                    schema = _ns(schema_raw)
+                    file_bytes = _form_data_to_excel(form_data, schema, dt.name if dt else 'Data')
+            else:
+                schema_raw = dt.get_fields_schema() if dt else {}
+                from utils.excel import normalize_schema as _ns
+                schema = _ns(schema_raw)
+                file_bytes = _form_data_to_excel(form_data, schema, dt.name if dt else 'Data')
+
             fname = f"submission_{sub_id}_{(dt.name if dt else 'data').replace(' ','_')}.xlsx"
             return send_file(
                 io.BytesIO(file_bytes),
@@ -891,8 +1071,92 @@ def _form_data_to_excel(form_data: dict, schema: dict, sheet_name: str) -> bytes
         for ci, field in enumerate(leaf_cols):
             fname = field.get('name', '')
             cell = ws.cell(row=row, column=col_offset+ci)
-            cell.value = row_data.get(fname, '')
+            # Support key __col_N (format baru), col_N (format lama), dan nama field
+            cell.value = row_data.get(f'__col_{ci}',
+                         row_data.get(f'col_{ci}',
+                         row_data.get(fname, '')))
             cell.border = thin; cell.alignment = valign
+
+    output = _io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+    return output.read()
+
+
+def _form_data_to_excel_from_template(form_data: list, tmpl_bytes: bytes, sheet_name: str) -> bytes:
+    """
+    Buat Excel dengan header persis dari file template,
+    lalu isi baris data dari form_data menggunakan key __col_N / __row_label.
+    """
+    import openpyxl as _xl
+    import io as _io
+    from openpyxl.styles import Border, Side, Alignment, Font, PatternFill
+
+    thin = Border(left=Side(style='thin'), right=Side(style='thin'),
+                  top=Side(style='thin'), bottom=Side(style='thin'))
+    valign = Alignment(vertical='center')
+    fc_fill = PatternFill(start_color='FFF9C4', end_color='FFF9C4', fill_type='solid')
+    fc_font = Font(bold=True, size=10)
+
+    # Baca template sebagai base
+    tmpl_wb = _xl.load_workbook(_io.BytesIO(tmpl_bytes), data_only=True)
+    tmpl_ws = tmpl_wb.active
+    max_col = tmpl_ws.max_column or 1
+
+    # Hitung jumlah baris header (dari merge vertikal)
+    num_header_rows = 1
+    for mr in tmpl_ws.merged_cells.ranges:
+        if mr.min_row == 1 and mr.max_row > num_header_rows:
+            num_header_rows = mr.max_row
+        if num_header_rows >= 5:
+            break
+
+    # Deteksi first_col
+    _merge_map = {}
+    for mr in tmpl_ws.merged_cells.ranges:
+        _merge_map[(mr.min_row, mr.min_col)] = (mr.max_row, mr.max_col)
+    has_first_col = False
+    if num_header_rows > 1:
+        mi = _merge_map.get((1, 1))
+        if mi and mi[0] >= num_header_rows:
+            has_first_col = True
+    else:
+        _dstart = num_header_rows + 1
+        _fc_sample = [tmpl_ws.cell(_r, 1).value for _r in range(_dstart, min(_dstart+5, tmpl_ws.max_row+1))]
+        has_first_col = any(v for v in _fc_sample)
+
+    num_data_cols = max_col - (1 if has_first_col else 0)
+    col_start = 2 if has_first_col else 1
+    data_start = num_header_rows + 1
+    tmpl_wb.close()
+
+    # Buat workbook baru — copy header dari template
+    wb = _xl.load_workbook(_io.BytesIO(tmpl_bytes))
+    ws = wb.active
+    ws.title = sheet_name[:31]
+
+    # Hapus baris data template (baris data_start ke bawah)
+    for r in range(ws.max_row, data_start - 1, -1):
+        ws.delete_rows(r)
+
+    # Tulis baris data dari form_data
+    rows_data = form_data if isinstance(form_data, list) else []
+    for ri, row_data in enumerate(rows_data):
+        row = data_start + ri
+        if has_first_col:
+            cell = ws.cell(row=row, column=1)
+            cell.value = row_data.get('__row_label', '')
+            cell.border = thin
+            cell.alignment = valign
+            cell.fill = fc_fill
+            cell.font = fc_font
+        for ci in range(num_data_cols):
+            v = row_data.get(f'__col_{ci}',
+                row_data.get(f'col_{ci}', ''))
+            cell = ws.cell(row=row, column=col_start + ci)
+            cell.value = v
+            cell.border = thin
+            cell.alignment = valign
 
     output = _io.BytesIO()
     wb.save(output)

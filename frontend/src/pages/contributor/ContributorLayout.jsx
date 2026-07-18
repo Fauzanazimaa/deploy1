@@ -164,6 +164,13 @@ export default function ContributorLayout() {
               </div>
             </div>
           ) : null}
+          <NavLink to="/"
+            title={!sidebarOpen ? 'Dashboard Publik' : undefined}
+            style={{ display: 'flex', alignItems: 'center', gap: 10, padding: sidebarOpen ? '7px 8px' : '7px 0', justifyContent: sidebarOpen ? 'flex-start' : 'center', borderRadius: 8, textDecoration: 'none', color: 'rgba(255,255,255,0.4)', fontSize: 12, marginBottom: 6 }}
+          >
+            <i className="bi bi-globe" style={{ fontSize: 14, flexShrink: 0 }}></i>
+            {sidebarOpen && <span style={{ whiteSpace: 'nowrap' }}>Dashboard Publik</span>}
+          </NavLink>
           <button
             onClick={handleLogout}
             title="Logout"

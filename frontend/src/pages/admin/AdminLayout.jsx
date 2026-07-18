@@ -16,8 +16,12 @@ const navGroups = [
       { to: '/admin/data-schema', icon: 'bi-grid-3x3-gap-fill', label: 'Jenis Data & Template' },
       { to: '/admin/tasks', icon: 'bi-clipboard2-check-fill', label: 'Tugas' },
       { to: '/admin/submissions', icon: 'bi-inbox-fill', label: 'Verifikasi Data' },
-      { to: '/admin/manual-entries', icon: 'bi-pencil-square', label: 'Entri Manual' },
-      { to: '/admin/penduduk', icon: 'bi-bar-chart-line-fill', label: 'Data Penduduk' },
+    ],
+  },
+  {
+    label: 'PUBLIKASI',
+    items: [
+      { to: '/admin/public-dashboard', icon: 'bi-layout-text-window-reverse', label: 'Dashboard Publik' },
     ],
   },
 ]
@@ -43,8 +47,7 @@ export default function AdminLayout() {
     '/admin/data-schema': 'Jenis Data & Template',
     '/admin/tasks': 'Tugas',
     '/admin/submissions': 'Verifikasi Data',
-    '/admin/manual-entries': 'Entri Manual',
-    '/admin/penduduk': 'Data Penduduk',
+    '/admin/public-dashboard': 'Dashboard Publik',
   }
   const currentLabel = pathLabel[location.pathname] || 'Dashboard'
 
@@ -155,17 +158,9 @@ export default function AdminLayout() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
               <div
                 style={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: '50%',
-                  background: ACCENT,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                  fontWeight: 700,
-                  color: '#fff',
-                  fontSize: 14,
+                  width: 34, height: 34, borderRadius: '50%', background: ACCENT,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0, fontWeight: 700, color: '#fff', fontSize: 14,
                 }}
               >
                 {user?.username?.[0]?.toUpperCase() || 'A'}
@@ -178,6 +173,14 @@ export default function AdminLayout() {
               </div>
             </div>
           ) : null}
+          {/* Link ke dashboard publik */}
+          <NavLink to="/"
+            style={{ display: 'flex', alignItems: 'center', gap: 10, padding: sidebarOpen ? '7px 8px' : '7px 0', justifyContent: sidebarOpen ? 'flex-start' : 'center', borderRadius: 8, textDecoration: 'none', color: 'rgba(255,255,255,0.4)', fontSize: 12, marginBottom: 6 }}
+            title={!sidebarOpen ? 'Dashboard Publik' : undefined}
+          >
+            <i className="bi bi-globe" style={{ fontSize: 14, flexShrink: 0 }}></i>
+            {sidebarOpen && <span style={{ whiteSpace: 'nowrap' }}>Dashboard Publik</span>}
+          </NavLink>
           <button
             onClick={handleLogout}
             title="Logout"

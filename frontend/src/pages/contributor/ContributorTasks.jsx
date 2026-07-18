@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { getMyTasks, downloadTemplate, submitTask } from '../../api'
+import DirectInputGrid from '../../components/DirectInputGrid'
 
 const ACCENT = '#f5a623'
 
@@ -29,6 +30,7 @@ function TaskCard({ task, onUpload }) {
   const [uploading, setUploading] = useState(false)
   const [selectedFile, setSelectedFile] = useState(null)
   const [showUpload, setShowUpload] = useState(false)
+  const [showDirectInput, setShowDirectInput] = useState(false)
 
   const handleDownloadTemplate = async () => {
     try {
@@ -65,6 +67,10 @@ function TaskCard({ task, onUpload }) {
   }
 
   const canUpload = task.status === 'pending' || task.status === 'revision'
+
+  // Tutup panel lain saat membuka satu
+  const openUpload = () => { setShowDirectInput(false); setShowUpload(v => !v) }
+  const openDirectInput = () => { setShowUpload(false); setShowDirectInput(v => !v) }
 
   return (
     <div
@@ -120,13 +126,38 @@ function TaskCard({ task, onUpload }) {
               <i className="bi bi-download"></i>Unduh Template
             </button>
             {canUpload && (
-              <button
-                onClick={() => setShowUpload(v => !v)}
-                style={{ background: ACCENT, border: 'none', color: '#fff', borderRadius: 8, padding: '7px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontFamily: "'Inter', sans-serif" }}
-              >
-                <i className="bi bi-upload"></i>
-                {task.status === 'revision' ? 'Upload Ulang' : 'Upload Data'}
-              </button>
+              <>
+                {/* Tombol Input Langsung */}
+                <button
+                  onClick={openDirectInput}
+                  style={{
+                    background: showDirectInput ? '#eff6ff' : '#fff',
+                    border: `1px solid ${showDirectInput ? '#3b82f6' : '#e5e7eb'}`,
+                    color: showDirectInput ? '#3b82f6' : '#374151',
+                    borderRadius: 8, padding: '7px 14px', fontSize: 12, fontWeight: 600,
+                    cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
+                    fontFamily: "'Inter', sans-serif",
+                  }}
+                >
+                  <i className="bi bi-table"></i>
+                  {showDirectInput ? 'Tutup Input' : 'Input Langsung'}
+                </button>
+                {/* Tombol Upload File */}
+                <button
+                  onClick={openUpload}
+                  style={{
+                    background: showUpload ? `${ACCENT}15` : ACCENT,
+                    border: `1px solid ${showUpload ? ACCENT : 'transparent'}`,
+                    color: showUpload ? ACCENT : '#fff',
+                    borderRadius: 8, padding: '7px 14px', fontSize: 12, fontWeight: 600,
+                    cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
+                    fontFamily: "'Inter', sans-serif",
+                  }}
+                >
+                  <i className="bi bi-upload"></i>
+                  {task.status === 'revision' ? 'Upload Ulang' : 'Upload File'}
+                </button>
+              </>
             )}
             {task.status === 'approved' && (
               <button disabled style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#16a34a', borderRadius: 8, padding: '7px 14px', fontSize: 12, fontWeight: 600, cursor: 'not-allowed', display: 'flex', alignItems: 'center', gap: 6, fontFamily: "'Inter', sans-serif" }}>
@@ -136,7 +167,25 @@ function TaskCard({ task, onUpload }) {
           </div>
         </div>
 
-        {/* Upload form */}
+        {/* Direct Input Grid */}
+        {showDirectInput && canUpload && (
+          <div style={{ marginTop: 16, padding: '16px', borderRadius: 10, background: '#f8fafc', border: '1.5px solid #bfdbfe' }}>
+            <div style={{ fontWeight: 700, fontSize: 13, color: '#1e40af', marginBottom: 2, display: 'flex', alignItems: 'center', gap: 7 }}>
+              <i className="bi bi-table"></i>
+              Input Data Langsung{task.status === 'revision' ? ' (Revisi)' : ''}
+            </div>
+            <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 10 }}>
+              Isi data langsung di tabel. Sel <span style={{ background: '#fef9c3', border: '1px solid #fde68a', borderRadius: 4, padding: '1px 6px', color: '#92400e', fontWeight: 600 }}>kuning</span> dan <span style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 4, padding: '1px 6px', color: '#9ca3af' }}>abu-abu</span> terkunci (terisi dari template). Hanya sel putih yang dapat diisi.
+            </div>
+            <DirectInputGrid
+              taskId={task.id}
+              onSubmitted={() => { setShowDirectInput(false); onUpload() }}
+              onCancel={() => setShowDirectInput(false)}
+            />
+          </div>
+        )}
+
+        {/* Upload file form */}
         {showUpload && canUpload && (
           <div style={{ marginTop: 16, padding: '14px 16px', borderRadius: 8, background: '#f8fafc', border: '1px dashed #cbd5e1' }}>
             <div style={{ fontWeight: 600, fontSize: 12, color: '#374151', marginBottom: 10 }}>

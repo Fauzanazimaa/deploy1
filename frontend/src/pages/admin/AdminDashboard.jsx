@@ -165,7 +165,7 @@ export default function AdminDashboard() {
           <StatCard icon="bi-inbox-fill" label="Menunggu Verifikasi" value={stats?.pending_verifications} color={ACCENT} to="/admin/submissions" />
         </div>
         <div className="col-6 col-md-3">
-          <StatCard icon="bi-pencil-square" label="Entri Manual" value={stats?.total_manual_entries} color="#10b981" to="/admin/manual-entries" />
+          <StatCard icon="bi-pencil-square" label="Entri Manual" value={stats?.total_manual_entries} color="#10b981" />
         </div>
       </div>
 

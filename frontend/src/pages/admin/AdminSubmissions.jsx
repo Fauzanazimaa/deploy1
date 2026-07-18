@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { getSubmissions, approveSubmission, revisionSubmission, downloadSubmission } from '../../api'
-import api from '../../api'
+import { getSubmissions, approveSubmission, revisionSubmission, downloadSubmission, previewSubmission } from '../../api'
 
 const STATUS_LABEL = {
   pending:  { label: 'Menunggu',  colorHex: '#f5a623', bg: '#fff7ed', border: '#fed7aa' },
@@ -9,36 +8,94 @@ const STATUS_LABEL = {
 }
 const ACCENT = '#f5a623'
 
-function PreviewTable({ rows, loading, error }) {
+/**
+ * GridPreview — render grid 2D persis seperti Excel asli
+ * props: grid (array of rows, each row = array of cell objects)
+ *   cell: { value, rowspan, colspan, is_header, bg }
+ */
+function PreviewTable({ grid, loading, error }) {
   if (loading) return (
-    <div style={{ textAlign: 'center', padding: '24px 0' }}>
-      <div style={{ width: 28, height: 28, border: `3px solid ${ACCENT}30`, borderTopColor: ACCENT, borderRadius: '50%', animation: 'spin 0.7s linear infinite', display: 'inline-block' }} />
+    <div style={{ textAlign: 'center', padding: '32px 0' }}>
+      <div style={{ width: 30, height: 30, border: `3px solid ${ACCENT}30`, borderTopColor: ACCENT, borderRadius: '50%', animation: 'spin .7s linear infinite', display: 'inline-block' }} />
+      <div style={{ color: '#9ca3af', fontSize: 13, marginTop: 8 }}>Memuat data...</div>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   )
   if (error) return (
-    <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '10px 14px', color: '#dc2626', fontSize: 13 }}>
+    <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '12px 16px', color: '#dc2626', fontSize: 13 }}>
       <i className="bi bi-exclamation-triangle me-2"></i>{error}
     </div>
   )
-  if (!rows || rows.length === 0) return (
-    <p style={{ textAlign: 'center', color: '#9ca3af', fontSize: 13, padding: '24px 0' }}>Tidak ada data dalam file.</p>
+  if (!grid || grid.length === 0) return (
+    <p style={{ textAlign: 'center', color: '#9ca3af', fontSize: 13, padding: '24px 0' }}>Tidak ada data.</p>
   )
-  const headers = Object.keys(rows[0])
+
   return (
-    <div style={{ overflowX: 'auto', border: '1px solid #e5e7eb', borderRadius: 8, maxHeight: 380, overflowY: 'auto' }}>
-      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
-        <thead style={{ position: 'sticky', top: 0, background: '#1a1f2e', zIndex: 1 }}>
-          <tr>
-            <th style={{ padding: '8px 12px', color: '#fff', fontWeight: 600, textAlign: 'center', width: 36 }}>#</th>
-            {headers.map((h, i) => <th key={i} style={{ padding: '8px 12px', color: '#fff', fontWeight: 600, whiteSpace: 'nowrap', textAlign: 'left' }}>{h}</th>)}
-          </tr>
-        </thead>
+    <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: 460, border: '1px solid #e5e7eb', borderRadius: 8 }}>
+      <table style={{ borderCollapse: 'collapse', fontSize: 12, minWidth: '100%', tableLayout: 'auto' }}>
         <tbody>
-          {rows.map((row, ri) => (
-            <tr key={ri} style={{ borderBottom: '1px solid #f0f0f0', background: ri % 2 === 0 ? '#fff' : '#fafafa' }}>
-              <td style={{ padding: '7px 12px', textAlign: 'center', color: '#9ca3af' }}>{ri + 1}</td>
-              {headers.map((h, ci) => <td key={ci} style={{ padding: '7px 12px' }}>{row[h] !== null && row[h] !== undefined ? String(row[h]) : ''}</td>)}
+          {grid.map((row, ri) => (
+            <tr key={ri}>
+              {/* Nomor baris (hanya untuk data rows) */}
+              {ri === 0 && (
+                <td
+                  rowSpan={grid.length}
+                  style={{
+                    padding: '0',
+                    width: 28,
+                    minWidth: 28,
+                    background: '#1a1f2e',
+                    verticalAlign: 'top',
+                  }}
+                >
+                  {grid.map((_, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        height: 32,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'rgba(255,255,255,0.4)',
+                        fontSize: 10,
+                        borderBottom: '1px solid rgba(255,255,255,0.06)',
+                        fontWeight: 500,
+                      }}
+                    >
+                      {i + 1}
+                    </div>
+                  ))}
+                </td>
+              )}
+              {row.map((cell, ci) => {
+                const isHeader = cell.is_header
+                const bg = cell.bg || (isHeader ? '#1e3a5f' : (ri % 2 === 0 ? '#fff' : '#f9fafb'))
+                const textColor = isHeader ? '#fff' : '#374151'
+
+                return (
+                  <td
+                    key={ci}
+                    rowSpan={cell.rowspan || 1}
+                    colSpan={cell.colspan || 1}
+                    style={{
+                      padding: '6px 10px',
+                      background: bg,
+                      color: textColor,
+                      fontWeight: isHeader ? 600 : 400,
+                      fontSize: isHeader ? 11 : 12,
+                      textAlign: isHeader ? 'center' : 'left',
+                      verticalAlign: 'middle',
+                      border: isHeader ? '1px solid rgba(255,255,255,0.12)' : '1px solid #e5e7eb',
+                      whiteSpace: isHeader ? 'normal' : 'nowrap',
+                      wordBreak: isHeader ? 'break-word' : 'normal',
+                      minWidth: isHeader ? 80 : 70,
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    {cell.value || (isHeader ? '' : <span style={{ color: '#d1d5db' }}>—</span>)}
+                  </td>
+                )
+              })}
             </tr>
           ))}
         </tbody>
@@ -57,7 +114,7 @@ export default function AdminSubmissions() {
   const [saving, setSaving] = useState(false)
   const [detailModal, setDetailModal] = useState(null)
   const [previewModal, setPreviewModal] = useState(null)
-  const [previewRows, setPreviewRows] = useState([])
+  const [previewGrid, setPreviewGrid] = useState([])
   const [previewLoading, setPreviewLoading] = useState(false)
   const [previewError, setPreviewError] = useState('')
 
@@ -98,15 +155,18 @@ export default function AdminSubmissions() {
   }
 
   const handlePreview = async (sub) => {
-    setPreviewModal(sub); setPreviewRows([]); setPreviewError(''); setPreviewLoading(true)
+    setPreviewModal(sub)
+    setPreviewGrid([])
+    setPreviewError('')
+    setPreviewLoading(true)
     try {
-      const dlRes = await downloadSubmission(sub.id)
-      const formData = new FormData()
-      formData.append('file', new File([dlRes.data], 'submission.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }))
-      const parseRes = await api.post('/admin/submissions/preview', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
-      setPreviewRows(parseRes.data.rows || [])
-    } catch (err) { setPreviewError(err.response?.data?.error || 'Gagal memuat preview data') }
-    finally { setPreviewLoading(false) }
+      const res = await previewSubmission(sub.id)
+      setPreviewGrid(res.data.grid || [])
+    } catch (err) {
+      setPreviewError(err.response?.data?.error || 'Gagal memuat preview data')
+    } finally {
+      setPreviewLoading(false)
+    }
   }
 
   const filtered = submissions.filter(s => {
@@ -232,13 +292,17 @@ export default function AdminSubmissions() {
                 </div>
                 <div style={{ color: '#6b7280', fontSize: 12, marginTop: 3 }}>
                   {previewModal.contributor_username} &bull; {previewModal.task_title}
-                  {!previewLoading && !previewError && previewRows.length > 0 && <> &bull; <strong>{previewRows.length}</strong> baris</>}
+                  {!previewLoading && !previewError && previewGrid.length > 0 && <> &bull; <strong>{previewGrid.length}</strong> baris data</>}
                 </div>
               </div>
               <button onClick={() => setPreviewModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: 20 }}><i className="bi bi-x"></i></button>
             </div>
             <div style={{ flex: 1, overflow: 'auto', padding: '16px 20px' }}>
-              <PreviewTable rows={previewRows} loading={previewLoading} error={previewError} />
+              <PreviewTable
+                grid={previewGrid}
+                loading={previewLoading}
+                error={previewError}
+              />
             </div>
             <div style={{ borderTop: '1px solid #f0f0f0', padding: '14px 20px', display: 'flex', justifyContent: 'flex-end', gap: 8, flexShrink: 0 }}>
               <button onClick={() => handleDownload(previewModal)} style={{ background: '#f9fafb', border: '1px solid #e5e7eb', color: '#374151', borderRadius: 8, padding: '8px 16px', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontFamily: "'Inter',sans-serif" }}><i className="bi bi-download"></i>Unduh File</button>
@@ -246,8 +310,7 @@ export default function AdminSubmissions() {
               {previewModal.status === 'pending' && <>
                 <button onClick={() => { setPreviewModal(null); setRevisionModal(previewModal); setRevisionNotes('') }} style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', borderRadius: 8, padding: '8px 16px', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontFamily: "'Inter',sans-serif" }}><i className="bi bi-pencil-square"></i>Minta Revisi</button>
                 <button onClick={() => { setPreviewModal(null); handleApprove(previewModal.id) }} disabled={saving} style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#16a34a', borderRadius: 8, padding: '8px 16px', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontFamily: "'Inter',sans-serif" }}><i className="bi bi-check-lg"></i>Setujui</button>
-              </>}
-            </div>
+              </>}            </div>
           </div>
         </div>
       )}

@@ -8,7 +8,6 @@ const navGroups = [
     items: [
       { to: '/viewer', icon: 'bi-speedometer2', label: 'Dashboard', end: true },
       { to: '/viewer/data', icon: 'bi-table', label: 'Lihat Data' },
-      { to: '/viewer/penduduk', icon: 'bi-people-fill', label: 'Data Penduduk' },
     ],
   },
 ]
@@ -30,7 +29,6 @@ export default function ViewerLayout() {
   const pathLabel = {
     '/viewer': 'Dashboard',
     '/viewer/data': 'Lihat Data',
-    '/viewer/penduduk': 'Data Penduduk',
   }
   const currentLabel = pathLabel[location.pathname] || 'Dashboard'
 
@@ -164,6 +162,13 @@ export default function ViewerLayout() {
               </div>
             </div>
           ) : null}
+          <NavLink to="/"
+            title={!sidebarOpen ? 'Dashboard Publik' : undefined}
+            style={{ display: 'flex', alignItems: 'center', gap: 10, padding: sidebarOpen ? '7px 8px' : '7px 0', justifyContent: sidebarOpen ? 'flex-start' : 'center', borderRadius: 8, textDecoration: 'none', color: 'rgba(255,255,255,0.4)', fontSize: 12, marginBottom: 6 }}
+          >
+            <i className="bi bi-globe" style={{ fontSize: 14, flexShrink: 0 }}></i>
+            {sidebarOpen && <span style={{ whiteSpace: 'nowrap' }}>Dashboard Publik</span>}
+          </NavLink>
           <button
             onClick={handleLogout}
             title="Logout"

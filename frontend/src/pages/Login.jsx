@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { login } from '../api'
 import { useAuth } from '../context/AuthContext'
 
@@ -240,6 +240,17 @@ function LoginDropdown({ role, onClose }) {
 
 export default function Login() {
   const [openPanel, setOpenPanel] = useState(null)
+  const { user } = useAuth()
+  const navigate = useNavigate()
+
+  // Jika sudah login, redirect ke dashboard yang sesuai
+  useEffect(() => {
+    if (user) {
+      if (user.role === 'admin') navigate('/admin', { replace: true })
+      else if (user.role === 'contributor') navigate('/contributor', { replace: true })
+      else if (user.role === 'viewer') navigate('/viewer', { replace: true })
+    }
+  }, [user, navigate])
 
   const toggle = (role) => setOpenPanel((prev) => (prev === role ? null : role))
 
@@ -257,22 +268,23 @@ export default function Login() {
       >
         {/* Brand */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div
-            style={{
-              width: 34,
-              height: 34,
-              background: ACCENT,
-              borderRadius: 8,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <i className="bi bi-database-fill-gear" style={{ color: '#fff', fontSize: 17 }}></i>
-          </div>
-          <span style={{ color: '#fff', fontWeight: 700, fontSize: 17, letterSpacing: 0.3 }}>
-            datacollect
-          </span>
+          <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
+            <div
+              style={{
+                width: 34, height: 34, background: ACCENT, borderRadius: 8,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}
+            >
+              <i className="bi bi-database-fill-gear" style={{ color: '#fff', fontSize: 17 }}></i>
+            </div>
+            <span style={{ color: '#fff', fontWeight: 700, fontSize: 17, letterSpacing: 0.3 }}>
+              datacollect
+            </span>
+          </Link>
+          <Link to="/"
+            style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, marginLeft: 8, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 5 }}>
+            <i className="bi bi-arrow-left"></i> Dashboard Publik
+          </Link>
         </div>
 
         {/* Login buttons */}
@@ -367,45 +379,32 @@ export default function Login() {
             <button
               onClick={() => toggle('admin')}
               style={{
-                background: ACCENT,
-                border: 'none',
-                color: '#fff',
-                padding: '11px 28px',
-                borderRadius: 8,
-                fontSize: 13,
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                fontFamily: "'Inter', sans-serif",
-                boxShadow: '0 4px 16px rgba(245,166,35,0.35)',
+                background: ACCENT, border: 'none', color: '#fff', padding: '11px 28px', borderRadius: 8,
+                fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center',
+                gap: 8, fontFamily: "'Inter', sans-serif", boxShadow: '0 4px 16px rgba(245,166,35,0.35)',
               }}
             >
-              <i className="bi bi-shield-lock"></i>
-              Login Admin
+              <i className="bi bi-shield-lock"></i> Login Admin
             </button>
             <button
               onClick={() => toggle('contributor')}
               style={{
-                background: SIDEBAR_BG,
-                border: 'none',
-                color: '#fff',
-                padding: '11px 28px',
-                borderRadius: 8,
-                fontSize: 13,
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                fontFamily: "'Inter', sans-serif",
-                boxShadow: '0 4px 16px rgba(26,31,46,0.2)',
+                background: SIDEBAR_BG, border: 'none', color: '#fff', padding: '11px 28px', borderRadius: 8,
+                fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center',
+                gap: 8, fontFamily: "'Inter', sans-serif", boxShadow: '0 4px 16px rgba(26,31,46,0.2)',
               }}
             >
-              <i className="bi bi-person-badge"></i>
-              Login Kontributor
+              <i className="bi bi-person-badge"></i> Login Kontributor
             </button>
+            <Link to="/"
+              style={{
+                background: '#fff', border: '1.5px solid #e5e7eb', color: '#374151', padding: '11px 28px',
+                borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex',
+                alignItems: 'center', gap: 8, fontFamily: "'Inter', sans-serif", textDecoration: 'none',
+              }}
+            >
+              <i className="bi bi-bar-chart-line-fill" style={{ color: ACCENT }}></i> Dashboard Publik
+            </Link>
           </div>
 
           {/* Feature badges */}

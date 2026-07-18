@@ -30,7 +30,7 @@ export default function AdminTasks() {
   const [error, setError] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
   const [search, setSearch] = useState('')
-  const [deleteConfirm, setDeleteConfirm] = useState(null) // task object
+  const [deleteConfirm, setDeleteConfirm] = useState(null)
   const [deleting, setDeleting] = useState(false)
 
   const fetchAll = async () => {
@@ -97,15 +97,6 @@ export default function AdminTasks() {
     }
   }
 
-  const handleChangeStatus = async (task, status) => {
-    try {
-      await updateTask(task.id, { status })
-      fetchAll()
-    } catch {
-      alert('Gagal mengubah status')
-    }
-  }
-
   const handleDelete = async () => {
     if (!deleteConfirm) return
     setDeleting(true)
@@ -126,6 +117,26 @@ export default function AdminTasks() {
       t.title.toLowerCase().includes(search.toLowerCase()) ||
       (t.assignee_username || '').toLowerCase().includes(search.toLowerCase())
     return matchStatus && matchSearch
+  })
+
+  const thStyle = (width) => ({
+    padding: '10px 16px',
+    textAlign: 'left',
+    fontWeight: 600,
+    color: '#9ca3af',
+    fontSize: 11,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    width: width || 'auto',
+    whiteSpace: 'nowrap',
+  })
+
+  const tdStyle = (extra = {}) => ({
+    padding: '13px 16px',
+    fontSize: 13,
+    color: '#374151',
+    verticalAlign: 'middle',
+    ...extra,
   })
 
   return (
@@ -170,77 +181,89 @@ export default function AdminTasks() {
       </div>
 
       {/* Table */}
-      <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #f0f0f0', overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+      <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #f0f0f0', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
         {loading ? (
           <div style={{ textAlign: 'center', padding: '40px 0' }}>
             <div style={{ width: 36, height: 36, border: `3px solid ${ACCENT}30`, borderTopColor: ACCENT, borderRadius: '50%', animation: 'spin 0.7s linear infinite', display: 'inline-block' }} />
-            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '48px 0', color: '#9ca3af', fontSize: 13 }}>
+            <i className="bi bi-inbox" style={{ fontSize: 32, display: 'block', marginBottom: 10, opacity: 0.35 }}></i>
+            Tidak ada tugas ditemukan
           </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-              <thead>
-                <tr style={{ background: '#fafafa', borderBottom: '1px solid #f0f0f0' }}>
-                  {['#', 'Judul Tugas', 'Jenis Data', 'Kontributor', 'Status', 'Deadline', ''].map((h) => (
-                    <th key={h} style={{ padding: '10px 20px', textAlign: h === '' ? 'right' : 'left', fontWeight: 600, color: '#6b7280', fontSize: 12 }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.length === 0 ? (
-                  <tr><td colSpan={7} style={{ textAlign: 'center', padding: '32px 0', color: '#9ca3af', fontSize: 13 }}>Tidak ada tugas ditemukan</td></tr>
-                ) : (
-                  filtered.map((t, i) => {
-                    const s = STATUS_LABEL[t.status] || { label: t.status, colorHex: '#6b7280', bg: '#f3f4f6', border: '#e5e7eb' }
-                    const isOverdue = t.deadline && new Date(t.deadline) < new Date() && t.status !== 'approved'
-                    return (
-                      <tr key={t.id} style={{ borderBottom: '1px solid #f9f9f9' }} className="table-row-hover">
-                        <td style={{ padding: '11px 20px', color: '#9ca3af', fontSize: 12 }}>{i + 1}</td>
-                        <td style={{ padding: '11px 20px' }}>
-                          <div style={{ fontWeight: 600, color: '#1a1f2e' }}>{t.title}</div>
-                          {t.description && <div style={{ color: '#6b7280', fontSize: 12, marginTop: 2 }}>{t.description.slice(0, 60)}{t.description.length > 60 ? '...' : ''}</div>}
-                        </td>
-                        <td style={{ padding: '11px 20px' }}>
-                          <span style={{ background: '#f3f4f6', border: '1px solid #e5e7eb', color: '#374151', borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 500 }}>{t.data_type_name || '-'}</span>
-                        </td>
-                        <td style={{ padding: '11px 20px', color: '#374151' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <i className="bi bi-person-circle" style={{ color: '#3b82f6' }}></i>
-                            {t.assignee_username}
-                          </div>
-                        </td>
-                        <td style={{ padding: '11px 20px' }}>
-                          <span style={{ background: s.bg, border: `1px solid ${s.border}`, color: s.colorHex, borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 600 }}>{s.label}</span>
-                        </td>
-                        <td style={{ padding: '11px 20px', color: isOverdue ? '#dc2626' : '#6b7280', fontWeight: isOverdue ? 600 : 400, fontSize: 12 }}>
-                          {t.deadline ? <>{isOverdue && <i className="bi bi-exclamation-triangle me-1"></i>}{new Date(t.deadline).toLocaleDateString('id-ID')}</> : <span style={{ color: '#9ca3af' }}>-</span>}
-                        </td>
-                        <td style={{ padding: '11px 20px', textAlign: 'right' }}>
-                          <div className="dropdown">
-                            <button className="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" style={{ fontSize: 12, fontFamily: "'Inter', sans-serif" }}>Aksi</button>
-                            <ul className="dropdown-menu dropdown-menu-end" style={{ fontSize: 13, fontFamily: "'Inter', sans-serif" }}>
-                              <li><button className="dropdown-item" onClick={() => openEdit(t)}><i className="bi bi-pencil me-2 text-primary"></i>Edit</button></li>
-                              <li><hr className="dropdown-divider" /></li>
-                              {Object.entries(STATUS_LABEL).map(([k, v]) => t.status !== k && (
-                                <li key={k}>
-                                  <button className="dropdown-item" onClick={() => handleChangeStatus(t, k)}>
-                                    <span style={{ background: v.bg, border: `1px solid ${v.border}`, color: v.colorHex, borderRadius: 10, padding: '1px 7px', fontSize: 11, fontWeight: 600, marginRight: 8 }}>{v.label}</span>
-                                    Ubah ke {v.label}
-                                  </button>
-                                </li>
-                              ))}
-                              <li><hr className="dropdown-divider" /></li>
-                              <li><button className="dropdown-item text-danger" onClick={() => setDeleteConfirm(t)}><i className="bi bi-trash me-2"></i>Hapus Tugas</button></li>
-                            </ul>
-                          </div>
-                        </td>
-                      </tr>
-                    )
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <thead>
+              <tr style={{ background: '#f8f9fa', borderBottom: '2px solid #f0f0f0' }}>
+                <th style={thStyle('40px')}>#</th>
+                <th style={thStyle()}>Jenis Data</th>
+                <th style={thStyle('150px')}>Kontributor</th>
+                <th style={thStyle('110px')}>Status</th>
+                <th style={thStyle('110px')}>Deadline</th>
+                <th style={{ ...thStyle('90px'), textAlign: 'center' }}>Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((t, i) => {
+                const s = STATUS_LABEL[t.status] || { label: t.status, colorHex: '#6b7280', bg: '#f3f4f6', border: '#e5e7eb' }
+                const isOverdue = t.deadline && new Date(t.deadline) < new Date() && t.status !== 'approved'
+                return (
+                  <tr key={t.id} className="task-row" style={{ borderBottom: '1px solid #f3f4f6' }}>
+                    <td style={tdStyle({ color: '#d1d5db', fontWeight: 600, fontSize: 11 })}>{i + 1}</td>
+                    <td style={tdStyle()}>
+                      <div style={{ fontWeight: 600, color: '#1a1f2e' }}>{t.data_type_name || '—'}</div>
+                      {t.description && (
+                        <div style={{ color: '#9ca3af', fontSize: 11, marginTop: 2 }}>{t.description.slice(0, 80)}{t.description.length > 80 ? '…' : ''}</div>
+                      )}
+                    </td>
+                    <td style={tdStyle()}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <i className="bi bi-person-fill" style={{ color: '#3b82f6', fontSize: 11 }}></i>
+                        </div>
+                        <span style={{ color: '#374151', fontSize: 12 }}>{t.assignee_username}</span>
+                      </div>
+                    </td>
+                    <td style={tdStyle()}>
+                      <span style={{ background: s.bg, border: `1px solid ${s.border}`, color: s.colorHex, borderRadius: 20, padding: '3px 11px', fontSize: 11, fontWeight: 600 }}>{s.label}</span>
+                    </td>
+                    <td style={tdStyle()}>
+                      {t.deadline ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: isOverdue ? '#dc2626' : '#6b7280', fontWeight: isOverdue ? 600 : 400, fontSize: 12 }}>
+                          {isOverdue && <i className="bi bi-exclamation-circle-fill" style={{ fontSize: 12 }}></i>}
+                          {new Date(t.deadline).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        </div>
+                      ) : (
+                        <span style={{ color: '#d1d5db' }}>—</span>
+                      )}
+                    </td>
+                    <td style={{ ...tdStyle(), textAlign: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                        <button
+                          onClick={() => openEdit(t)}
+                          title="Edit tugas"
+                          style={{ width: 30, height: 30, border: '1px solid #bfdbfe', background: '#eff6ff', borderRadius: 7, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+                          onMouseEnter={e => { e.currentTarget.style.background = '#dbeafe'; e.currentTarget.style.borderColor = '#93c5fd' }}
+                          onMouseLeave={e => { e.currentTarget.style.background = '#eff6ff'; e.currentTarget.style.borderColor = '#bfdbfe' }}
+                        >
+                          <i className="bi bi-pencil" style={{ color: '#3b82f6', fontSize: 12 }}></i>
+                        </button>
+                        <button
+                          onClick={() => setDeleteConfirm(t)}
+                          title="Hapus tugas"
+                          style={{ width: 30, height: 30, border: '1px solid #fecaca', background: '#fef2f2', borderRadius: 7, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+                          onMouseEnter={e => { e.currentTarget.style.background = '#fee2e2'; e.currentTarget.style.borderColor = '#fca5a5' }}
+                          onMouseLeave={e => { e.currentTarget.style.background = '#fef2f2'; e.currentTarget.style.borderColor = '#fecaca' }}
+                        >
+                          <i className="bi bi-trash" style={{ color: '#dc2626', fontSize: 12 }}></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
         )}
       </div>
 
@@ -326,7 +349,12 @@ export default function AdminTasks() {
           </div>
         </div>
       )}
-      <style>{`.table-row-hover:hover { background: #fafafa; }`}</style>
+      <style>{`
+        .task-row:hover { background: #fafbff; }
+        .task-row:hover .row-actions { opacity: 1; }
+        .row-actions { opacity: 0; transition: opacity 0.15s; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
     </div>
   )
 }

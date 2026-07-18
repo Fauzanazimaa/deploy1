@@ -2,6 +2,8 @@ import React from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
+
+import PublicDashboard from './pages/PublicDashboard'
 import Login from './pages/Login'
 
 import AdminLayout from './pages/admin/AdminLayout'
@@ -10,8 +12,7 @@ import AdminUsers from './pages/admin/AdminUsers'
 import AdminDataSchema from './pages/admin/AdminDataSchema'
 import AdminTasks from './pages/admin/AdminTasks'
 import AdminSubmissions from './pages/admin/AdminSubmissions'
-import AdminManualEntries from './pages/admin/AdminManualEntries'
-import AdminPenduduk from './pages/admin/AdminPenduduk'
+import AdminPublicDashboard from './pages/admin/AdminPublicDashboard'
 
 import ContributorLayout from './pages/contributor/ContributorLayout'
 import ContributorDashboard from './pages/contributor/ContributorDashboard'
@@ -21,14 +22,14 @@ import ContributorSubmissions from './pages/contributor/ContributorSubmissions'
 import ViewerLayout from './pages/viewer/ViewerLayout'
 import ViewerDashboard from './pages/viewer/ViewerDashboard'
 import ViewerData from './pages/viewer/ViewerData'
-import ViewerPenduduk from './pages/viewer/ViewerPenduduk'
 
 export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Navigate to="/login" replace />} />
+          {/* Landing page publik — tidak butuh login */}
+          <Route path="/" element={<PublicDashboard />} />
           <Route path="/login" element={<Login />} />
 
           {/* Admin Routes */}
@@ -45,8 +46,7 @@ export default function App() {
             <Route path="data-schema" element={<AdminDataSchema />} />
             <Route path="tasks" element={<AdminTasks />} />
             <Route path="submissions" element={<AdminSubmissions />} />
-            <Route path="manual-entries" element={<AdminManualEntries />} />
-            <Route path="penduduk" element={<AdminPenduduk />} />
+            <Route path="public-dashboard" element={<AdminPublicDashboard />} />
           </Route>
 
           {/* Contributor Routes */}
@@ -74,10 +74,9 @@ export default function App() {
           >
             <Route index element={<ViewerDashboard />} />
             <Route path="data" element={<ViewerData />} />
-            <Route path="penduduk" element={<ViewerPenduduk />} />
           </Route>
 
-          <Route path="*" element={<Navigate to="/login" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
