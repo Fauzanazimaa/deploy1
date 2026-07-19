@@ -144,8 +144,8 @@ export default function ViewerData() {
                 <h6 style={{ fontWeight: 700, fontSize: 14, color: '#1a1f2e', margin: '0 0 8px' }}>{sub.task_title}</h6>
                 <div style={{ fontSize: 12, color: '#6b7280', flex: 1, marginBottom: 10 }}>
                   <div><strong>Kontributor:</strong> {sub.contributor_username}</div>
-                  <div><strong>Dikirim:</strong> {new Date(sub.submitted_at).toLocaleDateString('id-ID')}</div>
-                  <div><strong>Disetujui:</strong> {sub.reviewed_at ? new Date(sub.reviewed_at).toLocaleDateString('id-ID') : '-'}</div>
+                  <div><strong>Dikirim:</strong> {sub.submitted_at ? sub.submitted_at.slice(0, 10).split('-').reverse().join('/') : '-'}</div>
+                  <div><strong>Disetujui:</strong> {sub.reviewed_at ? sub.reviewed_at.slice(0, 10).split('-').reverse().join('/') : '-'}</div>
                 </div>
                 <div style={{ background: '#fff', border: '1px solid #d1fae5', borderRadius: 7, padding: '6px 10px', fontSize: 11, color: '#6b7280', marginTop: 'auto' }}>
                   <i className="bi bi-info-circle me-1"></i>Detail data tersedia di file upload asli

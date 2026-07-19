@@ -16,15 +16,15 @@ def login():
     password = data.get('password', '')
 
     if not username or not password:
-        return jsonify({'error': 'Username and password are required'}), 400
+        return jsonify({'error': 'Username dan password wajib diisi.'}), 400
 
     user = User.query.filter_by(username=username).first()
 
     if not user or not check_password_hash(user.password_hash, password):
-        return jsonify({'error': 'Invalid credentials'}), 401
+        return jsonify({'error': 'Username atau password salah.'}), 401
 
     if not user.is_active:
-        return jsonify({'error': 'Account is deactivated'}), 403
+        return jsonify({'error': 'Akun dinonaktifkan. Hubungi administrator.'}), 403
 
     access_token = create_access_token(identity=str(user.id))
     return jsonify({

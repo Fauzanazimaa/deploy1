@@ -120,8 +120,8 @@ class Submission(db.Model):
             'source': self.source or 'excel',
             'status': self.status,
             'revision_notes': self.revision_notes,
-            'submitted_at': self.submitted_at.isoformat(),
-            'reviewed_at': self.reviewed_at.isoformat() if self.reviewed_at else None
+            'submitted_at': self.submitted_at.strftime('%Y-%m-%d') if self.submitted_at else None,
+            'reviewed_at': self.reviewed_at.strftime('%Y-%m-%d') if self.reviewed_at else None
         }
 
 
@@ -183,16 +183,20 @@ class DashboardWidget(db.Model):
     id            = db.Column(db.Integer, primary_key=True)
     title         = db.Column(db.String(200), nullable=False)
     description   = db.Column(db.Text)
-    category      = db.Column(db.String(50), default='Umum')  # Penduduk/Ekonomi/Kemiskinan/IPM/Tenaga Kerja/Umum
+    category      = db.Column(db.String(50), default='Umum')
     data_type_id  = db.Column(db.Integer, db.ForeignKey('data_types.id'), nullable=True)
     # Sumber data: 'manual' | 'approved_submissions' | 'both'
     data_source   = db.Column(db.String(20), default='both')
-    # Tipe tampilan: 'bar' | 'line' | 'pie' | 'doughnut' | 'table' | 'number'
+    # Tipe tampilan: 'bar' | 'line' | 'pie' | 'doughnut' | 'area' | 'table' | 'number'
     chart_type    = db.Column(db.String(20), default='bar')
-    # Field yang dijadikan label (sumbu X / kategori)
+    # Field sumbu X / kategori (nama key data, e.g. "__row_label" atau nama kolom)
     label_field   = db.Column(db.String(100))
-    # Field yang dijadikan value (sumbu Y / angka)
+    # Field sumbu Y / nilai
     value_field   = db.Column(db.String(100))
+    # Field seri/legenda (opsional, untuk grouped chart)
+    series_field  = db.Column(db.String(100))
+    # Konfigurasi visualisasi tambahan (JSON): header_level, label_field_label, dll
+    viz_config    = db.Column(db.Text)
     # Tampilkan di viewer publik?
     is_visible    = db.Column(db.Boolean, default=True)
     # Bisa di-download?
@@ -204,6 +208,14 @@ class DashboardWidget(db.Model):
 
     data_type = db.relationship('DataType', foreign_keys=[data_type_id])
     creator   = db.relationship('User',     foreign_keys=[created_by])
+
+    def get_viz_config(self):
+        if self.viz_config:
+            try:
+                return json.loads(self.viz_config)
+            except Exception:
+                return {}
+        return {}
 
     def to_dict(self):
         return {
@@ -217,6 +229,8 @@ class DashboardWidget(db.Model):
             'chart_type':     self.chart_type,
             'label_field':    self.label_field,
             'value_field':    self.value_field,
+            'series_field':   self.series_field,
+            'viz_config':     self.get_viz_config(),
             'is_visible':     self.is_visible,
             'allow_download': self.allow_download,
             'sort_order':     self.sort_order,
@@ -224,3 +238,4 @@ class DashboardWidget(db.Model):
             'creator_username': self.creator.username if self.creator else None,
             'created_at':     self.created_at.isoformat(),
         }
+

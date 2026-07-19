@@ -190,7 +190,11 @@ def get_template_grid(task_id):
 
 
 def _excel_to_grid(file_bytes: bytes):
-    """Baca Excel template → grid JSON untuk direct input."""
+    """
+    Baca Excel template → grid JSON untuk direct input.
+    Header dibaca PERSIS dari template — tidak ada manipulasi struktur.
+    Baris data: sel yang kosong di template = bisa diedit, sel berisi = terkunci.
+    """
     wb = openpyxl.load_workbook(io.BytesIO(file_bytes), data_only=True)
     ws = wb.active
 
@@ -198,7 +202,7 @@ def _excel_to_grid(file_bytes: bytes):
     max_col = ws.max_column or 1
 
     # ── Merge map ─────────────────────────────────────────────────────────────
-    merge_info = {}   # (r,c) top-left → {rowspan, colspan}
+    merge_info  = {}   # (r,c) top-left → {rowspan, colspan}
     merged_skip = set()
     for mr in ws.merged_cells.ranges:
         rs = mr.max_row - mr.min_row + 1
@@ -209,7 +213,8 @@ def _excel_to_grid(file_bytes: bytes):
                 if (r, c) != (mr.min_row, mr.min_col):
                     merged_skip.add((r, c))
 
-    # ── Jumlah baris header ───────────────────────────────────────────────────
+    # ── Deteksi jumlah baris header ───────────────────────────────────────────
+    # Hitung dari merge vertikal yang dimulai di baris 1
     num_header_rows = 1
     for mr in ws.merged_cells.ranges:
         if mr.min_row == 1 and mr.max_row > num_header_rows:
@@ -217,7 +222,6 @@ def _excel_to_grid(file_bytes: bytes):
         if num_header_rows >= 5:
             break
 
-    # ── Baca nilai grid ───────────────────────────────────────────────────────
     def cell_val(r, c):
         v = ws.cell(r, c).value
         if v is None:
@@ -226,122 +230,88 @@ def _excel_to_grid(file_bytes: bytes):
             return v.isoformat()
         return str(v).strip()
 
-    # ── Header rows ───────────────────────────────────────────────────────────
-    header_rows = []
+    # ── Header rows — baca PERSIS dari template, tidak diubah ────────────────
     HEADER_COLORS = ['#1e3a5f', '#2563eb', '#3b82f6', '#60a5fa']
+    header_rows = []
     for r in range(1, num_header_rows + 1):
         row_cells = []
         for c in range(1, max_col + 1):
             if (r, c) in merged_skip:
                 continue
             mi = merge_info.get((r, c), {'rowspan': 1, 'colspan': 1})
+            # Warna: kolom yang di-rowspan penuh = level 0, sisanya ikut level baris
             color_idx = min(r - 1, len(HEADER_COLORS) - 1)
-            # Kolom yang di-rowspan penuh → level 0 color
             if mi['rowspan'] >= num_header_rows and num_header_rows > 1:
                 color_idx = 0
             row_cells.append({
-                'value': cell_val(r, c),
+                'value':   cell_val(r, c),
                 'rowspan': mi['rowspan'],
                 'colspan': mi['colspan'],
-                'bg': HEADER_COLORS[color_idx],
+                'bg':      HEADER_COLORS[color_idx],
             })
         header_rows.append(row_cells)
 
     # ── Deteksi first_column ──────────────────────────────────────────────────
-    # Kolom 1 dianggap first_column jika ada merge vertikal penuh di baris header
-    has_first_col = False
+    # has_first_col = True jika kolom 1 di header di-merge secara vertikal
+    # (artinya kolom 1 = deskriptor baris, bukan nilai data)
+    has_first_col  = False
     first_col_label = ''
-    first_col_values = []  # isian default dari template
 
     if num_header_rows > 1:
         mi = merge_info.get((1, 1))
         if mi and mi['rowspan'] >= num_header_rows:
-            has_first_col = True
+            has_first_col   = True
             first_col_label = cell_val(1, 1)
     else:
-        # Single header — cek apakah ada isian di kolom 1 pada baris data
-        pass  # ditangani di bawah
+        # Single-header: cek apakah baris data di kolom 1 sudah terisi dari template
+        # Jika ya, anggap kolom 1 adalah label baris (first_col)
+        data_start_check = 2
+        sample_vals = [cell_val(r, 1) for r in range(data_start_check,
+                       min(data_start_check + 10, max_row + 1))]
+        filled = [v for v in sample_vals if v.strip()]
+        if filled:
+            has_first_col   = True
+            first_col_label = cell_val(1, 1)  # label kolom pertama dari header
 
-    # ── Baris data dari template ──────────────────────────────────────────────
-    data_start = num_header_rows + 1
-    num_data_cols = max_col - (1 if has_first_col else 0)
+    # ── Baris data ────────────────────────────────────────────────────────────
+    data_start   = num_header_rows + 1
+    col_start    = 1  # selalu mulai dari kolom 1 — tidak ada penggeseran
+    num_data_cols = max_col  # total kolom data termasuk first_col jika ada
 
-    # Kumpulkan nilai first_column dari baris data
-    fc_data_values = []
-    if has_first_col:
-        for r in range(data_start, max_row + 1):
-            fc_data_values.append(cell_val(r, 1))
-    else:
-        # Single header: cek apakah kolom 1 terisi (artinya ia first_col)
-        non_empty = [cell_val(r, 1) for r in range(data_start, min(data_start + 30, max_row + 1))
-                     if cell_val(r, 1)]
-        if non_empty:
-            has_first_col = True
-            if header_rows and header_rows[0]:
-                first_col_label = header_rows[0][0]['value']
-                # Hapus kolom pertama dari header (dia pindah ke first_col_label)
-                header_rows[0] = header_rows[0][1:]
-            fc_data_values = [cell_val(r, 1) for r in range(data_start, max_row + 1)]
-            num_data_cols = max_col - 1
+    # Temukan baris data terakhir yang ada isinya (supaya tidak baca baris kosong footer)
+    last_valid = data_start - 1
+    for r in range(data_start, max_row + 1):
+        row_any = any(cell_val(r, c).strip() for c in range(1, max_col + 1))
+        if row_any:
+            last_valid = r
 
-    col_start = 2 if has_first_col else 1
-
-    # ── Tentukan baris mana yang valid dari template ──────────────────────────
-    # Strategi: jika ada first_col, baris valid = baris yang first_col-nya terisi
-    # Jika tidak ada first_col, ambil semua baris sampai baris terakhir yang ada isinya
-    if has_first_col:
-        # Hanya ambil baris yang punya isian di first_col (terisi dari template)
-        # Skip baris kosong di first_col (baris benar-benar kosong / padding Excel)
-        valid_rows = []
-        for r in range(data_start, max_row + 1):
-            fc_val = cell_val(r, 1)
-            if fc_val.strip():
-                valid_rows.append(r)
-            # Stop jika sudah 3 baris kosong berturut-turut di first_col
-            # (menghindari membaca note/footer Excel)
-        # Ambil sampai baris valid terakhir saja
-        last_valid = valid_rows[-1] if valid_rows else data_start - 1
-    else:
-        # Tanpa first_col: cari baris terakhir yang ada isinya
-        last_valid = data_start - 1
-        for r in range(data_start, max_row + 1):
-            row_vals = [cell_val(r, c) for c in range(col_start, max_col + 1)]
-            if any(v.strip() for v in row_vals):
-                last_valid = r
-
-    # ── Bangun baris data ─────────────────────────────────────────────────────
+    # Baca semua baris data — sel berisi dari template = terkunci,
+    # sel kosong = bisa diedit kontributor
     data_rows = []
     for r in range(data_start, last_valid + 1):
         row_cells = []
-        fc_val = cell_val(r, 1) if has_first_col else ''
-
-        if has_first_col:
-            row_cells.append({'value': fc_val, 'locked': bool(fc_val.strip())})
-
-        for c in range(col_start, max_col + 1):
+        for c in range(1, max_col + 1):
             v = cell_val(r, c)
             row_cells.append({'value': v, 'locked': bool(v.strip())})
-
         data_rows.append(row_cells)
 
-    # Jika tidak ada baris sama sekali, tambah 1 baris kosong agar tabel tetap terbuka
+    # Pastikan minimal 1 baris tersedia untuk input
     if not data_rows:
-        empty_row = []
-        if has_first_col:
-            empty_row.append({'value': '', 'locked': False})
-        for _ in range(num_data_cols):
-            empty_row.append({'value': '', 'locked': False})
-        data_rows.append(empty_row)
+        data_rows.append([{'value': '', 'locked': False} for _ in range(max_col)])
 
     wb.close()
+
+    # num_data_cols = jumlah kolom data (di luar first_col jika ada)
+    actual_data_cols = max_col - (1 if has_first_col else 0)
+
     return jsonify({
-        'headers': header_rows,
-        'rows': data_rows,
+        'headers':         header_rows,
+        'rows':            data_rows,
         'num_header_rows': num_header_rows,
-        'num_data_cols': num_data_cols,
-        'has_first_col': has_first_col,
+        'num_data_cols':   actual_data_cols,
+        'has_first_col':   has_first_col,
         'first_col_label': first_col_label,
-        'total_cols': max_col,
+        'total_cols':      max_col,
     })
 
 

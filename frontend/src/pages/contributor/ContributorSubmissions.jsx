@@ -99,10 +99,10 @@ export default function ContributorSubmissions() {
                         </span>
                       </td>
                       <td style={{ padding: '11px 20px', color: '#6b7280', fontSize: 12 }}>
-                        {new Date(s.submitted_at).toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        {s.submitted_at ? s.submitted_at.slice(0, 10).split('-').reverse().join('/') : '-'}
                       </td>
                       <td style={{ padding: '11px 20px', color: '#6b7280', fontSize: 12 }}>
-                        {s.reviewed_at ? new Date(s.reviewed_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}
+                        {s.reviewed_at ? s.reviewed_at.slice(0, 10).split('-').reverse().join('/') : '-'}
                       </td>
                       <td style={{ padding: '11px 20px' }}>
                         {s.status === 'revision' && s.revision_notes ? (
@@ -141,7 +141,7 @@ export default function ContributorSubmissions() {
             </div>
             <div style={{ padding: '20px' }}>
               <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 14 }}>
-                <strong>Tugas:</strong> {detailSub.task_title} &bull; Dikirim {new Date(detailSub.submitted_at).toLocaleDateString('id-ID')}
+                <strong>Tugas:</strong> {detailSub.task_title} &bull; Dikirim {detailSub.submitted_at ? detailSub.submitted_at.slice(0, 10).split('-').reverse().join('/') : '-'}
               </div>
               <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, padding: '14px 16px', marginBottom: 14, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                 <i className="bi bi-exclamation-triangle-fill" style={{ color: '#dc2626', fontSize: 18, flexShrink: 0, marginTop: 1 }}></i>

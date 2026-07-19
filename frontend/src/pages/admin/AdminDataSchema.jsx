@@ -133,19 +133,20 @@ function HeaderPreview({ schema }) {
   }
 
   return (
-    <div
-      className="table-responsive border rounded"
-      style={{
-        fontSize: '0.75rem',
-        maxHeight: 400,
-        overflowY: 'auto',
-        overflowX: 'auto',
-      }}
-    >
+    <div style={{ width: '100%', overflowX: 'auto', border: '1px solid #dee2e6', borderRadius: 6 }}>
+      <div
+        style={{
+          fontSize: '0.75rem',
+          maxHeight: '350px',
+          overflowY: 'scroll',
+          overflowX: 'visible',
+          display: 'block',
+          width: '100%',
+        }}
+      >
       <table
         style={{
           borderCollapse: 'collapse',
-          width: '100%',
           minWidth: 400,
           tableLayout: 'auto',
         }}
@@ -205,7 +206,7 @@ function HeaderPreview({ schema }) {
           })}
         </thead>
         <tbody>
-          {(firstCol.default_rows || []).slice(0, 3).map((r, ri) => (
+          {(firstCol.default_rows || []).map((r, ri) => (
             <tr key={ri}>
               {hasFirst && (
                 <td style={{ ...tdBase, background: '#FFFDE7', fontWeight: 600 }}>{r}</td>
@@ -225,6 +226,7 @@ function HeaderPreview({ schema }) {
           )}
         </tbody>
       </table>
+    </div>
     </div>
   )
 }
@@ -721,7 +723,7 @@ export default function AdminDataSchema() {
               const tmpl = templateByDT[dt.id]
               const schema = normalizeSchema(dt.fields_schema)
               return (
-                <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #f0f0f0', overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+                <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #f0f0f0', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
                   <div style={{ borderBottom: '1px solid #f0f0f0', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
                       <h6 style={{ fontWeight: 700, fontSize: 15, color: '#1a1f2e', margin: 0 }}>{dt.name}</h6>
@@ -731,7 +733,7 @@ export default function AdminDataSchema() {
                       <i className="bi bi-pencil"></i>Edit Schema
                     </button>
                   </div>
-                  <div style={{ padding: '20px' }}>
+                  <div style={{ padding: '20px', minWidth: 0 }}>
                     {/* Preview Header */}
                     <h6 className="fw-semibold small text-uppercase text-muted mb-2">Preview Struktur</h6>
                     <HeaderPreview schema={schema} />

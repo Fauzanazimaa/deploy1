@@ -260,8 +260,8 @@ export default function AdminSubmissions() {
                           )}
                         </div>
                       </td>
-                      <td style={{ padding: '11px 20px', color: '#6b7280', fontSize: 12 }}>{new Date(s.submitted_at).toLocaleString('id-ID', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' })}</td>
-                      <td style={{ padding: '11px 20px', color: '#6b7280', fontSize: 12 }}>{s.reviewed_at ? new Date(s.reviewed_at).toLocaleString('id-ID', { day:'2-digit', month:'short', year:'numeric' }) : '-'}</td>
+                      <td style={{ padding: '11px 20px', color: '#6b7280', fontSize: 12 }}>{s.submitted_at ? s.submitted_at.slice(0, 10).split('-').reverse().join('/') : '-'}</td>
+                      <td style={{ padding: '11px 20px', color: '#6b7280', fontSize: 12 }}>{s.reviewed_at ? s.reviewed_at.slice(0, 10).split('-').reverse().join('/') : '-'}</td>
                       <td style={{ padding: '11px 20px', textAlign: 'right' }}>
                         <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
                           <button onClick={() => handlePreview(s)} title="Preview" style={{ background: '#eff6ff', border: '1px solid #bfdbfe', color: '#3b82f6', borderRadius: 7, padding: '5px 10px', fontSize: 14, cursor: 'pointer' }}><i className="bi bi-eye"></i></button>

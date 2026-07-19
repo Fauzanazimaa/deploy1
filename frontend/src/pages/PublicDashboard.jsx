@@ -8,6 +8,7 @@ import {
 import { Bar, Line, Pie, Doughnut } from 'react-chartjs-2'
 import { getPublicWidgets, downloadPublicWidget, login as loginApi } from '../api'
 import { useAuth } from '../context/AuthContext'
+import SejatiLogo from '../components/SejatiLogo'
 
 ChartJS.register(
   ArcElement, Tooltip, Legend, CategoryScale, LinearScale,
@@ -178,27 +179,13 @@ export default function PublicDashboard() {
 
       {/* ── Top Navigation ── */}
       <nav style={{ background: SIDEBAR_BG, height: 64, display: 'flex', alignItems: 'center', padding: '0 28px', position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 2px 12px rgba(0,0,0,0.18)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 36, height: 36, background: ACCENT, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <i className="bi bi-database-fill-gear" style={{ color: '#fff', fontSize: 18 }}></i>
-          </div>
-          <div>
-            <div style={{ color: '#fff', fontWeight: 800, fontSize: 16, letterSpacing: 0.2, lineHeight: 1.1 }}>DataCollect</div>
-            <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 10, letterSpacing: 0.5 }}>PORTAL DATA PUBLIK</div>
-          </div>
-        </div>
+        <SejatiLogo size={36} variant="full" />
 
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
           <div style={{ position: 'relative' }}>
-            <button onClick={() => setOpenLogin(openLogin === 'admin' ? null : 'admin')}
+            <button onClick={() => setOpenLogin(openLogin ? null : 'login')}
               style={{ background: ACCENT, border: 'none', color: '#fff', padding: '7px 16px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontFamily: "'Inter',sans-serif" }}>
-              <i className="bi bi-shield-lock"></i> Login Admin
-            </button>
-          </div>
-          <div style={{ position: 'relative' }}>
-            <button onClick={() => setOpenLogin(openLogin === 'user' ? null : 'user')}
-              style={{ background: 'transparent', border: '1.5px solid rgba(255,255,255,0.25)', color: '#fff', padding: '7px 16px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontFamily: "'Inter',sans-serif" }}>
-              <i className="bi bi-person"></i> Login
+              <i className="bi bi-box-arrow-in-right"></i> Login
             </button>
           </div>
         </div>
@@ -212,10 +199,10 @@ export default function PublicDashboard() {
             DATA TERVERIFIKASI RESMI
           </div>
           <h1 style={{ color: '#fff', fontWeight: 800, fontSize: 'clamp(22px, 4vw, 36px)', margin: '0 0 12px', lineHeight: 1.2 }}>
-            Dashboard Statistik Data Publik
+            Portal Data Statistik SEJATI
           </h1>
           <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: 14, margin: '0 0 28px', lineHeight: 1.6 }}>
-            Data yang ditampilkan telah melalui proses verifikasi oleh tim pengelola. Tersedia dalam berbagai format visualisasi dan dapat diunduh secara gratis.
+            Sistem Jejaring Pengumpulan Data Statistik Terintegrasi. Data yang ditampilkan telah melalui proses verifikasi oleh tim pengelola. Tersedia dalam berbagai format visualisasi dan dapat diunduh secara gratis.
           </p>
           <div style={{ display: 'flex', gap: 24, justifyContent: 'center', flexWrap: 'wrap' }}>
             {[
@@ -376,8 +363,11 @@ export default function PublicDashboard() {
 
       {/* ── Footer ── */}
       <footer style={{ background: SIDEBAR_BG, color: 'rgba(255,255,255,0.5)', textAlign: 'center', padding: '24px 20px', fontSize: 12 }}>
-        <div style={{ marginBottom: 6, color: 'rgba(255,255,255,0.7)', fontWeight: 600, fontSize: 13 }}>
-          <i className="bi bi-database-fill-gear me-2" style={{ color: ACCENT }}></i>DataCollect — Portal Data Publik
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
+          <SejatiLogo size={32} variant="compact" />
+        </div>
+        <div style={{ marginBottom: 4, color: 'rgba(255,255,255,0.7)', fontWeight: 600, fontSize: 13 }}>
+          SEJATI — Sistem Jejaring Pengumpulan Data Statistik Terintegrasi
         </div>
         <div>Data yang ditampilkan telah melalui proses verifikasi resmi. Bebas digunakan untuk kepentingan publik.</div>
       </footer>
@@ -387,7 +377,7 @@ export default function PublicDashboard() {
         <div style={{ position: 'fixed', inset: 0, zIndex: 200 }} onClick={() => setOpenLogin(null)}>
           <div onClick={e => e.stopPropagation()}
             style={{ position: 'fixed', top: 72, right: 20, width: 320, background: '#fff', borderRadius: 14, boxShadow: '0 16px 48px rgba(0,0,0,0.2)', overflow: 'hidden', fontFamily: "'Inter',sans-serif" }}>
-            <LoginPanel role={openLogin} onClose={() => setOpenLogin(null)} onLogin={() => navigate(openLogin === 'admin' ? '/admin' : '/login')} />
+            <LoginPanel onClose={() => setOpenLogin(null)} />
           </div>
         </div>
       )}
@@ -403,7 +393,7 @@ export default function PublicDashboard() {
 }
 
 // ─── Inline Login Panel ───────────────────────────────────────────────────────
-function LoginPanel({ role, onClose }) {
+function LoginPanel({ onClose }) {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [showPw, setShowPw] = useState(false)
@@ -411,7 +401,6 @@ function LoginPanel({ role, onClose }) {
   const [error, setError] = useState('')
   const navigate = useNavigate()
   const { loginUser } = useAuth()
-  const isAdmin = role === 'admin'
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -420,7 +409,6 @@ function LoginPanel({ role, onClose }) {
     try {
       const res = await loginApi({ username, password })
       const { access_token, user } = res.data
-      // Gunakan loginUser dari AuthContext agar state ter-update
       loginUser(access_token, user)
       if (user.role === 'admin') navigate('/admin', { replace: true })
       else if (user.role === 'contributor') navigate('/contributor', { replace: true })
@@ -432,9 +420,9 @@ function LoginPanel({ role, onClose }) {
 
   return (
     <>
-      <div style={{ background: isAdmin ? ACCENT : SIDEBAR_BG, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 10 }}>
-        <i className={`bi ${isAdmin ? 'bi-shield-lock-fill' : 'bi-person-badge-fill'}`} style={{ color: '#fff', fontSize: 18 }}></i>
-        <span style={{ color: '#fff', fontWeight: 700, fontSize: 14 }}>{isAdmin ? 'Login Admin' : 'Login'}</span>
+      <div style={{ background: ACCENT, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 10 }}>
+        <i className="bi bi-box-arrow-in-right" style={{ color: '#fff', fontSize: 18 }}></i>
+        <span style={{ color: '#fff', fontWeight: 700, fontSize: 14 }}>Masuk ke SEJATI</span>
         <button onClick={onClose} style={{ marginLeft: 'auto', background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 6, color: '#fff', width: 26, height: 26, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <i className="bi bi-x" style={{ fontSize: 16 }}></i>
         </button>
@@ -473,10 +461,15 @@ function LoginPanel({ role, onClose }) {
             </div>
           </div>
           <button type="submit" disabled={loading}
-            style={{ width: '100%', padding: '11px', border: 'none', borderRadius: 8, background: isAdmin ? ACCENT : SIDEBAR_BG, color: '#fff', fontWeight: 700, fontSize: 13, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.8 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontFamily: "'Inter',sans-serif" }}>
-            {loading ? <><span style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.4)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin .7s linear infinite', display: 'inline-block' }} /> Masuk…</> : <><i className="bi bi-box-arrow-in-right"></i> Masuk</>}
+            style={{ width: '100%', padding: '11px', border: 'none', borderRadius: 8, background: ACCENT, color: '#fff', fontWeight: 700, fontSize: 13, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.8 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontFamily: "'Inter',sans-serif", boxShadow: '0 4px 14px rgba(245,166,35,0.35)' }}>
+            {loading
+              ? <><span style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.4)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin .7s linear infinite', display: 'inline-block' }} /> Masuk…</>
+              : <><i className="bi bi-box-arrow-in-right"></i> Masuk</>}
           </button>
         </form>
+        <p style={{ textAlign: 'center', fontSize: 11, color: '#9ca3af', marginTop: 14, marginBottom: 0 }}>
+          Sistem akan otomatis mengarahkan ke panel sesuai role Anda.
+        </p>
       </div>
     </>
   )

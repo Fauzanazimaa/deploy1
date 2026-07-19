@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import SejatiLogo from '../../components/SejatiLogo'
 
 const navGroups = [
   {
@@ -78,25 +79,7 @@ export default function AdminLayout() {
             borderBottom: '1px solid rgba(255,255,255,0.07)',
           }}
         >
-          <div
-            style={{
-              width: 32,
-              height: 32,
-              background: ACCENT,
-              borderRadius: 8,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}
-          >
-            <i className="bi bi-database-fill-gear" style={{ color: '#fff', fontSize: 16 }}></i>
-          </div>
-          {sidebarOpen && (
-            <span style={{ color: '#fff', fontWeight: 700, fontSize: 16, letterSpacing: 0.3, whiteSpace: 'nowrap' }}>
-              datacollect
-            </span>
-          )}
+          <SejatiLogo size={32} variant={sidebarOpen ? 'compact' : 'icon'} />
         </div>
 
         {/* Nav */}
@@ -242,11 +225,9 @@ export default function AdminLayout() {
 
           {/* Breadcrumb */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#6b7280' }}>
-            <span style={{ fontWeight: 600, color: '#1a1f2e' }}>{currentLabel}</span>
+            <span style={{ fontWeight: 700, color: '#1a1f2e', fontSize: 14 }}>SEJATI</span>
             <i className="bi bi-chevron-right" style={{ fontSize: 11 }}></i>
-            <span style={{ color: '#9ca3af' }}>
-              <i className="bi bi-house me-1"></i>Dashboard
-            </span>
+            <span style={{ color: '#9ca3af' }}>Dashboard</span>
             <i className="bi bi-chevron-right" style={{ fontSize: 11 }}></i>
             <span style={{ color: ACCENT, fontWeight: 500 }}>{currentLabel}</span>
           </div>

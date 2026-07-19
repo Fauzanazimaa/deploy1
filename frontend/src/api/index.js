@@ -119,7 +119,10 @@ export const updateWidget = (id, data) => api.put(`/admin/widgets/${id}`, data)
 export const deleteWidget = (id) => api.delete(`/admin/widgets/${id}`)
 export const toggleWidgetVisibility = (id) => api.put(`/admin/widgets/${id}/toggle-visibility`)
 export const previewWidget = (id) => api.get(`/admin/widgets/${id}/preview`)
+export const getDataTypeSchema = (dataTypeId) => api.get(`/admin/widgets/schema/${dataTypeId}`)
+export const getVerifiedDataTypes = () => api.get('/admin/widgets/verified-data-types')
 export const getVerifiedSubmissions = () => api.get('/admin/verified-submissions')
 export const getAdminDataTypes = () => api.get('/admin/data-types')
+export const analyzeDataType = (dataTypeId) => api.get('/admin/widgets/analyze', { params: { data_type_id: dataTypeId } })
 
 export default api

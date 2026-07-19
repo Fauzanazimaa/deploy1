@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import SejatiLogo from '../../components/SejatiLogo'
 
 const navGroups = [
   {
@@ -59,25 +60,7 @@ export default function ViewerLayout() {
             borderBottom: '1px solid rgba(255,255,255,0.07)',
           }}
         >
-          <div
-            style={{
-              width: 32,
-              height: 32,
-              background: ACCENT,
-              borderRadius: 8,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}
-          >
-            <i className="bi bi-database-fill-gear" style={{ color: '#fff', fontSize: 16 }}></i>
-          </div>
-          {sidebarOpen && (
-            <span style={{ color: '#fff', fontWeight: 700, fontSize: 16, letterSpacing: 0.3, whiteSpace: 'nowrap' }}>
-              datacollect
-            </span>
-          )}
+          <SejatiLogo size={32} variant={sidebarOpen ? 'compact' : 'icon'} />
         </div>
 
         {/* Nav */}

@@ -125,7 +125,6 @@ export default function AdminUsers() {
               <option value="all">Semua Role</option>
               <option value="admin">Admin</option>
               <option value="contributor">Contributor</option>
-              <option value="viewer">Viewer</option>
             </select>
           </div>
           <div className="col-md-3 d-flex align-items-center">
@@ -228,7 +227,6 @@ export default function AdminUsers() {
                     <select className="form-select" style={{ fontSize: 13 }} value={form.role} onChange={e => setForm({ ...form, role: e.target.value })}>
                       <option value="admin">Admin</option>
                       <option value="contributor">Contributor</option>
-                      <option value="viewer">Viewer</option>
                     </select>
                   </div>
                   <div className="col-6">

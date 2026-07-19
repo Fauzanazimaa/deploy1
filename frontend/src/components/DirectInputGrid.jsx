@@ -117,9 +117,10 @@ export default function DirectInputGrid({ taskId, onSubmitted, onCancel }) {
   const addRow = () => {
     if (!gridData) return
     setRows(prev => {
-      const emptyRow = Array.from({ length: gridData.total_cols }, (_, ci) => ({
+      // Baris baru: semua sel kosong dan bisa diedit
+      const emptyRow = Array.from({ length: gridData.total_cols }, () => ({
         value: '',
-        locked: false,  // baris baru = semua bisa diedit
+        locked: false,
       }))
       return [...prev, emptyRow]
     })
@@ -152,26 +153,21 @@ export default function DirectInputGrid({ taskId, onSubmitted, onCancel }) {
     setSubmitting(true)
     try {
       const hasFc = gridData.has_first_col
-      const leafCount = gridData.num_data_cols
+      const totalCols = gridData.total_cols
 
-      // Simpan data sebagai rows dengan key:
-      //   __row_label  → nilai first_col (kolom pertama)
-      //   __col_0 ... __col_N → nilai tiap kolom data (posisi-based, bukan nama field)
-      // Format ini bisa dirender ulang tanpa bergantung pada fields_schema
+      // Simpan tiap baris sebagai:
+      //   __row_label  → nilai kolom 0 (jika has_first_col)
+      //   __col_0 ... __col_N → nilai kolom data (dimulai dari 1 jika has_first_col, 0 jika tidak)
       const formData = rows
-        .filter(row => {
-          const dataCells = hasFc ? row.slice(1) : row
-          return dataCells.some(c => c.value.trim() !== '') ||
-                 (hasFc && row[0]?.value.trim() !== '')
-        })
+        .filter(row => row.some(c => c.value.trim() !== ''))
         .map(row => {
           const obj = {}
           if (hasFc) {
             obj.__row_label = row[0]?.value ?? ''
           }
           const dataStart = hasFc ? 1 : 0
-          for (let i = 0; i < leafCount; i++) {
-            obj[`__col_${i}`] = row[dataStart + i]?.value ?? ''
+          for (let i = dataStart; i < row.length; i++) {
+            obj[`__col_${i - dataStart}`] = row[i]?.value ?? ''
           }
           return obj
         })
