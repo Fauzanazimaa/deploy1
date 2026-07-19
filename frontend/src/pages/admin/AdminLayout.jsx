@@ -227,9 +227,7 @@ export default function AdminLayout() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#6b7280' }}>
             <span style={{ fontWeight: 700, color: '#1a1f2e', fontSize: 14 }}>SEJATI</span>
             <i className="bi bi-chevron-right" style={{ fontSize: 11 }}></i>
-            <span style={{ color: '#9ca3af' }}>Dashboard</span>
-            <i className="bi bi-chevron-right" style={{ fontSize: 11 }}></i>
-            <span style={{ color: ACCENT, fontWeight: 500 }}>{currentLabel}</span>
+            <span style={{ color: ACCENT, fontWeight: 600 }}>{currentLabel}</span>
           </div>
 
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
