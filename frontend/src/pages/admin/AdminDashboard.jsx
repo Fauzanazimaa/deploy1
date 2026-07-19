@@ -285,46 +285,55 @@ export default function AdminDashboard() {
             Belum ada pengiriman
           </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-              <thead>
-                <tr style={{ background: '#fafafa', borderBottom: '1px solid #f0f0f0' }}>
-                  {['Kontributor', 'Tugas', 'Status', 'Dikirim'].map((h) => (
-                    <th key={h} style={{ padding: '10px 20px', textAlign: 'left', fontWeight: 600, color: '#6b7280', fontSize: 12 }}>
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {stats.recent_submissions.map((s) => {
-                  const badge = statusBadgeStyle[s.status] || { background: '#f3f4f6', color: '#374151', border: '1px solid #e5e7eb' }
-                  return (
-                    <tr key={s.id} style={{ borderBottom: '1px solid #f9f9f9' }} className="table-row-hover">
-                      <td style={{ padding: '11px 20px', fontWeight: 600, color: '#1a1f2e' }}>{s.contributor_username}</td>
-                      <td style={{ padding: '11px 20px', color: '#374151' }}>{s.task_title}</td>
-                      <td style={{ padding: '11px 20px' }}>
-                        <span
-                          style={{
-                            ...badge,
-                            borderRadius: 20,
-                            padding: '3px 10px',
-                            fontSize: 11,
-                            fontWeight: 600,
-                          }}
-                        >
-                          {s.status === 'pending' ? 'Menunggu' : s.status === 'approved' ? 'Disetujui' : s.status === 'revision' ? 'Revisi' : s.status}
-                        </span>
-                      </td>
-                      <td style={{ padding: '11px 20px', color: '#9ca3af', fontSize: 12 }}>
-                        {new Date(s.submitted_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+          <>
+            {/* Mobile: card list */}
+            <div className="d-md-none" style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+              {stats.recent_submissions.map((s) => {
+                const badge = statusBadgeStyle[s.status] || { background: '#f3f4f6', color: '#374151', border: '1px solid #e5e7eb' }
+                const statusLabel = s.status === 'pending' ? 'Menunggu' : s.status === 'approved' ? 'Disetujui' : s.status === 'revision' ? 'Revisi' : s.status
+                return (
+                  <div key={s.id} style={{ padding: '12px 16px', borderBottom: '1px solid #f5f5f5', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 600, fontSize: 13, color: '#1a1f2e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.task_title}</div>
+                      <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>{s.contributor_username} · {new Date(s.submitted_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}</div>
+                    </div>
+                    <span style={{ ...badge, borderRadius: 20, padding: '3px 9px', fontSize: 10, fontWeight: 600, flexShrink: 0 }}>{statusLabel}</span>
+                  </div>
+                )
+              })}
+            </div>
+            {/* Desktop: table */}
+            <div className="d-none d-md-block" style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                <thead>
+                  <tr style={{ background: '#fafafa', borderBottom: '1px solid #f0f0f0' }}>
+                    {['Kontributor', 'Tugas', 'Status', 'Dikirim'].map((h) => (
+                      <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 600, color: '#6b7280', fontSize: 12 }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {stats.recent_submissions.map((s) => {
+                    const badge = statusBadgeStyle[s.status] || { background: '#f3f4f6', color: '#374151', border: '1px solid #e5e7eb' }
+                    return (
+                      <tr key={s.id} style={{ borderBottom: '1px solid #f9f9f9' }} className="table-row-hover">
+                        <td style={{ padding: '10px 16px', fontWeight: 600, color: '#1a1f2e' }}>{s.contributor_username}</td>
+                        <td style={{ padding: '10px 16px', color: '#374151' }}>{s.task_title}</td>
+                        <td style={{ padding: '10px 16px' }}>
+                          <span style={{ ...badge, borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 600 }}>
+                            {s.status === 'pending' ? 'Menunggu' : s.status === 'approved' ? 'Disetujui' : s.status === 'revision' ? 'Revisi' : s.status}
+                          </span>
+                        </td>
+                        <td style={{ padding: '10px 16px', color: '#9ca3af', fontSize: 12 }}>
+                          {new Date(s.submitted_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 

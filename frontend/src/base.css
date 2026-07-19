@@ -1,2 +1,157 @@
 *, *::before, *::after { box-sizing: border-box; }
 body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+
+/* ── Global Mobile Responsiveness ─────────────────────────────────────── */
+
+/* Semua tabel di dalam card/panel punya scroll horizontal */
+table { min-width: 0; }
+
+/* Kurangi padding konten halaman di mobile */
+@media (max-width: 768px) {
+  /* Content area padding */
+  [data-page-content] {
+    padding: 12px !important;
+  }
+
+  /* Header halaman: teks lebih kecil */
+  h4[data-page-title] {
+    font-size: 17px !important;
+  }
+
+  /* Modal: full screen di mobile */
+  [data-modal-box] {
+    max-width: 100% !important;
+    max-height: 100% !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Kurangi padding sel tabel */
+  td, th {
+    padding: 8px 10px !important;
+    font-size: 12px !important;
+  }
+
+  /* Card grid jadi 1 kolom */
+  .col-md-3, .col-md-4, .col-md-6 {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+
+  /* Stat cards: 2 kolom tetap */
+  .col-6 {
+    flex: 0 0 50%;
+    max-width: 50%;
+  }
+
+  /* Buttons di header: teks lebih kecil */
+  button[data-action-btn] {
+    font-size: 11px !important;
+    padding: 6px 10px !important;
+  }
+
+  /* Semua inline modal/form jadi full-width */
+  [style*="maxWidth: 580"], [style*="maxWidth: 640"],
+  [style*="maxWidth: 700"], [style*="maxWidth: 720"],
+  [style*="max-width: 580px"], [style*="max-width: 640px"] {
+    max-width: calc(100vw - 28px) !important;
+  }
+
+  /* Sembunyikan label "Admin" badge di topbar mobile (sudah di drawer) */
+  .topbar-role-badge {
+    display: none !important;
+  }
+}
+
+/* ── Halaman admin: content padding ──────────────────────────────────── */
+@media (max-width: 768px) {
+  /* Kurangi padding konten halaman admin */
+  .admin-page-wrapper {
+    padding: 12px 14px 24px !important;
+  }
+
+  /* Header row admin: wrap di mobile */
+  .admin-page-header {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  /* Filter pills: scroll horizontal */
+  .filter-pills-row {
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+  .filter-pills-row::-webkit-scrollbar { display: none; }
+
+  /* Tabel admin: kurangi padding */
+  .admin-table td, .admin-table th {
+    padding: 8px 10px !important;
+    white-space: nowrap;
+  }
+
+  /* Modal: padding lebih kecil */
+  .modal-body-pad {
+    padding: 14px !important;
+  }
+}
+
+/* ── Animasi global ────────────────────────────────────────────────────── */
+@keyframes spin  { to   { transform: rotate(360deg); } }
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+/* ── Admin mobile: tabel & layout ─────────────────────────────────────── */
+@media (max-width: 768px) {
+
+  /* Semua td/th kurangi padding agar tabel muat di layar kecil */
+  td { padding: 8px 10px !important; font-size: 12px !important; }
+  th { padding: 8px 10px !important; font-size: 11px !important; }
+
+  /* Bootstrap row col-md-* collapse ke 2-kolom untuk stat cards */
+  .row > [class*="col-md-3"],
+  .row > [class*="col-lg-3"],
+  .row > [class*="col-xl-3"] {
+    flex: 0 0 50% !important;
+    max-width: 50% !important;
+  }
+
+  /* Panel lebar (col-md-5, col-md-7, col-md-8) jadi full width */
+  .row > [class*="col-md-5"],
+  .row > [class*="col-md-7"],
+  .row > [class*="col-md-8"],
+  .row > [class*="col-md-10"],
+  .row > [class*="col-xl-4"],
+  .row > [class*="col-xl-8"] {
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Modal ukuran besar jadi hampir full-screen */
+  [style*="maxWidth: 1000"],
+  [style*="maxWidth: 900"],
+  [style*="maxWidth: 800"],
+  [style*="maxWidth: 720"],
+  [style*="maxWidth: 700"],
+  [style*="maxWidth: 640"],
+  [style*="maxWidth: 580"] {
+    max-width: calc(100vw - 20px) !important;
+    border-radius: 12px !important;
+  }
+
+  /* Modal yang fixed inset: padding lebih kecil */
+  [style*="position: 'fixed'"][style*="inset: 0"] {
+    padding: 10px !important;
+  }
+
+  /* Sembunyikan beberapa kolom tabel di mobile lewat Bootstrap d-none */
+  .d-mobile-hide { display: none !important; }
+
+  /* Tombol aksi: lebih kecil */
+  button[style*="fontSize: 12"],
+  button[style*="fontSize: 13"] {
+    font-size: 11px !important;
+    padding: 5px 8px !important;
+  }
+}
