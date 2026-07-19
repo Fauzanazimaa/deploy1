@@ -115,18 +115,8 @@ def _seed_admin():
         db.session.add(admin)
         db.session.commit()
         print('Default admin created: admin / admin123')
-
-    if not User.query.filter_by(username='kontributor').first():
-        contrib = User(
-            username='kontributor',
-            email='kontributor@example.com',
-            password_hash=generate_password_hash('kontributor123'),
-            role='contributor',
-            is_active=True,
-        )
-        db.session.add(contrib)
-        db.session.commit()
-        print('Default contributor created: kontributor / kontributor123')
+    # Kontributor default TIDAK dibuat otomatis.
+    # Tambahkan kontributor manual via menu Kelola Pengguna di dashboard admin.
 
 
 if __name__ == '__main__':
