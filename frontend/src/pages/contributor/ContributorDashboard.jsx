@@ -134,41 +134,64 @@ export default function ContributorDashboard() {
             Belum ada tugas yang diberikan
           </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-              <thead>
-                <tr style={{ background: '#fafafa', borderBottom: '1px solid #f0f0f0' }}>
-                  {['Tugas', 'Jenis Data', 'Deadline', 'Status'].map((h) => (
-                    <th key={h} style={{ padding: '10px 20px', textAlign: 'left', fontWeight: 600, color: '#6b7280', fontSize: 12 }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {stats.recent_tasks.map(t => {
-                  const s = STATUS_MAP[t.status] || { label: t.status, color: '#6b7280', bg: '#f3f4f6', border: '#e5e7eb', icon: 'bi-circle' }
-                  const isOverdue = t.deadline && new Date(t.deadline) < new Date() && t.status !== 'approved'
-                  return (
-                    <tr key={t.id} style={{ borderBottom: '1px solid #f9f9f9' }} className="table-row-hover">
-                      <td style={{ padding: '11px 20px', fontWeight: 600, color: '#1a1f2e' }}>{t.title}</td>
-                      <td style={{ padding: '11px 20px' }}>
-                        <span style={{ background: '#f3f4f6', border: '1px solid #e5e7eb', color: '#374151', borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 500 }}>
-                          {t.data_type_name}
-                        </span>
-                      </td>
-                      <td style={{ padding: '11px 20px', color: isOverdue ? '#dc2626' : '#6b7280', fontWeight: isOverdue ? 600 : 400, fontSize: 12 }}>
-                        {t.deadline ? new Date(t.deadline).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) : '-'}
-                      </td>
-                      <td style={{ padding: '11px 20px' }}>
-                        <span style={{ background: s.bg, border: `1px solid ${s.border}`, color: s.color, borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 600 }}>
-                          <i className={`bi ${s.icon} me-1`}></i>{s.label}
-                        </span>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+          <>
+            {/* Mobile: card list */}
+            <div className="d-md-none" style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '8px 12px 12px' }}>
+              {stats.recent_tasks.map(t => {
+                const s = STATUS_MAP[t.status] || { label: t.status, color: '#6b7280', bg: '#f3f4f6', border: '#e5e7eb', icon: 'bi-circle' }
+                const isOverdue = t.deadline && new Date(t.deadline) < new Date() && t.status !== 'approved'
+                return (
+                  <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 4px', borderBottom: '1px solid #f0f0f0' }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 600, fontSize: 13, color: '#1a1f2e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</div>
+                      <div style={{ fontSize: 11, color: isOverdue ? '#dc2626' : '#9ca3af', marginTop: 2 }}>
+                        <i className="bi bi-calendar-event me-1"></i>
+                        {t.deadline ? new Date(t.deadline).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) : 'Tanpa deadline'}
+                      </div>
+                    </div>
+                    <span style={{ background: s.bg, border: `1px solid ${s.border}`, color: s.color, borderRadius: 20, padding: '3px 9px', fontSize: 10, fontWeight: 600, flexShrink: 0, marginLeft: 8 }}>
+                      <i className={`bi ${s.icon} me-1`}></i>{s.label}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Desktop: table */}
+            <div className="d-none d-md-block" style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                <thead>
+                  <tr style={{ background: '#fafafa', borderBottom: '1px solid #f0f0f0' }}>
+                    {['Tugas', 'Jenis Data', 'Deadline', 'Status'].map((h) => (
+                      <th key={h} style={{ padding: '10px 20px', textAlign: 'left', fontWeight: 600, color: '#6b7280', fontSize: 12 }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {stats.recent_tasks.map(t => {
+                    const s = STATUS_MAP[t.status] || { label: t.status, color: '#6b7280', bg: '#f3f4f6', border: '#e5e7eb', icon: 'bi-circle' }
+                    const isOverdue = t.deadline && new Date(t.deadline) < new Date() && t.status !== 'approved'
+                    return (
+                      <tr key={t.id} style={{ borderBottom: '1px solid #f9f9f9' }} className="table-row-hover">
+                        <td style={{ padding: '11px 20px', fontWeight: 600, color: '#1a1f2e' }}>{t.title}</td>
+                        <td style={{ padding: '11px 20px' }}>
+                          <span style={{ background: '#f3f4f6', border: '1px solid #e5e7eb', color: '#374151', borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 500 }}>{t.data_type_name}</span>
+                        </td>
+                        <td style={{ padding: '11px 20px', color: isOverdue ? '#dc2626' : '#6b7280', fontWeight: isOverdue ? 600 : 400, fontSize: 12 }}>
+                          {t.deadline ? new Date(t.deadline).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) : '-'}
+                        </td>
+                        <td style={{ padding: '11px 20px' }}>
+                          <span style={{ background: s.bg, border: `1px solid ${s.border}`, color: s.color, borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 600 }}>
+                            <i className={`bi ${s.icon} me-1`}></i>{s.label}
+                          </span>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 

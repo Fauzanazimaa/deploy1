@@ -76,53 +76,75 @@ export default function ContributorSubmissions() {
           Belum ada riwayat pengiriman.
         </div>
       ) : (
-        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #f0f0f0', overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-              <thead>
-                <tr style={{ background: '#fafafa', borderBottom: '1px solid #f0f0f0' }}>
-                  {['#', 'Tugas', 'Status', 'Dikirim', 'Ditinjau', 'Catatan'].map((h) => (
-                    <th key={h} style={{ padding: '10px 20px', textAlign: 'left', fontWeight: 600, color: '#6b7280', fontSize: 12 }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((s, i) => {
-                  const st = STATUS_MAP[s.status] || { label: s.status, colorHex: '#6b7280', bg: '#f3f4f6', border: '#e5e7eb', icon: 'bi-circle' }
-                  return (
-                    <tr key={s.id} style={{ borderBottom: '1px solid #f9f9f9' }} className="table-row-hover">
-                      <td style={{ padding: '11px 20px', color: '#9ca3af', fontSize: 12 }}>{i + 1}</td>
-                      <td style={{ padding: '11px 20px', fontWeight: 600, color: '#1a1f2e' }}>{s.task_title}</td>
-                      <td style={{ padding: '11px 20px' }}>
-                        <span style={{ background: st.bg, border: `1px solid ${st.border}`, color: st.colorHex, borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 600 }}>
-                          <i className={`bi ${st.icon} me-1`}></i>{st.label}
-                        </span>
-                      </td>
-                      <td style={{ padding: '11px 20px', color: '#6b7280', fontSize: 12 }}>
-                        {s.submitted_at ? s.submitted_at.slice(0, 10).split('-').reverse().join('/') : '-'}
-                      </td>
-                      <td style={{ padding: '11px 20px', color: '#6b7280', fontSize: 12 }}>
-                        {s.reviewed_at ? s.reviewed_at.slice(0, 10).split('-').reverse().join('/') : '-'}
-                      </td>
-                      <td style={{ padding: '11px 20px' }}>
-                        {s.status === 'revision' && s.revision_notes ? (
-                          <button
-                            onClick={() => setDetailSub(s)}
-                            style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', borderRadius: 7, padding: '5px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontFamily: "'Inter', sans-serif" }}
-                          >
-                            <i className="bi bi-eye"></i>Lihat Catatan
-                          </button>
-                        ) : (
-                          <span style={{ color: '#9ca3af' }}>-</span>
-                        )}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+        <>
+          {/* Mobile card list */}
+          <div className="d-md-none" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {filtered.map((s) => {
+              const st = STATUS_MAP[s.status] || { label: s.status, colorHex: '#6b7280', bg: '#f3f4f6', border: '#e5e7eb', icon: 'bi-circle' }
+              return (
+                <div key={s.id} style={{ background: '#fff', borderRadius: 12, border: '1px solid #f0f0f0', padding: '14px 16px', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                    <span style={{ fontWeight: 700, fontSize: 14, color: '#1a1f2e', flex: 1, marginRight: 8 }}>{s.task_title}</span>
+                    <span style={{ background: st.bg, border: `1px solid ${st.border}`, color: st.colorHex, borderRadius: 20, padding: '3px 9px', fontSize: 10, fontWeight: 600, flexShrink: 0 }}>
+                      <i className={`bi ${st.icon} me-1`}></i>{st.label}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 16, fontSize: 12, color: '#6b7280', flexWrap: 'wrap' }}>
+                    <span><i className="bi bi-send me-1"></i>Dikirim: {s.submitted_at ? s.submitted_at.slice(0,10).split('-').reverse().join('/') : '-'}</span>
+                    <span><i className="bi bi-check-circle me-1"></i>Ditinjau: {s.reviewed_at ? s.reviewed_at.slice(0,10).split('-').reverse().join('/') : '-'}</span>
+                  </div>
+                  {s.status === 'revision' && s.revision_notes && (
+                    <button onClick={() => setDetailSub(s)}
+                      style={{ marginTop: 10, background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', borderRadius: 7, padding: '6px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontFamily: "'Inter', sans-serif" }}>
+                      <i className="bi bi-eye"></i>Lihat Catatan Revisi
+                    </button>
+                  )}
+                </div>
+              )
+            })}
           </div>
-        </div>
+
+          {/* Desktop table */}
+          <div className="d-none d-md-block" style={{ background: '#fff', borderRadius: 12, border: '1px solid #f0f0f0', overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                <thead>
+                  <tr style={{ background: '#fafafa', borderBottom: '1px solid #f0f0f0' }}>
+                    {['#', 'Tugas', 'Status', 'Dikirim', 'Ditinjau', 'Catatan'].map((h) => (
+                      <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 600, color: '#6b7280', fontSize: 12 }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((s, i) => {
+                    const st = STATUS_MAP[s.status] || { label: s.status, colorHex: '#6b7280', bg: '#f3f4f6', border: '#e5e7eb', icon: 'bi-circle' }
+                    return (
+                      <tr key={s.id} style={{ borderBottom: '1px solid #f9f9f9' }} className="table-row-hover">
+                        <td style={{ padding: '10px 16px', color: '#9ca3af', fontSize: 12 }}>{i + 1}</td>
+                        <td style={{ padding: '10px 16px', fontWeight: 600, color: '#1a1f2e' }}>{s.task_title}</td>
+                        <td style={{ padding: '10px 16px' }}>
+                          <span style={{ background: st.bg, border: `1px solid ${st.border}`, color: st.colorHex, borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 600 }}>
+                            <i className={`bi ${st.icon} me-1`}></i>{st.label}
+                          </span>
+                        </td>
+                        <td style={{ padding: '10px 16px', color: '#6b7280', fontSize: 12 }}>{s.submitted_at ? s.submitted_at.slice(0,10).split('-').reverse().join('/') : '-'}</td>
+                        <td style={{ padding: '10px 16px', color: '#6b7280', fontSize: 12 }}>{s.reviewed_at ? s.reviewed_at.slice(0,10).split('-').reverse().join('/') : '-'}</td>
+                        <td style={{ padding: '10px 16px' }}>
+                          {s.status === 'revision' && s.revision_notes ? (
+                            <button onClick={() => setDetailSub(s)}
+                              style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', borderRadius: 7, padding: '5px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontFamily: "'Inter', sans-serif" }}>
+                              <i className="bi bi-eye"></i>Lihat Catatan
+                            </button>
+                          ) : <span style={{ color: '#9ca3af' }}>-</span>}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
       )}
 
       {/* Revision modal */}

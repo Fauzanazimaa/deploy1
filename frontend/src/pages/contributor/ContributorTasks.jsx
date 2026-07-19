@@ -200,7 +200,7 @@ function TaskCard({ task, onUpload }) {
                 ref={fileRef}
                 onChange={e => setSelectedFile(e.target.files[0])}
                 required
-                style={{ maxWidth: 300, fontSize: 12 }}
+                style={{ flex: '1 1 200px', fontSize: 12 }}
               />
               <button
                 type="submit"
