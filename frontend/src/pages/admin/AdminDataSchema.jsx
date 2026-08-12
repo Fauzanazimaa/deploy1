@@ -847,7 +847,7 @@ export default function AdminDataSchema() {
                     }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                       <div style={{ flex: 1, overflow: 'hidden' }}>
-                        <div style={{ fontWeight: 600, color: '#1a1f2e', fontSize: 14, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{dt.name}</div>
+                        <div style={{ fontWeight: 600, color: '#1a1f2e', fontSize: 13, whiteSpace: 'normal', wordBreak: 'break-word', lineHeight: '1.4' }}>{dt.name}</div>
                         <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>
                           {leafs.length} kolom &bull;{' '}
                           {tmpl
