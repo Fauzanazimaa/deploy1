@@ -309,6 +309,13 @@ def update_task(task_id):
         task.status = data['status']
     if 'deadline' in data:
         task.deadline = datetime.fromisoformat(data['deadline']) if data['deadline'] else None
+    if 'data_type_id' in data:
+        task.data_type_id = data['data_type_id']
+    if 'assigned_to' in data:
+        assignee = db.session.get(User, data['assigned_to'])
+        if not assignee or assignee.role != 'contributor':
+            return jsonify({'error': 'Assigned user must be a contributor'}), 400
+        task.assigned_to = data['assigned_to']
 
     db.session.commit()
     return jsonify(task.to_dict()), 200
