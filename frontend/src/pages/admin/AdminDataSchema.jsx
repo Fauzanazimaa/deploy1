@@ -1103,12 +1103,12 @@ export default function AdminDataSchema() {
                       {formError}
                     </div>
                   )}
-                  <div className="row g-3 mb-4">
-                    <div className="col-md-5">
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    <div>
                       <label style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 5, letterSpacing: 0.5 }}>NAMA JENIS DATA <span style={{ color: '#dc2626' }}>*</span></label>
                       <input className="form-control" required placeholder="contoh: Data Pertanahan" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} style={{ fontSize: 13, fontFamily: "'Inter',sans-serif" }} />
                     </div>
-                    <div className="col-md-7">
+                    <div>
                       <label style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 5, letterSpacing: 0.5 }}>DESKRIPSI</label>
                       <input className="form-control" placeholder="Deskripsi singkat (opsional)" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} style={{ fontSize: 13, fontFamily: "'Inter',sans-serif" }} />
                     </div>
