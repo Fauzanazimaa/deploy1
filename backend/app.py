@@ -50,6 +50,24 @@ def create_app():
     JWTManager(app)
     CORS(app, resources={r'/api/*': {'origins': '*'}})
 
+    # ── Database Migration on Startup ──────────────────────────────────────────
+    with app.app_context():
+        try:
+            from sqlalchemy import text
+            uri = app.config.get('SQLALCHEMY_DATABASE_URI', '')
+            if 'postgresql' in uri:
+                db.session.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS whatsapp VARCHAR(30)"))
+                db.session.commit()
+            else:
+                try:
+                    db.session.execute(text("ALTER TABLE users ADD COLUMN whatsapp VARCHAR(30)"))
+                    db.session.commit()
+                except Exception:
+                    db.session.rollback()
+        except Exception as e:
+            db.session.rollback()
+            app.logger.warning(f"Startup migration failed or skipped: {str(e)}")
+
     # SQLite foreign key enforcement (hanya lokal)
     if IS_LOCAL:
         from sqlalchemy import event
