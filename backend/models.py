@@ -117,6 +117,7 @@ class Submission(db.Model):
             'id': self.id,
             'task_id': self.task_id,
             'task_title': self.task.title if self.task else None,
+            'data_type_name': self.task.data_type.name if (self.task and self.task.data_type) else None,
             'contributor_id': self.contributor_id,
             'contributor_username': self.contributor.username if self.contributor else None,
             'file_path': self.file_path,

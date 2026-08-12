@@ -130,7 +130,15 @@ export default function ContributorSubmissions() {
               return (
                 <div key={s.id} style={{ background: '#fff', borderRadius: 12, border: '1px solid #f0f0f0', padding: '14px 16px', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-                    <span style={{ fontWeight: 700, fontSize: 14, color: '#1a1f2e', flex: 1, marginRight: 8 }}>{s.task_title}</span>
+                    <div style={{ flex: 1, marginRight: 8 }}>
+                      <span style={{ fontWeight: 700, fontSize: 14, color: '#1a1f2e', display: 'block' }}>{s.task_title}</span>
+                      {s.data_type_name && (
+                        <span style={{ color: '#6b7280', fontSize: 11, marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <i className="bi bi-file-earmark-spreadsheet" style={{ color: '#9ca3af', fontSize: 10 }}></i>
+                          {s.data_type_name}
+                        </span>
+                      )}
+                    </div>
                     <span style={{ background: st.bg, border: `1px solid ${st.border}`, color: st.colorHex, borderRadius: 20, padding: '3px 9px', fontSize: 10, fontWeight: 600, flexShrink: 0 }}>
                       <i className={`bi ${st.icon} me-1`}></i>{st.label}
                     </span>
@@ -177,7 +185,15 @@ export default function ContributorSubmissions() {
                     return (
                       <tr key={s.id} style={{ borderBottom: '1px solid #f9f9f9' }} className="table-row-hover">
                         <td style={{ padding: '10px 16px', color: '#9ca3af', fontSize: 12 }}>{i + 1}</td>
-                        <td style={{ padding: '10px 16px', fontWeight: 600, color: '#1a1f2e' }}>{s.task_title}</td>
+                        <td style={{ padding: '10px 16px' }}>
+                          <div style={{ fontWeight: 600, color: '#1a1f2e' }}>{s.task_title}</div>
+                          {s.data_type_name && (
+                            <div style={{ color: '#6b7280', fontSize: 11, marginTop: 3, display: 'flex', alignItems: 'center', gap: 4 }}>
+                              <i className="bi bi-file-earmark-spreadsheet" style={{ color: '#9ca3af' }}></i>
+                              {s.data_type_name}
+                            </div>
+                          )}
+                        </td>
                         <td style={{ padding: '10px 16px' }}>
                           <span style={{ background: st.bg, border: `1px solid ${st.border}`, color: st.colorHex, borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 600 }}>
                             <i className={`bi ${st.icon} me-1`}></i>{st.label}

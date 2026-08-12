@@ -300,7 +300,15 @@ export default function AdminSubmissions() {
                           <span style={{ fontWeight: 600, color: '#1a1f2e' }}>{s.contributor_username}</span>
                         </div>
                       </td>
-                      <td style={{ padding: '11px 20px', color: '#374151' }}>{s.task_title}</td>
+                      <td style={{ padding: '11px 20px' }}>
+                        <div style={{ fontWeight: 600, color: '#374151' }}>{s.task_title}</div>
+                        {s.data_type_name && (
+                          <div style={{ color: '#6b7280', fontSize: 11, marginTop: 3, display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <i className="bi bi-file-earmark-spreadsheet" style={{ color: '#9ca3af' }}></i>
+                            {s.data_type_name}
+                          </div>
+                        )}
+                      </td>
                       <td style={{ padding: '11px 20px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                           <span style={{ background: st.bg, border: `1px solid ${st.border}`, color: st.colorHex, borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 600 }}>{st.label}</span>
