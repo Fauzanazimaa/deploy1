@@ -963,20 +963,6 @@ export default function AdminDataSchema() {
                               ? <><span className="spinner-border spinner-border-sm" style={{ width: 14, height: 14, borderWidth: 2 }} />Mengupload...</>
                               : <><i className="bi bi-upload"></i>Upload</>}
                           </button>
-                          <button
-                            style={{
-                              background: '#fff', border: '1px solid #e5e7eb', color: '#374151',
-                              borderRadius: 8, padding: '8px 14px', fontSize: 12, fontWeight: 500,
-                              cursor: getLeafLevel(schema).length === 0 ? 'not-allowed' : 'pointer',
-                              opacity: getLeafLevel(schema).length === 0 ? 0.5 : 1,
-                              display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0,
-                              fontFamily: "'Inter',sans-serif",
-                            }}
-                            disabled={getLeafLevel(schema).length === 0}
-                            title={getLeafLevel(schema).length === 0 ? 'Edit schema dulu untuk menambah kolom' : 'Generate template dari schema yang ada'}
-                            onClick={() => handleGenerate(dt.id)}>
-                            <i className="bi bi-magic"></i>Generate dari Schema
-                          </button>
                         </div>
                         {uploadError && (
                           <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 7, padding: '7px 12px', fontSize: 12, color: '#dc2626', marginTop: 8 }}>
@@ -1002,7 +988,7 @@ export default function AdminDataSchema() {
       {/* Form Modal */}
       {showFormModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1050, overflowY: 'auto', padding: '20px' }}>
-          <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 20px 60px rgba(0,0,0,0.2)', width: '100%', maxWidth: editDT ? 1000 : 480, margin: '0 auto', fontFamily: "'Inter',sans-serif" }}>
+          <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 20px 60px rgba(0,0,0,0.2)', width: '100%', maxWidth: 480, margin: '0 auto', fontFamily: "'Inter',sans-serif" }}>
             
             {/* Header */}
             <div style={{ borderBottom: '1px solid #f0f0f0', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -1128,17 +1114,6 @@ export default function AdminDataSchema() {
                     </div>
                   </div>
 
-                  <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#92400e', marginBottom: 16 }}>
-                    <i className="bi bi-info-circle me-2"></i>
-                    Untuk mengubah kolom, upload ulang template Excel dari panel detail. Schema builder di bawah untuk penyesuaian manual.
-                  </div>
-
-                  <div className="row g-4">
-                    <div className="col-md-12">
-                      <h6 style={{ fontWeight: 600, fontSize: 12, color: '#6b7280', letterSpacing: 1, marginBottom: 12 }}>PREVIEW SCHEMA</h6>
-                      <HeaderPreview schema={form.schema} />
-                    </div>
-                  </div>
                 </div>
                 <div style={{ borderTop: '1px solid #f0f0f0', padding: '14px 20px', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
                   <button type="button" onClick={() => setShowFormModal(false)} style={{ background: '#f3f4f6', border: '1px solid #e5e7eb', color: '#374151', borderRadius: 8, padding: '8px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Inter',sans-serif" }}>Batal</button>
