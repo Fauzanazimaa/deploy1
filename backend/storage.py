@@ -64,10 +64,24 @@ def upload_file(bucket, path: str, file_bytes: bytes, content_type: str = 'appli
     if _USE_SUPABASE:
         sb = _get_supabase()
         bucket_name = bucket() if callable(bucket) else bucket
-        sb.storage.from_(bucket_name).upload(
-            path, file_bytes,
-            file_options={'content-type': content_type, 'upsert': 'true'}
-        )
+        try:
+            sb.storage.from_(bucket_name).upload(
+                path, file_bytes,
+                file_options={'content-type': content_type, 'upsert': 'true'}
+            )
+        except Exception as e:
+            # Jika bucket tidak ditemukan/belum dibuat, coba buat bucketnya
+            if 'not found' in str(e).lower() or 'bucket' in str(e).lower():
+                try:
+                    sb.storage.create_bucket(bucket_name, options={'public': True})
+                    sb.storage.from_(bucket_name).upload(
+                        path, file_bytes,
+                        file_options={'content-type': content_type, 'upsert': 'true'}
+                    )
+                except Exception as inner_e:
+                    raise Exception(f"Gagal upload: {str(e)}. Gagal membuat bucket otomatis: {str(inner_e)}")
+            else:
+                raise e
         return sb.storage.from_(bucket_name).get_public_url(path)
     else:
         folder = _bucket_to_local_dir(bucket)
