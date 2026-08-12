@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from 'react'
-import { getAdminTasks, createTask, updateTask, deleteTask, getUsers, getDataTypes } from '../../api'
+import {
+  getAdminTasks, createTask, updateTask, deleteTask, getUsers, getDataTypes,
+  getAdminAssignmentLetters, uploadAssignmentLetter, deleteAssignmentLetter, downloadAdminAssignmentLetter
+} from '../../api'
 
 const emptyForm = {
   title: '',
@@ -33,19 +36,25 @@ export default function AdminTasks() {
   const [deleteConfirm, setDeleteConfirm] = useState(null)
   const [deleting, setDeleting] = useState(false)
 
-  // Tabs state: 'tasks' (flat list) | 'contributors' (grouped by who hasn't submitted)
+  // Tabs state: 'tasks' (flat list) | 'contributors' (grouped by who hasn't submitted) | 'letters'
   const [activeTab, setActiveTab] = useState('tasks')
+
+  const [assignmentLetters, setAssignmentLetters] = useState([])
+  const [uploadingLetter, setUploadingLetter] = useState(false)
+  const [letterError, setLetterError] = useState('')
 
   const fetchAll = async () => {
     try {
-      const [tasksRes, usersRes, dtRes] = await Promise.all([
+      const [tasksRes, usersRes, dtRes, lettersRes] = await Promise.all([
         getAdminTasks(),
         getUsers(),
         getDataTypes(),
+        getAdminAssignmentLetters()
       ])
       setTasks(tasksRes.data)
       setContributors(usersRes.data.filter((u) => u.role === 'contributor'))
       setDataTypes(dtRes.data)
+      setAssignmentLetters(lettersRes.data)
     } catch (e) {
       console.error(e)
     } finally {
@@ -54,6 +63,57 @@ export default function AdminTasks() {
   }
 
   useEffect(() => { fetchAll() }, [])
+
+  const handleUploadLetter = async (title, file) => {
+    if (!file) return
+    setUploadingLetter(true)
+    setLetterError('')
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      fd.append('task_title', title)
+      await uploadAssignmentLetter(fd)
+      fetchAll()
+    } catch (err) {
+      setLetterError(err.response?.data?.error || 'Gagal mengupload surat tugas')
+    } finally {
+      setUploadingLetter(false)
+    }
+  }
+
+  const handleDeleteLetter = async (id) => {
+    if (!window.confirm('Hapus surat tugas ini?')) return
+    try {
+      await deleteAssignmentLetter(id)
+      fetchAll()
+    } catch (err) {
+      alert(err.response?.data?.error || 'Gagal menghapus surat tugas')
+    }
+  }
+
+  const handleDownloadLetter = async (letter) => {
+    try {
+      const res = await downloadAdminAssignmentLetter(letter.id)
+      const url = window.URL.createObjectURL(new Blob([res.data]))
+      const a = document.createElement('a')
+      a.href = url
+      a.setAttribute('download', letter.original_filename)
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      window.URL.revokeObjectURL(url)
+    } catch (err) {
+      alert('Gagal mengunduh surat tugas')
+    }
+  }
+
+  const getUniqueTaskTitles = () => {
+    const titles = new Set()
+    tasks.forEach(t => {
+      if (t.title) titles.add(t.title)
+    })
+    return Array.from(titles)
+  }
 
   const openCreate = () => {
     setEditTask(null)
@@ -248,6 +308,18 @@ export default function AdminTasks() {
           }}
         >
           <i className="bi bi-person-exclamation me-2"></i>Belum Kirim Data ({contributorsWithPending.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('letters')}
+          style={{
+            background: 'none', border: 'none',
+            borderBottom: activeTab === 'letters' ? `2px solid ${ACCENT}` : '2px solid transparent',
+            color: activeTab === 'letters' ? '#1a1f2e' : '#6b7280',
+            fontWeight: 600, paddingBottom: 10, cursor: 'pointer', fontSize: 13,
+            fontFamily: "'Inter', sans-serif", transition: 'border-color 0.15s, color 0.15s'
+          }}
+        >
+          <i className="bi bi-file-earmark-text me-2"></i>Surat Tugas
         </button>
       </div>
 
@@ -469,6 +541,102 @@ export default function AdminTasks() {
             </div>
           )}
         </>
+      )}
+
+      {/* Tab Content 3: Assignment Letters */}
+      {activeTab === 'letters' && (
+        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #f0f0f0', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', padding: '24px 20px' }}>
+          <h5 style={{ fontWeight: 700, fontSize: 16, color: '#1a1f2e', marginBottom: 6 }}>Manajemen Surat Tugas</h5>
+          <p style={{ color: '#6b7280', fontSize: 13, marginBottom: 20 }}>Upload dan kelola surat tugas (format PDF) berdasarkan judul kegiatan/tugas</p>
+          
+          {letterError && (
+            <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', borderRadius: 8, padding: '10px 14px', fontSize: 13, marginBottom: 16 }}>
+              <i className="bi bi-exclamation-triangle me-2"></i>{letterError}
+            </div>
+          )}
+
+          {getUniqueTaskTitles().length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '36px 0', color: '#9ca3af', fontSize: 13 }}>
+              <i className="bi bi-file-earmark-text" style={{ fontSize: 32, display: 'block', marginBottom: 10, opacity: 0.35 }}></i>
+              Belum ada judul tugas yang dibuat. Buat tugas terlebih dahulu.
+            </div>
+          ) : (
+            <div className="table-responsive">
+              <table className="table align-middle text-start" style={{ fontSize: 13 }}>
+                <thead>
+                  <tr style={{ background: '#f8f9fa' }}>
+                    <th style={{ width: '40%', padding: '10px 16px' }}>Judul Kegiatan / Tugas</th>
+                    <th style={{ width: '35%', padding: '10px 16px' }}>File Surat Tugas (PDF)</th>
+                    <th style={{ width: '25%', padding: '10px 16px', textAlign: 'center' }}>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {getUniqueTaskTitles().map(title => {
+                    const letter = assignmentLetters.find(l => l.task_title === title)
+                    return (
+                      <tr key={title}>
+                        <td style={{ fontWeight: 600, color: '#1a1f2e', padding: '12px 16px' }}>{title}</td>
+                        <td style={{ padding: '12px 16px' }}>
+                          {letter ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#16a34a', fontWeight: 500 }}>
+                              <i className="bi bi-file-earmark-pdf-fill" style={{ fontSize: 16, color: '#ef4444' }}></i>
+                              <span style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={letter.original_filename}>
+                                {letter.original_filename}
+                              </span>
+                            </div>
+                          ) : (
+                            <span style={{ color: '#9ca3af', fontStyle: 'italic' }}>Belum diupload</span>
+                          )}
+                        </td>
+                        <td style={{ padding: '12px 16px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
+                            {letter ? (
+                              <>
+                                <button
+                                  onClick={() => handleDownloadLetter(letter)}
+                                  className="btn btn-sm btn-outline-success"
+                                  style={{ display: 'flex', alignItems: 'center', gap: 4 }}
+                                >
+                                  <i className="bi bi-download"></i> Unduh
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteLetter(letter.id)}
+                                  className="btn btn-sm btn-outline-danger"
+                                  style={{ display: 'flex', alignItems: 'center', gap: 4 }}
+                                >
+                                  <i className="bi bi-trash"></i> Hapus
+                                </button>
+                              </>
+                            ) : (
+                              <label style={{
+                                margin: 0, padding: '5px 12px', background: '#eff6ff',
+                                border: '1px solid #bfdbfe', color: '#3b82f6', borderRadius: 6,
+                                cursor: 'pointer', fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4
+                              }}>
+                                <i className="bi bi-upload"></i> Upload PDF
+                                <input
+                                  type="file"
+                                  accept=".pdf"
+                                  style={{ display: 'none' }}
+                                  onChange={e => {
+                                    const file = e.target.files[0]
+                                    if (file) {
+                                      handleUploadLetter(title, file)
+                                    }
+                                  }}
+                                />
+                              </label>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       )}
 
       {/* Form Modal */}

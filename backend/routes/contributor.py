@@ -700,3 +700,60 @@ def download_submission(sub_id):
         download_name=submission.file_path.split('_', 1)[-1] if '_' in submission.file_path else submission.file_path,
         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     )
+
+
+# ─── Assignment Letters (Surat Tugas) ──────────────────────────────────────
+
+@contributor_bp.route('/assignment-letters', methods=['GET'])
+@jwt_required()
+def get_my_assignment_letters():
+    user, err, code = require_contributor()
+    if err:
+        return err, code
+
+    from models import Task, AssignmentLetter
+
+    # Find all tasks assigned to this contributor
+    my_tasks = Task.query.filter_by(assigned_to=user.id).all()
+    
+    # Extract unique task titles
+    unique_titles = list(set([t.title for t in my_tasks if t.title]))
+    
+    if not unique_titles:
+        return jsonify([]), 200
+
+    # Retrieve all assignment letters for these titles
+    letters = AssignmentLetter.query.filter(AssignmentLetter.task_title.in_(unique_titles)).all()
+    
+    return jsonify([l.to_dict() for l in letters]), 200
+
+
+@contributor_bp.route('/assignment-letters/<int:letter_id>/download', methods=['GET'])
+@jwt_required()
+def download_my_assignment_letter(letter_id):
+    user, err, code = require_contributor()
+    if err:
+        return err, code
+
+    from models import Task, AssignmentLetter
+    from storage import download_file, LETTERS_BUCKET
+
+    letter = AssignmentLetter.query.get_or_404(letter_id)
+    
+    # Security check: verify contributor is assigned to at least one task with this title
+    has_access = Task.query.filter_by(assigned_to=user.id, title=letter.task_title).first() is not None
+    if not has_access:
+        return jsonify({'error': 'Access denied'}), 403
+
+    try:
+        file_bytes = download_file(LETTERS_BUCKET(), letter.file_path)
+    except Exception:
+        return jsonify({'error': 'File not found in storage'}), 404
+
+    return send_file(
+        io.BytesIO(file_bytes),
+        as_attachment=True,
+        download_name=letter.original_filename,
+        mimetype='application/pdf'
+    )
+

@@ -42,8 +42,10 @@ def create_app():
     if IS_LOCAL:
         app.config['UPLOAD_FOLDER'] = os.path.join(BASE_DIR, 'uploads')
         app.config['TEMPLATES_EXCEL_FOLDER'] = os.path.join(BASE_DIR, 'templates_excel')
+        app.config['LETTERS_FOLDER'] = os.path.join(BASE_DIR, 'assignment_letters')
         os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
         os.makedirs(app.config['TEMPLATES_EXCEL_FOLDER'], exist_ok=True)
+        os.makedirs(app.config['LETTERS_FOLDER'], exist_ok=True)
 
     # ── Extensions ────────────────────────────────────────────────────────────
     db.init_app(app)

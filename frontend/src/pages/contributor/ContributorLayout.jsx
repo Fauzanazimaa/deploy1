@@ -7,6 +7,7 @@ const navItems = [
   { to: '/contributor',             icon: 'bi-speedometer2',          label: 'Dashboard',          end: true },
   { to: '/contributor/tasks',       icon: 'bi-clipboard2-check-fill', label: 'Tugas Saya' },
   { to: '/contributor/submissions', icon: 'bi-inbox-fill',            label: 'Riwayat' },
+  { to: '/contributor/letters',     icon: 'bi-file-earmark-text',     label: 'Surat Tugas' },
 ]
 
 const SIDEBAR_BG = '#1a1f2e'
@@ -39,6 +40,7 @@ export default function ContributorLayout() {
     '/contributor':             'Dashboard',
     '/contributor/tasks':       'Tugas Saya',
     '/contributor/submissions': 'Riwayat Pengiriman',
+    '/contributor/letters':     'Surat Tugas',
   }
   const currentLabel = pathLabel[location.pathname] || 'Dashboard'
 

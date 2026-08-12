@@ -18,6 +18,7 @@ import ContributorLayout from './pages/contributor/ContributorLayout'
 import ContributorDashboard from './pages/contributor/ContributorDashboard'
 import ContributorTasks from './pages/contributor/ContributorTasks'
 import ContributorSubmissions from './pages/contributor/ContributorSubmissions'
+import ContributorLetters from './pages/contributor/ContributorLetters'
 
 import ViewerLayout from './pages/viewer/ViewerLayout'
 import ViewerDashboard from './pages/viewer/ViewerDashboard'
@@ -61,6 +62,7 @@ export default function App() {
             <Route index element={<ContributorDashboard />} />
             <Route path="tasks" element={<ContributorTasks />} />
             <Route path="submissions" element={<ContributorSubmissions />} />
+            <Route path="letters" element={<ContributorLetters />} />
           </Route>
 
           {/* Viewer Routes */}

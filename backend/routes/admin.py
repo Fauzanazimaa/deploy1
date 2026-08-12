@@ -1200,3 +1200,116 @@ def dashboard_stats():
         'total_manual_entries':   ManualEntry.query.count(),
         'recent_submissions':     [s.to_dict() for s in recent_submissions],
     }), 200
+
+
+# ─── Assignment Letters (Surat Tugas) ──────────────────────────────────────
+
+@admin_bp.route('/assignment-letters', methods=['GET'])
+@jwt_required()
+def get_assignment_letters():
+    user, err, code = require_admin()
+    if err:
+        return err, code
+
+    from models import AssignmentLetter
+    letters = AssignmentLetter.query.all()
+    return jsonify([l.to_dict() for l in letters]), 200
+
+
+@admin_bp.route('/assignment-letters', methods=['POST'])
+@jwt_required()
+def upload_assignment_letter():
+    user, err, code = require_admin()
+    if err:
+        return err, code
+
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+
+    file = request.files['file']
+    task_title = request.form.get('task_title')
+
+    if not task_title:
+        return jsonify({'error': 'task_title is required'}), 400
+
+    if not file.filename.lower().endswith('.pdf'):
+        return jsonify({'error': 'File must be a PDF'}), 400
+
+    from models import AssignmentLetter
+    from storage import upload_file, delete_file, LETTERS_BUCKET
+
+    # Delete existing if any for this task title
+    existing = AssignmentLetter.query.filter_by(task_title=task_title).first()
+    if existing:
+        try:
+            delete_file(LETTERS_BUCKET(), existing.file_path)
+        except Exception:
+            pass
+        db.session.delete(existing)
+
+    file_bytes = file.read()
+    filename = secure_filename(file.filename)
+    storage_path = f"letter_{uuid.uuid4()}_{filename}"
+
+    upload_file(
+        LETTERS_BUCKET(), storage_path, file_bytes,
+        content_type='application/pdf'
+    )
+
+    letter = AssignmentLetter(
+        task_title=task_title,
+        file_path=storage_path,
+        original_filename=filename,
+        created_by=user.id
+    )
+    db.session.add(letter)
+    db.session.commit()
+
+    return jsonify(letter.to_dict()), 201
+
+
+@admin_bp.route('/assignment-letters/<int:letter_id>', methods=['DELETE'])
+@jwt_required()
+def delete_assignment_letter(letter_id):
+    user, err, code = require_admin()
+    if err:
+        return err, code
+
+    from models import AssignmentLetter
+    from storage import delete_file, LETTERS_BUCKET
+
+    letter = AssignmentLetter.query.get_or_404(letter_id)
+    try:
+        delete_file(LETTERS_BUCKET(), letter.file_path)
+    except Exception:
+        pass
+
+    db.session.delete(letter)
+    db.session.commit()
+
+    return jsonify({'message': 'Assignment letter deleted'}), 200
+
+
+@admin_bp.route('/assignment-letters/<int:letter_id>/download', methods=['GET'])
+@jwt_required()
+def download_assignment_letter(letter_id):
+    user, err, code = require_admin()
+    if err:
+        return err, code
+
+    from models import AssignmentLetter
+    from storage import download_file, LETTERS_BUCKET
+
+    letter = AssignmentLetter.query.get_or_404(letter_id)
+    try:
+        file_bytes = download_file(LETTERS_BUCKET(), letter.file_path)
+    except Exception:
+        return jsonify({'error': 'File not found in storage'}), 404
+
+    return send_file(
+        io.BytesIO(file_bytes),
+        as_attachment=True,
+        download_name=letter.original_filename,
+        mimetype='application/pdf'
+    )
+

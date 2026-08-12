@@ -30,6 +30,9 @@ def UPLOADS_BUCKET():
 def TEMPLATES_BUCKET():
     return os.getenv('SUPABASE_TEMPLATES_BUCKET', 'templates')
 
+def LETTERS_BUCKET():
+    return os.getenv('SUPABASE_LETTERS_BUCKET', 'assignment_letters')
+
 
 # ── Local backend ─────────────────────────────────────────────────────────────
 
@@ -41,11 +44,17 @@ def _local_templates_dir():
     base = os.path.abspath(os.path.join(os.path.dirname(__file__)))
     return os.path.join(base, 'templates_excel')
 
+def _local_letters_dir():
+    base = os.path.abspath(os.path.join(os.path.dirname(__file__)))
+    return os.path.join(base, 'assignment_letters')
+
 def _bucket_to_local_dir(bucket_fn):
     """Map bucket name ke folder lokal."""
     name = bucket_fn() if callable(bucket_fn) else bucket_fn
     if 'template' in name:
         return _local_templates_dir()
+    if 'letter' in name or 'assignment' in name:
+        return _local_letters_dir()
     return _local_uploads_dir()
 
 

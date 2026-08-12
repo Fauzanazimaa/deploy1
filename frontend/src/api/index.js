@@ -80,6 +80,14 @@ export const deleteManualEntry = (id) => api.delete(`/admin/manual-entries/${id}
 // ─── Admin – Dashboard ────────────────────────────────────────────────────────
 export const getAdminStats = () => api.get('/admin/dashboard/stats')
 
+// ─── Admin – Assignment Letters (Surat Tugas) ──────────────────────────────────
+export const getAdminAssignmentLetters = () => api.get('/admin/assignment-letters')
+export const uploadAssignmentLetter = (formData) =>
+  api.post('/admin/assignment-letters', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+export const deleteAssignmentLetter = (id) => api.delete(`/admin/assignment-letters/${id}`)
+export const downloadAdminAssignmentLetter = (id) =>
+  api.get(`/admin/assignment-letters/${id}/download`, { responseType: 'blob' })
+
 // ─── Contributor ──────────────────────────────────────────────────────────────
 export const getMyTasks = () => api.get('/contributor/tasks')
 export const getMyTask = (id) => api.get(`/contributor/tasks/${id}`)
@@ -98,6 +106,11 @@ export const downloadContributorSubmission = (id) =>
   api.get(`/contributor/submissions/${id}/download`, { responseType: 'blob' })
 export const previewContributorSubmission = (id) => api.get(`/contributor/submissions/${id}/preview`)
 export const getContributorStats = () => api.get('/contributor/dashboard/stats')
+
+// ─── Contributor – Assignment Letters (Surat Tugas) ────────────────────────────
+export const getContributorAssignmentLetters = () => api.get('/contributor/assignment-letters')
+export const downloadContributorAssignmentLetter = (id) =>
+  api.get(`/contributor/assignment-letters/${id}/download`, { responseType: 'blob' })
 
 // ─── Viewer ───────────────────────────────────────────────────────────────────
 export const getViewerDashboard = () => api.get('/viewer/dashboard')

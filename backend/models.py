@@ -243,3 +243,27 @@ class DashboardWidget(db.Model):
             'created_at':     self.created_at.isoformat(),
         }
 
+
+class AssignmentLetter(db.Model):
+    __tablename__ = 'assignment_letters'
+    id = db.Column(db.Integer, primary_key=True)
+    task_title = db.Column(db.String(200), nullable=False, unique=True)
+    file_path = db.Column(db.String(500), nullable=False)
+    original_filename = db.Column(db.String(255), nullable=False)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    creator = db.relationship('User', foreign_keys=[created_by])
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'task_title': self.task_title,
+            'file_path': self.file_path,
+            'original_filename': self.original_filename,
+            'created_by': self.created_by,
+            'creator_username': self.creator.username if self.creator else None,
+            'created_at': self.created_at.isoformat()
+        }
+
+
