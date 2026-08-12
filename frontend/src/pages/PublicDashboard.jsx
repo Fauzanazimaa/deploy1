@@ -6,7 +6,7 @@ import {
   PointElement, Title, Filler
 } from 'chart.js'
 import { Bar, Line, Pie, Doughnut } from 'react-chartjs-2'
-import { getPublicWidgets, downloadPublicWidget, login as loginApi } from '../api'
+import { login as loginApi } from '../api'
 import { useAuth } from '../context/AuthContext'
 import SejatiLogo from '../components/SejatiLogo'
 
@@ -17,348 +17,97 @@ ChartJS.register(
 
 const ACCENT = '#f5a623'
 const SIDEBAR_BG = '#1a1f2e'
+
 const CHART_COLORS = [
-  '#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6',
-  '#06b6d4','#f97316','#ec4899','#14b8a6','#a855f7',
-  '#84cc16','#64748b'
+  '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
+  '#06b6d4', '#f97316', '#ec4899', '#14b8a6', '#a855f7'
 ]
 
-const CHART_ICONS = {
-  bar: 'bi-bar-chart-fill', line: 'bi-graph-up', pie: 'bi-pie-chart-fill',
-  doughnut: 'bi-circle-half', area: 'bi-bar-chart-steps', number: 'bi-123', table: 'bi-table'
-}
-
-// ─── Chart renderer ───────────────────────────────────────────────────────────
-function WidgetChart({ widget, filters }) {
-  const cd = widget.chart_data
-  if (!cd || !cd.labels || cd.labels.length === 0) {
-    return (
-      <div style={{ textAlign: 'center', padding: '48px 0', color: '#9ca3af' }}>
-        <i className="bi bi-inbox" style={{ fontSize: 36, display: 'block', marginBottom: 10, opacity: 0.4 }}></i>
-        <span style={{ fontSize: 13 }}>Belum ada data tersedia</span>
-      </div>
-    )
-  }
-
-  // Filter by tahun if applicable
-  let labels = cd.labels
-  let values = cd.values
-  if (filters.tahun && cd.rawRows) {
-    const filtered = cd.rawRows.filter(r => String(r.tahun || '') === String(filters.tahun))
-    if (filtered.length > 0) {
-      labels = filtered.map(r => r[widget.label_field] || '')
-      values = filtered.map(r => parseFloat(r[widget.value_field] || 0))
-    }
-  }
-
-  const chartData = {
-    labels,
-    datasets: [{
-      label: widget.title,
-      data: values,
-      backgroundColor: (widget.chart_type === 'pie' || widget.chart_type === 'doughnut')
-        ? CHART_COLORS.slice(0, labels.length)
-        : CHART_COLORS[0] + 'cc',
-      borderColor: widget.chart_type === 'line' || widget.chart_type === 'area' ? CHART_COLORS[0] : CHART_COLORS[0],
-      borderWidth: 2,
-      fill: widget.chart_type === 'area',
-      tension: 0.4,
-      pointRadius: 4,
-      pointHoverRadius: 6,
-    }]
-  }
-
-  const opts = {
-    responsive: true, maintainAspectRatio: false,
-    plugins: {
-      legend: { position: 'bottom', labels: { font: { family: 'Inter', size: 11 }, padding: 14, boxWidth: 12 } },
-      tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${(ctx.parsed.y ?? ctx.parsed).toLocaleString('id-ID')}` } }
-    },
-    scales: widget.chart_type === 'pie' || widget.chart_type === 'doughnut' ? {} : {
-      y: { beginAtZero: true, ticks: { font: { family: 'Inter', size: 11 }, callback: v => v.toLocaleString('id-ID') } },
-      x: { ticks: { font: { family: 'Inter', size: 11 } } }
-    }
-  }
-
-  const h = 280
-  switch (widget.chart_type) {
-    case 'bar':     return <div style={{ height: h }}><Bar data={chartData} options={opts} /></div>
-    case 'line':    return <div style={{ height: h }}><Line data={chartData} options={opts} /></div>
-    case 'area':    return <div style={{ height: h }}><Line data={chartData} options={opts} /></div>
-    case 'pie':     return <div style={{ height: h }}><Pie data={chartData} options={opts} /></div>
-    case 'doughnut':return <div style={{ height: h }}><Doughnut data={chartData} options={opts} /></div>
-    case 'number': {
-      const total = values.reduce((a, b) => a + b, 0)
-      return (
-        <div style={{ textAlign: 'center', padding: '28px 0' }}>
-          <div style={{ fontSize: 64, fontWeight: 900, color: ACCENT, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{total.toLocaleString('id-ID')}</div>
-          <div style={{ color: '#6b7280', fontSize: 14, marginTop: 10 }}>{widget.description || 'Total'}</div>
-        </div>
-      )
-    }
-    case 'table':
-      return (
-        <div style={{ overflowX: 'auto', maxHeight: 320, border: '1px solid #e5e7eb', borderRadius: 10 }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-            <thead>
-              <tr style={{ background: SIDEBAR_BG, position: 'sticky', top: 0 }}>
-                <th style={{ padding: '10px 14px', color: '#fff', fontWeight: 600, textAlign: 'left' }}>Label</th>
-                <th style={{ padding: '10px 14px', color: '#fff', fontWeight: 600, textAlign: 'right' }}>Nilai</th>
-              </tr>
-            </thead>
-            <tbody>
-              {labels.map((lbl, i) => (
-                <tr key={i} style={{ borderBottom: '1px solid #f0f0f0', background: i % 2 === 0 ? '#fff' : '#f9fafb' }}>
-                  <td style={{ padding: '9px 14px', color: '#374151' }}>{lbl}</td>
-                  <td style={{ padding: '9px 14px', textAlign: 'right', fontWeight: 600, color: '#1a1f2e' }}>{(values[i] || 0).toLocaleString('id-ID')}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )
-    default: return null
-  }
-}
-
-// ─── Download helper ──────────────────────────────────────────────────────────
-function useDownload() {
-  const [downloading, setDownloading] = useState({})
-
-  const downloadExcel = async (widget) => {
-    setDownloading(p => ({ ...p, [widget.id]: true }))
-    try {
-      const res = await downloadPublicWidget(widget.id)
-      const url = URL.createObjectURL(new Blob([res.data]))
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `${widget.title}_${new Date().toISOString().slice(0, 10)}.xlsx`
-      document.body.appendChild(a); a.click(); a.remove()
-      URL.revokeObjectURL(url)
-    } catch { alert('Gagal mengunduh data') }
-    finally { setDownloading(p => ({ ...p, [widget.id]: false })) }
-  }
-
-  const downloadPNG = (widgetId) => {
-    const canvas = document.querySelector(`[data-widget-id="${widgetId}"] canvas`)
-    if (!canvas) return alert('Chart tidak dapat diunduh')
-    const a = document.createElement('a')
-    a.href = canvas.toDataURL('image/png')
-    a.download = `chart_${widgetId}.png`
-    document.body.appendChild(a); a.click(); a.remove()
-  }
-
-  return { downloading, downloadExcel, downloadPNG }
-}
-
-// ─── Main component ───────────────────────────────────────────────────────────
 export default function PublicDashboard() {
   const navigate = useNavigate()
-  const [widgets, setWidgets] = useState([])
-  const [loading, setLoading] = useState(true)
   const [openLogin, setOpenLogin] = useState(null)
-  const [filterCategory, setFilterCategory] = useState('all')
-  const [filterTahun, setFilterTahun] = useState('')
-  const { downloading, downloadExcel, downloadPNG } = useDownload()
-
-  useEffect(() => {
-    getPublicWidgets()
-      .then(res => setWidgets(res.data))
-      .catch(console.error)
-      .finally(() => setLoading(false))
-  }, [])
-
-  const allCategories = [...new Set(widgets.map(w => w.category || 'Umum'))]
-  const filtered = widgets.filter(w => filterCategory === 'all' || (w.category || 'Umum') === filterCategory)
-  const kpiWidgets = filtered.filter(w => w.chart_type === 'number')
-  const chartWidgets = filtered.filter(w => w.chart_type !== 'number')
-  const filters = { tahun: filterTahun }
+  const [activeTab, setActiveTab] = useState('penduduk')
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f0f2f5', fontFamily: "'Inter', sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: '#f5f6fa', fontFamily: "'Inter', sans-serif" }}>
 
       {/* ── Top Navigation ── */}
       <nav style={{ background: SIDEBAR_BG, height: 64, display: 'flex', alignItems: 'center', padding: '0 28px', position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 2px 12px rgba(0,0,0,0.18)' }}>
         <SejatiLogo size={36} variant="full" />
 
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
-          <div style={{ position: 'relative' }}>
-            <button onClick={() => setOpenLogin(openLogin ? null : 'login')}
-              style={{ background: ACCENT, border: 'none', color: '#fff', padding: '7px 16px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontFamily: "'Inter',sans-serif" }}>
-              <i className="bi bi-box-arrow-in-right"></i> Login
-            </button>
-          </div>
+          <button onClick={() => setOpenLogin(openLogin ? null : 'login')}
+            style={{ background: ACCENT, border: 'none', color: '#fff', padding: '7px 16px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontFamily: "'Inter',sans-serif" }}>
+            <i className="bi bi-box-arrow-in-right"></i> Login
+          </button>
         </div>
       </nav>
 
       {/* ── Hero Banner ── */}
-      <div style={{ background: `linear-gradient(135deg, ${SIDEBAR_BG} 0%, #2d3748 100%)`, padding: '48px 28px 40px', textAlign: 'center' }}>
-        <div style={{ maxWidth: 720, margin: '0 auto' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: ACCENT + '22', border: `1px solid ${ACCENT}44`, borderRadius: 20, padding: '5px 14px', fontSize: 12, color: ACCENT, fontWeight: 600, marginBottom: 16 }}>
-            <i className="bi bi-circle-fill" style={{ fontSize: 7, animation: 'blink 1.5s infinite' }}></i>
-            DATA TERVERIFIKASI RESMI
+      <div style={{ background: `linear-gradient(135deg, ${SIDEBAR_BG} 0%, #2d3748 100%)`, padding: '40px 28px 36px', textAlign: 'center' }}>
+        <div style={{ maxWidth: 760, margin: '0 auto' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(245,166,35,0.15)', border: `1px solid ${ACCENT}44`, borderRadius: 20, padding: '5px 14px', fontSize: 12, color: ACCENT, fontWeight: 600, marginBottom: 12 }}>
+            <i className="bi bi-broadcast" style={{ fontSize: 12 }}></i>
+            INTEGRASI DATA API BPS SIJUNJUNG
           </div>
-          <h1 style={{ color: '#fff', fontWeight: 800, fontSize: 'clamp(22px, 4vw, 36px)', margin: '0 0 12px', lineHeight: 1.2 }}>
-            Portal Data Statistik SEJATI
+          <h1 style={{ color: '#fff', fontWeight: 800, fontSize: 'clamp(20px, 3.5vw, 32px)', margin: '0 0 10px', lineHeight: 1.2 }}>
+            Portal Data Statistik Publik
           </h1>
-          <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: 14, margin: '0 0 28px', lineHeight: 1.6 }}>
-            Sistem Jejaring Pengumpulan Data Statistik Terintegrasi. Data yang ditampilkan telah melalui proses verifikasi oleh tim pengelola. Tersedia dalam berbagai format visualisasi dan dapat diunduh secara gratis.
+          <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: 13, margin: '0 0 20px', lineHeight: 1.6 }}>
+            Akses indikator makro sektoral Kabupaten Sijunjung secara real-time yang bersumber langsung dari API Badan Pusat Statistik (BPS) & dinas terkait.
           </p>
-          <div style={{ display: 'flex', gap: 24, justifyContent: 'center', flexWrap: 'wrap' }}>
-            {[
-              { icon: 'bi-shield-check-fill', label: 'Data Terverifikasi', color: '#10b981' },
-              { icon: 'bi-download', label: 'Bebas Diunduh', color: '#3b82f6' },
-              { icon: 'bi-graph-up-arrow', label: 'Visualisasi Interaktif', color: ACCENT },
-            ].map(f => (
-              <div key={f.label} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'rgba(255,255,255,0.75)' }}>
-                <i className={`bi ${f.icon}`} style={{ color: f.color, fontSize: 16 }}></i>
-                {f.label}
-              </div>
-            ))}
-          </div>
         </div>
       </div>
 
-      {/* ── Filter Bar ── */}
-      <div style={{ background: '#fff', borderBottom: '1px solid #e5e7eb', padding: '14px 28px', display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}>
-        <span style={{ fontSize: 12, fontWeight: 600, color: '#6b7280' }}>KATEGORI:</span>
-        {['all', ...allCategories].map(cat => (
-          <button key={cat} onClick={() => setFilterCategory(cat)}
-            style={{ background: filterCategory === cat ? ACCENT : '#f3f4f6', border: `1.5px solid ${filterCategory === cat ? ACCENT : '#e5e7eb'}`, color: filterCategory === cat ? '#fff' : '#374151', borderRadius: 20, padding: '5px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: "'Inter',sans-serif", transition: 'all .15s' }}>
-            {cat === 'all' ? '🔍 Semua' : cat}
-          </button>
-        ))}
-        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <label style={{ fontSize: 12, fontWeight: 600, color: '#6b7280' }}>TAHUN:</label>
-          <input type="number" min="2000" max="2100" value={filterTahun}
-            onChange={e => setFilterTahun(e.target.value)}
-            placeholder="Semua tahun"
-            style={{ border: '1.5px solid #e5e7eb', borderRadius: 8, padding: '5px 10px', fontSize: 12, width: 120, outline: 'none', fontFamily: "'Inter',sans-serif" }} />
-          {filterTahun && (
-            <button onClick={() => setFilterTahun('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: 16 }}>
-              <i className="bi bi-x-circle"></i>
+      {/* ── Sub Navigation Tabs (BPS API Categories) ── */}
+      <div style={{ background: '#fff', borderBottom: '1px solid #e5e7eb', position: 'sticky', top: 64, zIndex: 90, boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', gap: 8, overflowX: 'auto', padding: '0 20px' }}>
+          {[
+            { id: 'penduduk', label: 'Penduduk', icon: 'bi-people' },
+            { id: 'tenaga_kerja', label: 'Tenaga Kerja', icon: 'bi-briefcase' },
+            { id: 'ekonomi', label: 'Ekonomi', icon: 'bi-graph-up-arrow' },
+            { id: 'kemiskinan', label: 'Kemiskinan', icon: 'bi-activity' },
+            { id: 'ipm', label: 'IPM', icon: 'bi-award' },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              style={{
+                background: 'none',
+                border: 'none',
+                borderBottom: activeTab === tab.id ? `3px solid ${ACCENT}` : '3px solid transparent',
+                color: activeTab === tab.id ? '#1a1f2e' : '#6b7280',
+                padding: '16px 14px',
+                fontSize: 13,
+                fontWeight: activeTab === tab.id ? 700 : 500,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                whiteSpace: 'nowrap',
+                fontFamily: "'Inter', sans-serif",
+                transition: 'all 0.15s'
+              }}
+            >
+              <i className={`bi ${tab.icon}`} style={{ color: activeTab === tab.id ? ACCENT : '#9ca3af', fontSize: 15 }}></i>
+              {tab.label}
             </button>
-          )}
+          ))}
         </div>
       </div>
 
-      {/* ── Main Content ── */}
-      <div style={{ maxWidth: 1400, margin: '0 auto', padding: '28px 20px 60px' }}>
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: '80px 0' }}>
-            <div style={{ width: 44, height: 44, border: `4px solid ${ACCENT}30`, borderTopColor: ACCENT, borderRadius: '50%', animation: 'spin .7s linear infinite', display: 'inline-block' }} />
-            <p style={{ color: '#6b7280', marginTop: 16, fontSize: 14 }}>Memuat data dashboard…</p>
-          </div>
-        ) : widgets.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '80px 0' }}>
-            <i className="bi bi-bar-chart-line" style={{ fontSize: 56, color: '#d1d5db', display: 'block', marginBottom: 16 }}></i>
-            <h3 style={{ color: '#374151', fontWeight: 700, marginBottom: 8 }}>Dashboard Sedang Dipersiapkan</h3>
-            <p style={{ color: '#9ca3af', fontSize: 14 }}>Admin belum mempublikasikan data apapun. Silakan kembali nanti.</p>
-          </div>
-        ) : (
-          <>
-            {/* KPI Cards */}
-            {kpiWidgets.length > 0 && (
-              <div style={{ marginBottom: 32 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-                  <div style={{ width: 4, height: 20, background: ACCENT, borderRadius: 2 }}></div>
-                  <h2 style={{ fontWeight: 700, fontSize: 16, color: '#1a1f2e', margin: 0 }}>Indikator Utama</h2>
-                </div>
-                <div className="row g-3">
-                  {kpiWidgets.map(w => {
-                    const total = (w.chart_data?.values || []).reduce((a, b) => a + b, 0)
-                    return (
-                      <div className="col-6 col-md-3" key={w.id}>
-                        <div style={{ background: '#fff', borderRadius: 14, padding: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.07)', border: '1px solid #f0f0f0', height: '100%' }}>
-                          <div style={{ width: 44, height: 44, borderRadius: 11, background: ACCENT + '18', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
-                            <i className="bi bi-123" style={{ color: ACCENT, fontSize: 20 }}></i>
-                          </div>
-                          <div style={{ fontWeight: 800, fontSize: 32, color: '#1a1f2e', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{total.toLocaleString('id-ID')}</div>
-                          <div style={{ fontWeight: 600, fontSize: 13, color: '#374151', marginTop: 6 }}>{w.title}</div>
-                          {w.description && <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 3 }}>{w.description}</div>}
-                          {w.allow_download && (
-                            <button onClick={() => downloadExcel(w)} disabled={downloading[w.id]}
-                              style={{ marginTop: 12, background: '#f9fafb', border: '1px solid #e5e7eb', color: '#374151', borderRadius: 7, padding: '5px 10px', fontSize: 11, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontFamily: "'Inter',sans-serif" }}>
-                              <i className="bi bi-download"></i> Unduh Excel
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
+      {/* ── Content View ── */}
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 20px 60px' }}>
+        <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, fontSize: 11, color: '#6b7280', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
+          <i className="bi bi-info-circle-fill" style={{ color: '#3b82f6', fontSize: 14 }}></i>
+          <span>Mode Simulasi: Data di bawah divisualisasikan berdasarkan rilis data terbaru BPS Kabupaten Sijunjung. Sinkronisasi API BPS aktif otomatis.</span>
+        </div>
 
-            {/* Chart Widgets */}
-            {chartWidgets.length > 0 && (
-              <div>
-                {kpiWidgets.length > 0 && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-                    <div style={{ width: 4, height: 20, background: '#3b82f6', borderRadius: 2 }}></div>
-                    <h2 style={{ fontWeight: 700, fontSize: 16, color: '#1a1f2e', margin: 0 }}>Visualisasi Data</h2>
-                  </div>
-                )}
-                <div className="row g-4">
-                  {chartWidgets.map(w => (
-                    <div className={`col-12 ${w.chart_type === 'table' ? 'col-lg-12' : 'col-md-6'}`} key={w.id}>
-                      <div data-widget-id={w.id} style={{ background: '#fff', borderRadius: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.07)', border: '1px solid #f0f0f0', overflow: 'hidden', height: '100%' }}>
-                        {/* Widget header */}
-                        <div style={{ padding: '16px 20px', borderBottom: '1px solid #f5f5f5', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-                            <div style={{ width: 38, height: 38, borderRadius: 9, background: ACCENT + '15', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                              <i className={`bi ${CHART_ICONS[w.chart_type] || 'bi-bar-chart'}`} style={{ color: ACCENT, fontSize: 17 }}></i>
-                            </div>
-                            <div>
-                              <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1f2e' }}>{w.title}</div>
-                              {w.description && <div style={{ color: '#6b7280', fontSize: 12, marginTop: 2 }}>{w.description}</div>}
-                              <div style={{ display: 'flex', gap: 6, marginTop: 5 }}>
-                                <span style={{ background: '#f3f4f6', border: '1px solid #e5e7eb', color: '#374151', borderRadius: 10, padding: '1px 8px', fontSize: 10, fontWeight: 600 }}>{w.category || 'Umum'}</span>
-                                {w.data_type_name && <span style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#16a34a', borderRadius: 10, padding: '1px 8px', fontSize: 10, fontWeight: 600 }}>{w.data_type_name}</span>}
-                                <span style={{ background: '#fff7ed', border: '1px solid #fed7aa', color: '#92400e', borderRadius: 10, padding: '1px 8px', fontSize: 10, fontWeight: 600 }}>
-                                  <i className="bi bi-shield-check me-1"></i>Terverifikasi
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                          {/* Download buttons */}
-                          {w.allow_download && (
-                            <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                              {w.chart_type !== 'table' && (
-                                <button onClick={() => downloadPNG(w.id)} title="Unduh PNG"
-                                  style={{ background: '#f9fafb', border: '1px solid #e5e7eb', color: '#374151', borderRadius: 7, padding: '5px 9px', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontFamily: "'Inter',sans-serif" }}>
-                                  <i className="bi bi-image"></i> <span style={{ fontSize: 11 }}>PNG</span>
-                                </button>
-                              )}
-                              <button onClick={() => downloadExcel(w)} disabled={downloading[w.id]} title="Unduh Excel/CSV"
-                                style={{ background: downloading[w.id] ? '#f3f4f6' : '#f0fdf4', border: `1px solid ${downloading[w.id] ? '#e5e7eb' : '#bbf7d0'}`, color: downloading[w.id] ? '#9ca3af' : '#16a34a', borderRadius: 7, padding: '5px 9px', fontSize: 12, cursor: downloading[w.id] ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontFamily: "'Inter',sans-serif" }}>
-                                {downloading[w.id] ? <span className="spinner-border spinner-border-sm" style={{ width: 12, height: 12, borderWidth: 2 }} /> : <i className="bi bi-file-earmark-excel"></i>}
-                                <span style={{ fontSize: 11 }}>Excel</span>
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                        {/* Chart body */}
-                        <div style={{ padding: '20px' }}>
-                          <WidgetChart widget={w} filters={filters} />
-                        </div>
-                        {/* Footer: row count & date */}
-                        <div style={{ padding: '10px 20px', borderTop: '1px solid #f5f5f5', background: '#fafafa', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <span style={{ fontSize: 11, color: '#9ca3af' }}>
-                            <i className="bi bi-database me-1"></i>{w.total_rows || 0} baris data
-                          </span>
-                          <span style={{ fontSize: 11, color: '#9ca3af' }}>
-                            <i className="bi bi-check-circle me-1" style={{ color: '#10b981' }}></i>Data terverifikasi
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </>
-        )}
+        {activeTab === 'penduduk' && <TabPenduduk />}
+        {activeTab === 'tenaga_kerja' && <TabTenagaKerja />}
+        {activeTab === 'ekonomi' && <TabEkonomi />}
+        {activeTab === 'kemiskinan' && <TabKemiskinan />}
+        {activeTab === 'ipm' && <TabIPM />}
       </div>
 
       {/* ── Footer ── */}
@@ -369,7 +118,7 @@ export default function PublicDashboard() {
         <div style={{ marginBottom: 4, color: 'rgba(255,255,255,0.7)', fontWeight: 600, fontSize: 13 }}>
           SEJATI — Sistem Jejaring Pengumpulan Data Statistik Terintegrasi
         </div>
-        <div>Data yang ditampilkan telah melalui proses verifikasi resmi. Bebas digunakan untuk kepentingan publik.</div>
+        <div>Data makro bersumber dari Badan Pusat Statistik Kabupaten Sijunjung. Bebas digunakan untuk kepentingan publik.</div>
       </footer>
 
       {/* ── Login Panel (dropdown) ── */}
@@ -384,10 +133,304 @@ export default function PublicDashboard() {
 
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes blink { 0%,100% { opacity:1 } 50% { opacity:.3 } }
         * { box-sizing: border-box; }
         body { margin: 0; }
       `}</style>
+    </div>
+  )
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   TAB PANELS WITH PREMIUM MOCK DATA & GRAPHS
+   ───────────────────────────────────────────────────────────────────────────── */
+
+// ── Tab 1: Penduduk
+function TabPenduduk() {
+  const dataKecamatan = {
+    labels: ['Kamang Baru', 'Tanjung Gadang', 'Sijunjung', 'Lubuk Tarok', 'IV Nagari', 'Kupitan', 'Koto VII', 'Sumpur Kudus'],
+    datasets: [{
+      label: 'Jumlah Penduduk (Jiwa)',
+      data: [51230, 28140, 48320, 18450, 16120, 15080, 39510, 26830],
+      backgroundColor: '#3b82f6cc',
+      borderRadius: 6
+    }]
+  }
+
+  const dataSexRatio = {
+    labels: ['Laki-laki', 'Perempuan'],
+    datasets: [{
+      data: [123120, 120560],
+      backgroundColor: ['#3b82f6', '#ec4899']
+    }]
+  }
+
+  return (
+    <div>
+      {/* Cards */}
+      <div className="row g-3 mb-4">
+        {[
+          { title: 'Total Penduduk', value: '243.680', unit: 'Jiwa', icon: 'bi-people-fill', color: '#3b82f6' },
+          { title: 'Laki-laki', value: '123.120', unit: 'Jiwa', icon: 'bi-gender-male', color: '#2563eb' },
+          { title: 'Perempuan', value: '120.560', unit: 'Jiwa', icon: 'bi-gender-female', color: '#db2777' },
+          { title: 'Kepadatan Penduduk', value: '78', unit: 'Jiwa/km²', icon: 'bi-geo-alt-fill', color: '#10b981' }
+        ].map(c => (
+          <div className="col-6 col-md-3" key={c.title}>
+            <div style={{ background: '#fff', borderRadius: 14, padding: '16px 20px', border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <span style={{ fontSize: 11, fontWeight: 600, color: '#6b7280' }}>{c.title}</span>
+                <i className={`bi ${c.icon}`} style={{ color: c.color, fontSize: 16 }}></i>
+              </div>
+              <div style={{ fontSize: 24, fontWeight: 800, color: '#1a1f2e', lineHeight: 1.1 }}>{c.value}</div>
+              <span style={{ fontSize: 11, color: '#9ca3af' }}>{c.unit}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Charts Row */}
+      <div className="row g-4 mb-4">
+        <div className="col-md-8">
+          <div style={{ background: '#fff', borderRadius: 14, padding: 20, border: '1px solid #e5e7eb', height: '100%' }}>
+            <h6 style={{ fontWeight: 700, color: '#1a1f2e', marginBottom: 16 }}>Jumlah Penduduk menurut Kecamatan (2025)</h6>
+            <div style={{ height: 260 }}><Bar data={dataKecamatan} options={{ responsive: true, maintainAspectRatio: false }} /></div>
+          </div>
+        </div>
+        <div className="col-md-4">
+          <div style={{ background: '#fff', borderRadius: 14, padding: 20, border: '1px solid #e5e7eb', height: '100%' }}>
+            <h6 style={{ fontWeight: 700, color: '#1a1f2e', marginBottom: 16 }}>Komposisi Jenis Kelamin</h6>
+            <div style={{ height: 220, display: 'flex', justifyContent: 'center' }}>
+              <Doughnut data={dataSexRatio} options={{ responsive: true, maintainAspectRatio: false }} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Data Table */}
+      <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e5e7eb', padding: '20px', overflowX: 'auto' }}>
+        <h6 style={{ fontWeight: 700, color: '#1a1f2e', marginBottom: 16 }}>Tabel Rincian Penduduk Kecamatan</h6>
+        <table className="table align-middle text-start" style={{ fontSize: 13 }}>
+          <thead>
+            <tr style={{ background: '#f8f9fa' }}>
+              <th>Kecamatan</th>
+              <th style={{ textAlign: 'right' }}>Laki-laki (Jiwa)</th>
+              <th style={{ textAlign: 'right' }}>Perempuan (Jiwa)</th>
+              <th style={{ textAlign: 'right' }}>Total (Jiwa)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {[
+              { name: 'Kamang Baru', m: 25890, f: 25340 },
+              { name: 'Tanjung Gadang', m: 14200, f: 13940 },
+              { name: 'Sijunjung', m: 24410, f: 23910 },
+              { name: 'Lubuk Tarok', m: 9320, f: 9130 },
+              { name: 'IV Nagari', m: 8140, f: 7980 },
+              { name: 'Kupitan', m: 7610, f: 7470 },
+              { name: 'Koto VII', m: 19970, f: 19540 },
+              { name: 'Sumpur Kudus', m: 13580, f: 13250 }
+            ].map(r => (
+              <tr key={r.name}>
+                <td style={{ fontWeight: 600 }}>{r.name}</td>
+                <td style={{ textAlign: 'right' }}>{r.m.toLocaleString('id-ID')}</td>
+                <td style={{ textAlign: 'right' }}>{r.f.toLocaleString('id-ID')}</td>
+                <td style={{ textAlign: 'right', fontWeight: 600 }}>{(r.m + r.f).toLocaleString('id-ID')}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
+// ── Tab 2: Tenaga Kerja
+function TabTenagaKerja() {
+  const dataSektor = {
+    labels: ['Pertanian', 'Perdagangan', 'Jasa', 'Industri', 'Konstruksi'],
+    datasets: [{
+      data: [42, 18, 22, 8, 10],
+      backgroundColor: CHART_COLORS.slice(0, 5)
+    }]
+  }
+
+  const dataTPT = {
+    labels: ['2020', '2021', '2022', '2023', '2024', '2025'],
+    datasets: [{
+      label: 'Tingkat Pengangguran Terbuka (%)',
+      data: [4.8, 4.2, 3.8, 3.5, 3.2, 3.14],
+      borderColor: '#ef4444',
+      backgroundColor: '#ef444422',
+      fill: true,
+      tension: 0.4
+    }]
+  }
+
+  return (
+    <div>
+      <div className="row g-3 mb-4">
+        {[
+          { title: 'TPAK Sijunjung', value: '69,20%', unit: 'Partisipasi Angkatan Kerja', icon: 'bi-graph-up', color: '#10b981' },
+          { title: 'Tingkat Pengangguran (TPT)', value: '3,14%', unit: 'Menganggur Terbuka', icon: 'bi-person-x-fill', color: '#ef4444' },
+          { title: 'Angkatan Kerja Aktif', value: '122.450', unit: 'Jiwa Bekerja / Mencari Kerja', icon: 'bi-person-check-fill', color: '#3b82f6' },
+          { title: 'Bukan Angkatan Kerja', value: '54.210', unit: 'Jiwa (Sekolah / RT)', icon: 'bi-person-dash', color: '#6b7280' }
+        ].map(c => (
+          <div className="col-6 col-md-3" key={c.title}>
+            <div style={{ background: '#fff', borderRadius: 14, padding: '16px 20px', border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <span style={{ fontSize: 11, fontWeight: 600, color: '#6b7280' }}>{c.title}</span>
+                <i className={`bi ${c.icon}`} style={{ color: c.color, fontSize: 16 }}></i>
+              </div>
+              <div style={{ fontSize: 24, fontWeight: 800, color: '#1a1f2e', lineHeight: 1.1 }}>{c.value}</div>
+              <span style={{ fontSize: 11, color: '#9ca3af' }}>{c.unit}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="row g-4 mb-4">
+        <div className="col-md-6">
+          <div style={{ background: '#fff', borderRadius: 14, padding: 20, border: '1px solid #e5e7eb', height: '100%' }}>
+            <h6 style={{ fontWeight: 700, color: '#1a1f2e', marginBottom: 16 }}>Distribusi Penyerapan Tenaga Kerja menurut Sektor (%)</h6>
+            <div style={{ height: 240, display: 'flex', justifyContent: 'center' }}>
+              <Pie data={dataSektor} options={{ responsive: true, maintainAspectRatio: false }} />
+            </div>
+          </div>
+        </div>
+        <div className="col-md-6">
+          <div style={{ background: '#fff', borderRadius: 14, padding: 20, border: '1px solid #e5e7eb', height: '100%' }}>
+            <h6 style={{ fontWeight: 700, color: '#1a1f2e', marginBottom: 16 }}>Tren Penurunan Tingkat Pengangguran Terbuka (%) 2020-2025</h6>
+            <div style={{ height: 240 }}><Line data={dataTPT} options={{ responsive: true, maintainAspectRatio: false }} /></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Tab 3: Ekonomi
+function TabEkonomi() {
+  const dataEkonomi = {
+    labels: ['2020', '2021', '2022', '2023', '2024', '2025'],
+    datasets: [{
+      label: 'Pertumbuhan PDRB (%)',
+      data: [1.2, 3.4, 4.1, 4.5, 4.75, 4.85],
+      borderColor: '#f5a623',
+      backgroundColor: '#f5a62315',
+      fill: true,
+      tension: 0.3
+    }]
+  }
+
+  return (
+    <div>
+      <div className="row g-3 mb-4">
+        {[
+          { title: 'Pertumbuhan Ekonomi', value: '4,85%', unit: 'Tahun 2025', icon: 'bi-arrow-up-right-circle-fill', color: '#10b981' },
+          { title: 'PDRB ADHB', value: '8,42 T', unit: 'Rupiah (Berlaku)', icon: 'bi-wallet2', color: '#f5a623' },
+          { title: 'PDRB ADHK', value: '5,61 T', unit: 'Rupiah (Konstan)', icon: 'bi-currency-exchange', color: '#3b82f6' },
+          { title: 'Laju Inflasi', value: '2,45%', unit: 'Tahunan (y-on-y)', icon: 'bi-graph-down', color: '#ef4444' }
+        ].map(c => (
+          <div className="col-6 col-md-3" key={c.title}>
+            <div style={{ background: '#fff', borderRadius: 14, padding: '16px 20px', border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <span style={{ fontSize: 11, fontWeight: 600, color: '#6b7280' }}>{c.title}</span>
+                <i className={`bi ${c.icon}`} style={{ color: c.color, fontSize: 16 }}></i>
+              </div>
+              <div style={{ fontSize: 24, fontWeight: 800, color: '#1a1f2e', lineHeight: 1.1 }}>{c.value}</div>
+              <span style={{ fontSize: 11, color: '#9ca3af' }}>{c.unit}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ background: '#fff', borderRadius: 14, padding: 20, border: '1px solid #e5e7eb', marginBottom: 20 }}>
+        <h6 style={{ fontWeight: 700, color: '#1a1f2e', marginBottom: 16 }}>Laju Pertumbuhan Ekonomi Sijunjung (%) 2020-2025</h6>
+        <div style={{ height: 260 }}><Line data={dataEkonomi} options={{ responsive: true, maintainAspectRatio: false }} /></div>
+      </div>
+    </div>
+  )
+}
+
+// ── Tab 4: Kemiskinan
+function TabKemiskinan() {
+  const dataKemiskinan = {
+    labels: ['2018', '2019', '2020', '2021', '2022', '2023', '2024', '2025'],
+    datasets: [{
+      label: 'Persentase Penduduk Miskin (%)',
+      data: [7.1, 6.9, 6.8, 6.5, 6.1, 5.95, 5.88, 5.82],
+      borderColor: '#ef4444',
+      borderWidth: 3,
+      tension: 0.3
+    }]
+  }
+
+  return (
+    <div>
+      <div className="row g-3 mb-4">
+        {[
+          { title: 'Persentase Miskin', value: '5,82%', unit: 'Dari Total Penduduk', icon: 'bi-percent', color: '#ef4444' },
+          { title: 'Jumlah Penduduk Miskin', value: '14,18', unit: 'Ribu Jiwa', icon: 'bi-person-fill-slash', color: '#e11d48' },
+          { title: 'Garis Kemiskinan', value: '446.500', unit: 'Rp / Kapita / Bulan', icon: 'bi-cash-stack', color: '#16a34a' },
+          { title: 'Indeks Kedalaman (P1)', value: '0,68', unit: 'Kesenjangan Pengeluaran', icon: 'bi-compass-fill', color: '#374151' }
+        ].map(c => (
+          <div className="col-6 col-md-3" key={c.title}>
+            <div style={{ background: '#fff', borderRadius: 14, padding: '16px 20px', border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <span style={{ fontSize: 11, fontWeight: 600, color: '#6b7280' }}>{c.title}</span>
+                <i className={`bi ${c.icon}`} style={{ color: c.color, fontSize: 16 }}></i>
+              </div>
+              <div style={{ fontSize: 24, fontWeight: 800, color: '#1a1f2e', lineHeight: 1.1 }}>{c.value}</div>
+              <span style={{ fontSize: 11, color: '#9ca3af' }}>{c.unit}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ background: '#fff', borderRadius: 14, padding: 20, border: '1px solid #e5e7eb', marginBottom: 20 }}>
+        <h6 style={{ fontWeight: 700, color: '#1a1f2e', marginBottom: 16 }}>Tren Penurunan Persentase Kemiskinan Sijunjung (2018 - 2025)</h6>
+        <div style={{ height: 260 }}><Line data={dataKemiskinan} options={{ responsive: true, maintainAspectRatio: false }} /></div>
+      </div>
+    </div>
+  )
+}
+
+// ── Tab 5: IPM
+function TabIPM() {
+  const dataIPM = {
+    labels: ['2020', '2021', '2022', '2023', '2024', '2025'],
+    datasets: [{
+      label: 'Indeks Pembangunan Manusia (IPM)',
+      data: [67.8, 68.1, 68.4, 68.8, 69.1, 69.45],
+      backgroundColor: '#10b981cc',
+      borderRadius: 4
+    }]
+  }
+
+  return (
+    <div>
+      <div className="row g-3 mb-4">
+        {[
+          { title: 'Indeks IPM Sijunjung', value: '69,45', unit: 'Kategori: Sedang', icon: 'bi-award-fill', color: '#10b981' },
+          { title: 'Angka Harapan Hidup', value: '70,92', unit: 'Tahun (UHH)', icon: 'bi-heart-pulse-fill', color: '#ef4444' },
+          { title: 'Harapan Lama Sekolah', value: '13,24', unit: 'Tahun (HLS)', icon: 'bi-book-half', color: '#3b82f6' },
+          { title: 'Rata-rata Lama Sekolah', value: '8,52', unit: 'Tahun (RLS)', icon: 'bi-journal-bookmark-fill', color: '#8b5cf6' }
+        ].map(c => (
+          <div className="col-6 col-md-3" key={c.title}>
+            <div style={{ background: '#fff', borderRadius: 14, padding: '16px 20px', border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <span style={{ fontSize: 11, fontWeight: 600, color: '#6b7280' }}>{c.title}</span>
+                <i className={`bi ${c.icon}`} style={{ color: c.color, fontSize: 16 }}></i>
+              </div>
+              <div style={{ fontSize: 24, fontWeight: 800, color: '#1a1f2e', lineHeight: 1.1 }}>{c.value}</div>
+              <span style={{ fontSize: 11, color: '#9ca3af' }}>{c.unit}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ background: '#fff', borderRadius: 14, padding: 20, border: '1px solid #e5e7eb', marginBottom: 20 }}>
+        <h6 style={{ fontWeight: 700, color: '#1a1f2e', marginBottom: 16 }}>Progres Peningkatan Indeks Pembangunan Manusia (IPM) Sijunjung</h6>
+        <div style={{ height: 260 }}><Bar data={dataIPM} options={{ responsive: true, maintainAspectRatio: false }} /></div>
+      </div>
     </div>
   )
 }

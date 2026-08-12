@@ -19,12 +19,6 @@ const navGroups = [
       { to: '/admin/submissions',  icon: 'bi-inbox-fill',                 label: 'Verifikasi Data' },
     ],
   },
-  {
-    label: 'PUBLIKASI',
-    items: [
-      { to: '/admin/public-dashboard', icon: 'bi-layout-text-window-reverse', label: 'Dashboard Publik' },
-    ],
-  },
 ]
 
 const SIDEBAR_BG = '#1a1f2e'
