@@ -57,6 +57,7 @@ def create_app():
             uri = app.config.get('SQLALCHEMY_DATABASE_URI', '')
             if 'postgresql' in uri:
                 db.session.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS whatsapp VARCHAR(30)"))
+                db.session.execute(text("ALTER TABLE data_types ALTER COLUMN name TYPE VARCHAR(255)"))
                 db.session.commit()
             else:
                 try:
