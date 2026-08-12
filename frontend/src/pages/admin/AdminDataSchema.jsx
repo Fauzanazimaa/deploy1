@@ -2,8 +2,135 @@ import React, { useEffect, useState, useRef } from 'react'
 import {
   getDataTypes, createDataType, updateDataType, deleteDataType,
   getTemplates, uploadTemplate, generateTemplate, downloadAdminTemplate,
-  deleteTemplate, parseTemplateStructure,
+  deleteTemplate, parseTemplateStructure, previewDataTypeTemplateGrid,
+  previewTemplateGrid,
 } from '../../api'
+
+// ─── ExcelGrid — render grid 2D persis dari backend ─────────────────────────
+// Digunakan untuk preview struktur template maupun preview submission
+// Props: grid (dari parse_excel_to_preview_grid), num_header_rows, maxHeight
+export function ExcelGrid({ grid, numHeaderRows = 1, maxHeight = 420, emptyMsg = 'Tidak ada data' }) {
+  if (!grid || grid.length === 0) {
+    return <div style={{ textAlign: 'center', color: '#9ca3af', padding: '24px', fontSize: 12 }}>{emptyMsg}</div>
+  }
+
+  const HEADER_COLORS = ['#1e3a5f', '#2563eb', '#3b82f6', '#60a5fa']
+  const headerRows = grid.slice(0, numHeaderRows)
+  const dataRows   = grid.slice(numHeaderRows)
+
+  return (
+    <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight, border: '1px solid #e2e8f0', borderRadius: 8 }}>
+      <table style={{ borderCollapse: 'collapse', fontSize: 12, tableLayout: 'auto', minWidth: '100%' }}>
+        <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
+          {headerRows.map((row, ri) => (
+            <tr key={ri}>
+              {row.map((cell, ci) => {
+                if (cell.is_merged_child) return null;
+                return (
+                  <th key={ci}
+                    rowSpan={cell.rowspan || 1}
+                    colSpan={cell.colspan || 1}
+                    style={{
+                      background:    cell.bg || HEADER_COLORS[Math.min(ri, HEADER_COLORS.length - 1)],
+                      color:         '#fff',
+                      fontWeight:    700,
+                      fontSize:      11,
+                      padding:       '7px 10px',
+                      textAlign:     'center',
+                      verticalAlign: 'middle',
+                      border:        '1px solid rgba(255,255,255,0.15)',
+                      whiteSpace:    'pre-wrap',
+                      wordBreak:     'break-word',
+                      minWidth:      70,
+                      lineHeight:    1.35,
+                    }}>
+                    {cell.value || ''}
+                  </th>
+                );
+              })}
+            </tr>
+          ))}
+        </thead>
+        <tbody>
+          {dataRows.length === 0 ? (
+            <tr>
+              <td colSpan={999} style={{ textAlign: 'center', color: '#9ca3af', padding: '14px', fontSize: 11 }}>
+                (belum ada baris data)
+              </td>
+            </tr>
+          ) : dataRows.map((row, ri) => (
+            <tr key={ri} style={{ background: ri % 2 === 0 ? '#fff' : '#f8fafc' }}>
+              {row.map((cell, ci) => {
+                if (cell.is_merged_child) return null;
+                const isFirstCol = cell.is_first_col
+                const bg = cell.is_first_col ? '#fef9c3' : (ri % 2 === 0 ? '#fff' : '#f8fafc')
+                return (
+                  <td key={ci}
+                    rowSpan={cell.rowspan || 1}
+                    colSpan={cell.colspan || 1}
+                    style={{
+                      padding:       '6px 10px',
+                      background:    bg,
+                      color:         isFirstCol ? '#92400e' : '#374151',
+                      fontWeight:    isFirstCol ? 600 : 400,
+                      fontSize:      12,
+                      verticalAlign: 'middle',
+                      border:        '1px solid #e5e7eb',
+                      whiteSpace:    'pre-wrap',
+                      wordBreak:     'break-word',
+                      minWidth:      60,
+                      lineHeight:    1.35,
+                    }}>
+                    {cell.value !== '' && cell.value !== null && cell.value !== undefined
+                      ? cell.value
+                      : <span style={{ color: '#d1d5db', fontSize: 10 }}>—</span>}
+                  </td>
+                )
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+// ─── TemplateGridPreview — load & render grid dari file Excel template ───────
+function TemplateGridPreview({ templateId, dtId }) {
+  const [grid,       setGrid]       = useState(null)
+  const [numHeaders, setNumHeaders] = useState(1)
+  const [loading,    setLoading]    = useState(true)
+  const [error,      setError]      = useState('')
+
+  useEffect(() => {
+    if (!templateId && !dtId) return
+    setLoading(true); setError(''); setGrid(null)
+    const call = dtId ? previewDataTypeTemplateGrid(dtId) : previewTemplateGrid(templateId)
+    call
+      .then(res => {
+        setGrid(res.data.grid || [])
+        setNumHeaders(res.data.num_header_rows || 1)
+      })
+      .catch(e => setError(e?.response?.data?.error || 'Gagal memuat preview template'))
+      .finally(() => setLoading(false))
+  }, [templateId, dtId])
+
+  if (loading) return (
+    <div style={{ textAlign: 'center', padding: '20px', color: '#9ca3af', fontSize: 12 }}>
+      <div style={{ width: 20, height: 20, border: '2.5px solid #e5e7eb', borderTopColor: '#3b82f6', borderRadius: '50%', animation: 'spin .7s linear infinite', display: 'inline-block', marginBottom: 6 }}></div>
+      <div>Memuat preview dari file Excel...</div>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    </div>
+  )
+  if (error) return (
+    <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: '#92400e' }}>
+      <i className="bi bi-exclamation-triangle me-1"></i>{error}
+    </div>
+  )
+  if (!grid) return null
+
+  return <ExcelGrid grid={grid} numHeaderRows={numHeaders} maxHeight={380} />
+}
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 const FIELD_TYPES = ['text', 'number', 'date', 'email', 'textarea', 'select']
@@ -105,6 +232,88 @@ function normalizeSchemaForPreview(schema) {
 }
 
 function HeaderPreview({ schema }) {
+  // Support dua format:
+  // 1. Format baru dari parse_excel_schema_from_template: punya raw_headers + num_header_rows
+  // 2. Format lama: header_levels + first_column
+
+  if (schema && schema.raw_headers && schema.num_header_rows) {
+    // ── Format baru: render langsung dari raw_headers ──────────────────────
+    const { raw_headers, num_header_rows, total_cols } = schema
+    if (!raw_headers || raw_headers.length === 0) return <p className="text-muted small">Belum ada kolom.</p>
+
+    // Kelompokkan sel per baris
+    const rowMap = {}
+    for (let r = 1; r <= num_header_rows; r++) rowMap[r] = []
+    for (const h of raw_headers) {
+      if (rowMap[h.row]) rowMap[h.row].push(h)
+    }
+
+    const COLORS = ['#1E3A5F', '#2563EB', '#3B82F6', '#60A5FA']
+
+    // Deteksi first_column dari schema.first_column
+    const fc = schema.first_column || {}
+    const fcEnabled = fc.enabled || false
+
+    return (
+      <div style={{ width: '100%', overflowX: 'auto', border: '1px solid #dee2e6', borderRadius: 6 }}>
+        <div style={{ fontSize: '0.75rem', maxHeight: '350px', overflowY: 'auto' }}>
+          <table style={{ borderCollapse: 'collapse', tableLayout: 'auto', minWidth: 400 }}>
+            <thead style={{ position: 'sticky', top: 0, zIndex: 2 }}>
+              {Object.keys(rowMap).map(r => (
+                <tr key={r}>
+                  {rowMap[r].map((h, ci) => {
+                    const colorIdx = Math.min(Number(r) - 1, COLORS.length - 1)
+                    const isFullRowspan = h.rowspan >= num_header_rows && num_header_rows > 1
+                    const bg = isFullRowspan ? COLORS[0] : COLORS[colorIdx]
+                    return (
+                      <th key={ci}
+                        rowSpan={h.rowspan || 1}
+                        colSpan={h.colspan || 1}
+                        style={{
+                          background: bg,
+                          color: '#fff',
+                          fontWeight: 700,
+                          fontSize: 11,
+                          padding: '6px 8px',
+                          textAlign: 'center',
+                          verticalAlign: 'middle',
+                          border: '1px solid rgba(255,255,255,0.15)',
+                          whiteSpace: 'pre-wrap',
+                          wordBreak: 'break-word',
+                          minWidth: 70,
+                          lineHeight: 1.3,
+                        }}>
+                        {h.value || ''}
+                      </th>
+                    )
+                  })}
+                </tr>
+              ))}
+            </thead>
+            <tbody>
+              {(fc.default_rows || []).slice(0, 5).map((r, ri) => (
+                <tr key={ri}>
+                  {fcEnabled && <td style={{ padding: '5px 8px', background: '#FFFDE7', fontWeight: 600, border: '1px solid #dee2e6', fontSize: 11 }}>{r}</td>}
+                  {Array.from({ length: total_cols - (fcEnabled ? 1 : 0) }).map((_, ci) => (
+                    <td key={ci} style={{ padding: '5px 8px', border: '1px solid #dee2e6', minWidth: 60 }}></td>
+                  ))}
+                </tr>
+              ))}
+              {!(fc.default_rows || []).length && (
+                <tr>
+                  <td colSpan={total_cols + 1} style={{ textAlign: 'center', color: '#9ca3af', padding: '8px', fontSize: 11 }}>
+                    (baris data kosong)
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Format lama: gunakan normalizeSchemaForPreview ──────────────────────
   const { levels, firstCol } = normalizeSchemaForPreview(schema)
   const hasFirst = firstCol.enabled
   const numLevels = levels.length
@@ -114,110 +323,57 @@ function HeaderPreview({ schema }) {
   if (totalCols === 0) return <p className="text-muted small">Belum ada kolom.</p>
 
   const thBase = {
-    border: '1px solid #dee2e6',
-    padding: '6px 8px',
-    textAlign: 'center',
-    verticalAlign: 'middle',
-    color: '#fff',
-    fontWeight: 600,
-    whiteSpace: 'normal',
-    wordBreak: 'break-word',
-    lineHeight: 1.3,
+    border: '1px solid #dee2e6', padding: '6px 8px',
+    textAlign: 'center', verticalAlign: 'middle',
+    color: '#fff', fontWeight: 600,
+    whiteSpace: 'normal', wordBreak: 'break-word', lineHeight: 1.3,
   }
-
   const tdBase = {
-    border: '1px solid #dee2e6',
-    padding: '5px 8px',
-    verticalAlign: 'middle',
-    minWidth: 70,
+    border: '1px solid #dee2e6', padding: '5px 8px',
+    verticalAlign: 'middle', minWidth: 70,
   }
 
   return (
     <div style={{ width: '100%', overflowX: 'auto', border: '1px solid #dee2e6', borderRadius: 6 }}>
-      <div
-        style={{
-          fontSize: '0.75rem',
-          maxHeight: '350px',
-          overflowY: 'scroll',
-          overflowX: 'visible',
-          display: 'block',
-          width: '100%',
-        }}
-      >
-      <table
-        style={{
-          borderCollapse: 'collapse',
-          minWidth: 400,
-          tableLayout: 'auto',
-        }}
-      >
-        <thead style={{ position: 'sticky', top: 0, zIndex: 2 }}>
-          {levels.map((level, li) => {
-            const isLeaf = li === numLevels - 1
-            const bgColor = PREVIEW_COLORS[Math.min(li, PREVIEW_COLORS.length - 1)]
-            return (
-              <tr key={li}>
-                {/* Kolom pertama — hanya render di baris pertama dengan rowSpan */}
-                {hasFirst && li === 0 && (
-                  <th
-                    rowSpan={numLevels}
-                    style={{
-                      ...thBase,
-                      background: PREVIEW_COLORS[0],
-                      minWidth: 100,
-                      maxWidth: 140,
-                    }}
-                  >
-                    {firstCol.label || 'Kolom 1'}
-                  </th>
-                )}
-
-                {isLeaf
-                  ? /* Leaf columns */
-                    level.map((f, fi) => (
-                      <th
-                        key={fi}
-                        style={{
-                          ...thBase,
-                          background: bgColor,
-                          minWidth: 70,
-                        }}
-                      >
-                        {f.label || f.name || `Kol ${fi + 1}`}
-                        {f.required && <span style={{ color: '#FCD34D', marginLeft: 3 }}>*</span>}
-                      </th>
-                    ))
-                  : /* Group headers */
-                    level.map((grp, gi) => (
-                      <th
-                        key={gi}
-                        colSpan={grp.span || 1}
-                        style={{
-                          ...thBase,
-                          background: bgColor,
-                        }}
-                      >
-                        {grp.label || `Grup ${gi + 1}`}
-                      </th>
-                    ))
-                }
+      <div style={{ fontSize: '0.75rem', maxHeight: '350px', overflowY: 'scroll', overflowX: 'visible', display: 'block', width: '100%' }}>
+        <table style={{ borderCollapse: 'collapse', minWidth: 400, tableLayout: 'auto' }}>
+          <thead style={{ position: 'sticky', top: 0, zIndex: 2 }}>
+            {levels.map((level, li) => {
+              const isLeaf  = li === numLevels - 1
+              const bgColor = PREVIEW_COLORS[Math.min(li, PREVIEW_COLORS.length - 1)]
+              return (
+                <tr key={li}>
+                  {hasFirst && li === 0 && (
+                    <th rowSpan={numLevels} style={{ ...thBase, background: PREVIEW_COLORS[0], minWidth: 100, maxWidth: 140 }}>
+                      {firstCol.label || 'Kolom 1'}
+                    </th>
+                  )}
+                  {isLeaf
+                    ? level.map((f, fi) => (
+                        <th key={fi} style={{ ...thBase, background: bgColor, minWidth: 70 }}>
+                          {f.label || f.name || `Kol ${fi + 1}`}
+                          {f.required && <span style={{ color: '#FCD34D', marginLeft: 3 }}>*</span>}
+                        </th>
+                      ))
+                    : level.map((grp, gi) => (
+                        <th key={gi} colSpan={grp.span || 1} style={{ ...thBase, background: bgColor }}>
+                          {grp.label || `Grup ${gi + 1}`}
+                        </th>
+                      ))
+                  }
+                </tr>
+              )
+            })}
+          </thead>
+          <tbody>
+            {(firstCol.default_rows || []).map((r, ri) => (
+              <tr key={ri}>
+                {hasFirst && <td style={{ ...tdBase, background: '#FFFDE7', fontWeight: 600 }}>{r}</td>}
+                {leafs.map((_, ci) => <td key={ci} style={tdBase}></td>)}
               </tr>
-            )
-          })}
-        </thead>
-        <tbody>
-          {(firstCol.default_rows || []).map((r, ri) => (
-            <tr key={ri}>
-              {hasFirst && (
-                <td style={{ ...tdBase, background: '#FFFDE7', fontWeight: 600 }}>{r}</td>
-              )}
-              {leafs.map((_, ci) => (
-                <td key={ci} style={tdBase}></td>
-              ))}
-            </tr>
-          ))}
-          {!(firstCol.default_rows || []).length && (
-            <tr>
+            ))}
+            {!(firstCol.default_rows || []).length && (
+              <tr>
               {hasFirst && (
                 <td style={{ ...tdBase, color: '#aaa', fontStyle: 'italic' }}>baris data...</td>
               )}
@@ -734,9 +890,12 @@ export default function AdminDataSchema() {
                     </button>
                   </div>
                   <div style={{ padding: '20px', minWidth: 0 }}>
-                    {/* Preview Header */}
+                    {/* Preview Struktur — load langsung dari file Excel */}
                     <h6 className="fw-semibold small text-uppercase text-muted mb-2">Preview Struktur</h6>
-                    <HeaderPreview schema={schema} />
+                    {tmpl
+                      ? <TemplateGridPreview templateId={tmpl.id} />
+                      : <HeaderPreview schema={schema} />
+                    }
 
                     {/* Template section */}
                     <div className="mt-4">

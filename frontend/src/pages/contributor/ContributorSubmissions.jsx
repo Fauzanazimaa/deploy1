@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import { getMySubmissions } from '../../api'
+import { getMySubmissions, downloadContributorSubmission, previewContributorSubmission } from '../../api'
+import { ExcelGrid } from '../admin/AdminDataSchema'
 
 const ACCENT = '#f5a623'
 
@@ -15,12 +16,57 @@ export default function ContributorSubmissions() {
   const [filterStatus, setFilterStatus] = useState('all')
   const [detailSub, setDetailSub] = useState(null)
 
-  useEffect(() => {
+  // Preview states
+  const [previewModal, setPreviewModal] = useState(null)
+  const [previewGrid, setPreviewGrid] = useState([])
+  const [previewHeaders, setPreviewHeaders] = useState(1)
+  const [previewLoading, setPreviewLoading] = useState(false)
+  const [previewError, setPreviewError] = useState('')
+
+  const fetchSubmissions = () => {
+    setLoading(true)
     getMySubmissions()
       .then(res => setSubmissions(res.data))
       .catch(console.error)
       .finally(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    fetchSubmissions()
   }, [])
+
+  const handleDownload = async (sub) => {
+    try {
+      const res = await downloadContributorSubmission(sub.id)
+      const url = window.URL.createObjectURL(new Blob([res.data]))
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', `submission_${sub.id}_${sub.task_title.replace(/\s+/g, '_')}.xlsx`)
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+    } catch {
+      alert('Gagal mengunduh file')
+    }
+  }
+
+  const handlePreview = async (sub) => {
+    setPreviewModal(sub)
+    setPreviewGrid([])
+    setPreviewHeaders(1)
+    setPreviewError('')
+    setPreviewLoading(true)
+    try {
+      const res = await previewContributorSubmission(sub.id)
+      setPreviewGrid(res.data.grid || [])
+      setPreviewHeaders(res.data.num_header_rows || 1)
+    } catch (err) {
+      setPreviewError(err.response?.data?.error || 'Gagal memuat preview data')
+    } finally {
+      setPreviewLoading(false)
+    }
+  }
 
   const filtered = submissions.filter(s =>
     filterStatus === 'all' || s.status === filterStatus
@@ -30,7 +76,7 @@ export default function ContributorSubmissions() {
     <div style={{ fontFamily: "'Inter', sans-serif" }}>
       <div style={{ marginBottom: 24 }}>
         <h4 style={{ fontWeight: 700, fontSize: 20, color: '#1a1f2e', margin: 0 }}>Riwayat Pengiriman</h4>
-        <p style={{ color: '#6b7280', fontSize: 13, margin: '4px 0 0' }}>Semua file yang pernah kamu kirimkan beserta statusnya</p>
+        <p style={{ color: '#6b7280', fontSize: 13, margin: '4px 0 0' }}>Semua data dan file yang pernah kamu kirimkan beserta statusnya</p>
       </div>
 
       {/* Filter pills */}
@@ -89,16 +135,26 @@ export default function ContributorSubmissions() {
                       <i className={`bi ${st.icon} me-1`}></i>{st.label}
                     </span>
                   </div>
-                  <div style={{ display: 'flex', gap: 16, fontSize: 12, color: '#6b7280', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', gap: 16, fontSize: 12, color: '#6b7280', flexWrap: 'wrap', marginBottom: 12 }}>
                     <span><i className="bi bi-send me-1"></i>Dikirim: {s.submitted_at ? s.submitted_at.slice(0,10).split('-').reverse().join('/') : '-'}</span>
                     <span><i className="bi bi-check-circle me-1"></i>Ditinjau: {s.reviewed_at ? s.reviewed_at.slice(0,10).split('-').reverse().join('/') : '-'}</span>
                   </div>
-                  {s.status === 'revision' && s.revision_notes && (
-                    <button onClick={() => setDetailSub(s)}
-                      style={{ marginTop: 10, background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', borderRadius: 7, padding: '6px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontFamily: "'Inter', sans-serif" }}>
-                      <i className="bi bi-eye"></i>Lihat Catatan Revisi
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <button onClick={() => handlePreview(s)}
+                      style={{ background: '#eff6ff', border: '1px solid #bfdbfe', color: '#3b82f6', borderRadius: 7, padding: '6px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontFamily: "'Inter', sans-serif" }}>
+                      <i className="bi bi-eye"></i>Preview Data
                     </button>
-                  )}
+                    <button onClick={() => handleDownload(s)}
+                      style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#16a34a', borderRadius: 7, padding: '6px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontFamily: "'Inter', sans-serif" }}>
+                      <i className="bi bi-download"></i>Unduh Excel
+                    </button>
+                    {s.status === 'revision' && s.revision_notes && (
+                      <button onClick={() => setDetailSub(s)}
+                        style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', borderRadius: 7, padding: '6px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontFamily: "'Inter', sans-serif" }}>
+                        <i className="bi bi-exclamation-triangle"></i>Catatan Revisi
+                      </button>
+                    )}
+                  </div>
                 </div>
               )
             })}
@@ -110,7 +166,7 @@ export default function ContributorSubmissions() {
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                 <thead>
                   <tr style={{ background: '#fafafa', borderBottom: '1px solid #f0f0f0' }}>
-                    {['#', 'Tugas', 'Status', 'Dikirim', 'Ditinjau', 'Catatan'].map((h) => (
+                    {['#', 'Tugas', 'Status', 'Dikirim', 'Ditinjau', 'Aksi'].map((h) => (
                       <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 600, color: '#6b7280', fontSize: 12 }}>{h}</th>
                     ))}
                   </tr>
@@ -130,12 +186,19 @@ export default function ContributorSubmissions() {
                         <td style={{ padding: '10px 16px', color: '#6b7280', fontSize: 12 }}>{s.submitted_at ? s.submitted_at.slice(0,10).split('-').reverse().join('/') : '-'}</td>
                         <td style={{ padding: '10px 16px', color: '#6b7280', fontSize: 12 }}>{s.reviewed_at ? s.reviewed_at.slice(0,10).split('-').reverse().join('/') : '-'}</td>
                         <td style={{ padding: '10px 16px' }}>
-                          {s.status === 'revision' && s.revision_notes ? (
-                            <button onClick={() => setDetailSub(s)}
-                              style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', borderRadius: 7, padding: '5px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontFamily: "'Inter', sans-serif" }}>
-                              <i className="bi bi-eye"></i>Lihat Catatan
+                          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                            <button onClick={() => handlePreview(s)} title="Preview Data" style={{ background: '#eff6ff', border: '1px solid #bfdbfe', color: '#3b82f6', borderRadius: 7, padding: '5px 10px', fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                              <i className="bi bi-eye"></i>
                             </button>
-                          ) : <span style={{ color: '#9ca3af' }}>-</span>}
+                            <button onClick={() => handleDownload(s)} title="Unduh Excel" style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#16a34a', borderRadius: 7, padding: '5px 10px', fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                              <i className="bi bi-download"></i>
+                            </button>
+                            {s.status === 'revision' && s.revision_notes && (
+                              <button onClick={() => setDetailSub(s)} title="Lihat Catatan" style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', borderRadius: 7, padding: '5px 10px', fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                                <i className="bi bi-exclamation-triangle"></i>
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     )
@@ -145,6 +208,45 @@ export default function ContributorSubmissions() {
             </div>
           </div>
         </>
+      )}
+
+      {/* Preview Modal */}
+      {previewModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1050, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 20px 60px rgba(0,0,0,0.2)', width: '100%', maxWidth: 900, maxHeight: '85vh', display: 'flex', flexDirection: 'column', fontFamily: "'Inter',sans-serif" }}>
+            <div style={{ borderBottom: '1px solid #f0f0f0', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 15, color: '#1a1f2e', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <i className="bi bi-eye" style={{ color: '#3b82f6' }}></i>Preview Data Terkirim
+                </div>
+                <div style={{ color: '#6b7280', fontSize: 12, marginTop: 3 }}>
+                  {previewModal.task_title}
+                  {!previewLoading && !previewError && previewGrid.length > 0 && <> &bull; <strong>{previewGrid.length}</strong> baris data</>}
+                </div>
+              </div>
+              <button onClick={() => setPreviewModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: 20 }}><i className="bi bi-x"></i></button>
+            </div>
+            <div style={{ flex: 1, overflow: 'auto', padding: '16px 20px' }}>
+              {previewLoading ? (
+                <div style={{ textAlign: 'center', padding: '32px 0' }}>
+                  <div style={{ width: 28, height: 28, border: '3px solid #e5e7eb', borderTopColor: '#3b82f6', borderRadius: '50%', animation: 'spin .7s linear infinite', display: 'inline-block' }}></div>
+                  <div style={{ color: '#9ca3af', fontSize: 13, marginTop: 8 }}>Memuat data...</div>
+                  <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+                </div>
+              ) : previewError ? (
+                <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '12px 16px', color: '#dc2626', fontSize: 13 }}>
+                  <i className="bi bi-exclamation-triangle me-2"></i>{previewError}
+                </div>
+              ) : (
+                <ExcelGrid grid={previewGrid} numHeaderRows={previewHeaders} maxHeight={440} />
+              )}
+            </div>
+            <div style={{ borderTop: '1px solid #f0f0f0', padding: '14px 20px', display: 'flex', justifyContent: 'flex-end', gap: 8, flexShrink: 0 }}>
+              <button onClick={() => handleDownload(previewModal)} style={{ background: '#f9fafb', border: '1px solid #e5e7eb', color: '#374151', borderRadius: 8, padding: '8px 16px', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontFamily: "'Inter',sans-serif" }}><i className="bi bi-download"></i>Unduh Excel</button>
+              <button onClick={() => setPreviewModal(null)} style={{ background: '#f3f4f6', border: '1px solid #e5e7eb', color: '#374151', borderRadius: 8, padding: '8px 16px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: "'Inter',sans-serif" }}>Tutup</button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Revision modal */}

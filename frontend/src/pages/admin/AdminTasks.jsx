@@ -33,6 +33,9 @@ export default function AdminTasks() {
   const [deleteConfirm, setDeleteConfirm] = useState(null)
   const [deleting, setDeleting] = useState(false)
 
+  // Tabs state: 'tasks' (flat list) | 'contributors' (grouped by who hasn't submitted)
+  const [activeTab, setActiveTab] = useState('tasks')
+
   const fetchAll = async () => {
     try {
       const [tasksRes, usersRes, dtRes] = await Promise.all([
@@ -111,6 +114,70 @@ export default function AdminTasks() {
     }
   }
 
+  const handleSendWaReminder = (task) => {
+    let phone = task.assignee_whatsapp || ''
+    if (!phone) {
+      alert(`Kontributor ${task.assignee_username} belum memiliki nomor WhatsApp terdaftar. Silakan tambahkan di menu Kelola Pengguna.`)
+      return
+    }
+
+    // Normalisasi nomor wa
+    phone = phone.replace(/[^0-9]/g, '')
+    if (phone.startsWith('0')) {
+      phone = '62' + phone.slice(1)
+    } else if (phone.startsWith('8')) {
+      phone = '62' + phone
+    }
+
+    // Cari tugas pending/revision
+    const pendingTasks = tasks.filter(t => 
+      t.assigned_to === task.assigned_to && 
+      (t.status === 'pending' || t.status === 'revision')
+    )
+
+    let message = `*PENGUMPULAN DATA BPS KABUPATEN SIJUNJUNG*\n\n`
+    message += `Halo Bapak/Ibu Petugas *${task.assignee_username}*,\n`
+    message += `Mengingatkan untuk segera mengirimkan pengumpulan data pada aplikasi SEJATI BPS Kabupaten Sijunjung.\n\n`
+    message += `Berikut rincian tugas Anda yang belum dikirim:\n`
+    
+    pendingTasks.forEach((t, index) => {
+      const deadlineStr = t.deadline 
+        ? new Date(t.deadline).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+        : 'Tanpa deadline'
+      message += `${index + 1}. *${t.title}* (Batas: ${deadlineStr})\n`
+    })
+
+    message += `\nSilakan akses aplikasi melalui link SEJATI berikut:\n`
+    message += `https://sejati-sijunjung.vercel.app/\n\n`
+    message += `Terima kasih atas kerja samanya.`
+
+    const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
+    window.open(waUrl, '_blank')
+  }
+
+  // Get contributors with pending/revision tasks
+  const getContributorsWithPendingTasks = () => {
+    const groups = {}
+    tasks.forEach(t => {
+      if (t.status === 'pending' || t.status === 'revision') {
+        const matchSearch = t.assignee_username.toLowerCase().includes(search.toLowerCase()) ||
+                            t.title.toLowerCase().includes(search.toLowerCase())
+        if (!matchSearch && search) return
+
+        if (!groups[t.assigned_to]) {
+          groups[t.assigned_to] = {
+            id: t.assigned_to,
+            username: t.assignee_username,
+            whatsapp: t.assignee_whatsapp,
+            pending_tasks: []
+          }
+        }
+        groups[t.assigned_to].pending_tasks.push(t)
+      }
+    })
+    return Object.values(groups)
+  }
+
   const filtered = tasks.filter((t) => {
     const matchStatus = filterStatus === 'all' || t.status === filterStatus
     const matchSearch =
@@ -139,12 +206,14 @@ export default function AdminTasks() {
     ...extra,
   })
 
+  const contributorsWithPending = getContributorsWithPendingTasks()
+
   return (
     <div style={{ fontFamily: "'Inter', sans-serif" }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
         <div>
           <h4 style={{ fontWeight: 700, fontSize: 20, color: '#1a1f2e', margin: 0 }}>Manajemen Tugas</h4>
-          <p style={{ color: '#6b7280', fontSize: 13, margin: '4px 0 0' }}>Buat dan tugaskan pekerjaan kepada kontributor</p>
+          <p style={{ color: '#6b7280', fontSize: 13, margin: '4px 0 0' }}>Buat, tugaskan, dan pantau status kontributor pengumpulan data</p>
         </div>
         <button
           onClick={openCreate}
@@ -154,118 +223,253 @@ export default function AdminTasks() {
         </button>
       </div>
 
-      {/* Filters */}
-      <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #f0f0f0', padding: '16px 20px', marginBottom: 20, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-        <div className="row g-2">
-          <div className="col-md-5">
-            <div style={{ display: 'flex', alignItems: 'center', border: '1.5px solid #e5e7eb', borderRadius: 8, overflow: 'hidden', background: '#fff' }}>
-              <span style={{ padding: '0 12px', color: '#9ca3af', background: '#f9fafb', borderRight: '1px solid #e5e7eb', height: 38, display: 'flex', alignItems: 'center' }}><i className="bi bi-search"></i></span>
-              <input style={{ flex: 1, border: 'none', outline: 'none', padding: '0 12px', fontSize: 13, height: 38, fontFamily: "'Inter', sans-serif" }} placeholder="Cari judul tugas atau kontributor..." value={search} onChange={(e) => setSearch(e.target.value)} />
-            </div>
-          </div>
-          <div className="col-md-3">
-            <select className="form-select" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} style={{ fontSize: 13, height: 38, fontFamily: "'Inter', sans-serif" }}>
-              <option value="all">Semua Status</option>
-              {Object.entries(STATUS_LABEL).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-            </select>
-          </div>
-          <div className="col-md-4 d-flex align-items-center gap-3">
-            {Object.entries(STATUS_LABEL).map(([k, v]) => (
-              <span key={k} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12 }}>
-                <span style={{ background: v.bg, border: `1px solid ${v.border}`, color: v.colorHex, borderRadius: 20, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>{tasks.filter(t => t.status === k).length}</span>
-                <span style={{ color: '#6b7280' }}>{v.label}</span>
-              </span>
-            ))}
-          </div>
-        </div>
+      {/* Tabs */}
+      <div style={{ display: 'flex', borderBottom: '1px solid #e5e7eb', marginBottom: 20, gap: 20 }}>
+        <button
+          onClick={() => setActiveTab('tasks')}
+          style={{
+            background: 'none', border: 'none',
+            borderBottom: activeTab === 'tasks' ? `2px solid ${ACCENT}` : '2px solid transparent',
+            color: activeTab === 'tasks' ? '#1a1f2e' : '#6b7280',
+            fontWeight: 600, paddingBottom: 10, cursor: 'pointer', fontSize: 13,
+            fontFamily: "'Inter', sans-serif", transition: 'border-color 0.15s, color 0.15s'
+          }}
+        >
+          <i className="bi bi-list-task me-2"></i>Daftar Tugas
+        </button>
+        <button
+          onClick={() => setActiveTab('contributors')}
+          style={{
+            background: 'none', border: 'none',
+            borderBottom: activeTab === 'contributors' ? `2px solid ${ACCENT}` : '2px solid transparent',
+            color: activeTab === 'contributors' ? '#1a1f2e' : '#6b7280',
+            fontWeight: 600, paddingBottom: 10, cursor: 'pointer', fontSize: 13,
+            fontFamily: "'Inter', sans-serif", transition: 'border-color 0.15s, color 0.15s'
+          }}
+        >
+          <i className="bi bi-person-exclamation me-2"></i>Belum Kirim Data ({contributorsWithPending.length})
+        </button>
       </div>
 
-      {/* Table */}
-      <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #f0f0f0', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: '40px 0' }}>
-            <div style={{ width: 36, height: 36, border: `3px solid ${ACCENT}30`, borderTopColor: ACCENT, borderRadius: '50%', animation: 'spin 0.7s linear infinite', display: 'inline-block' }} />
+      {/* Tab Content 1: Flat Tasks List */}
+      {activeTab === 'tasks' && (
+        <>
+          {/* Filters */}
+          <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #f0f0f0', padding: '16px 20px', marginBottom: 20, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+            <div className="row g-2">
+              <div className="col-md-5">
+                <div style={{ display: 'flex', alignItems: 'center', border: '1.5px solid #e5e7eb', borderRadius: 8, overflow: 'hidden', background: '#fff' }}>
+                  <span style={{ padding: '0 12px', color: '#9ca3af', background: '#f9fafb', borderRight: '1px solid #e5e7eb', height: 38, display: 'flex', alignItems: 'center' }}><i className="bi bi-search"></i></span>
+                  <input style={{ flex: 1, border: 'none', outline: 'none', padding: '0 12px', fontSize: 13, height: 38, fontFamily: "'Inter', sans-serif" }} placeholder="Cari judul tugas atau kontributor..." value={search} onChange={(e) => setSearch(e.target.value)} />
+                </div>
+              </div>
+              <div className="col-md-3">
+                <select className="form-select" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} style={{ fontSize: 13, height: 38, fontFamily: "'Inter', sans-serif" }}>
+                  <option value="all">Semua Status</option>
+                  {Object.entries(STATUS_LABEL).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                </select>
+              </div>
+              <div className="col-md-4 d-flex align-items-center gap-3">
+                {Object.entries(STATUS_LABEL).map(([k, v]) => (
+                  <span key={k} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12 }}>
+                    <span style={{ background: v.bg, border: `1px solid ${v.border}`, color: v.colorHex, borderRadius: 20, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>{tasks.filter(t => t.status === k).length}</span>
+                    <span style={{ color: '#6b7280' }}>{v.label}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
           </div>
-        ) : filtered.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '48px 0', color: '#9ca3af', fontSize: 13 }}>
-            <i className="bi bi-inbox" style={{ fontSize: 32, display: 'block', marginBottom: 10, opacity: 0.35 }}></i>
-            Tidak ada tugas ditemukan
-          </div>
-        ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-            <thead>
-              <tr style={{ background: '#f8f9fa', borderBottom: '2px solid #f0f0f0' }}>
-                <th style={thStyle('40px')}>#</th>
-                <th style={thStyle()}>Jenis Data</th>
-                <th style={thStyle('150px')}>Kontributor</th>
-                <th style={thStyle('110px')}>Status</th>
-                <th style={thStyle('110px')}>Deadline</th>
-                <th style={{ ...thStyle('90px'), textAlign: 'center' }}>Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((t, i) => {
-                const s = STATUS_LABEL[t.status] || { label: t.status, colorHex: '#6b7280', bg: '#f3f4f6', border: '#e5e7eb' }
-                const isOverdue = t.deadline && new Date(t.deadline) < new Date() && t.status !== 'approved'
-                return (
-                  <tr key={t.id} className="task-row" style={{ borderBottom: '1px solid #f3f4f6' }}>
-                    <td style={tdStyle({ color: '#d1d5db', fontWeight: 600, fontSize: 11 })}>{i + 1}</td>
-                    <td style={tdStyle()}>
-                      <div style={{ fontWeight: 600, color: '#1a1f2e' }}>{t.data_type_name || '—'}</div>
-                      {t.description && (
-                        <div style={{ color: '#9ca3af', fontSize: 11, marginTop: 2 }}>{t.description.slice(0, 80)}{t.description.length > 80 ? '…' : ''}</div>
-                      )}
-                    </td>
-                    <td style={tdStyle()}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                          <i className="bi bi-person-fill" style={{ color: '#3b82f6', fontSize: 11 }}></i>
-                        </div>
-                        <span style={{ color: '#374151', fontSize: 12 }}>{t.assignee_username}</span>
-                      </div>
-                    </td>
-                    <td style={tdStyle()}>
-                      <span style={{ background: s.bg, border: `1px solid ${s.border}`, color: s.colorHex, borderRadius: 20, padding: '3px 11px', fontSize: 11, fontWeight: 600 }}>{s.label}</span>
-                    </td>
-                    <td style={tdStyle()}>
-                      {t.deadline ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: isOverdue ? '#dc2626' : '#6b7280', fontWeight: isOverdue ? 600 : 400, fontSize: 12 }}>
-                          {isOverdue && <i className="bi bi-exclamation-circle-fill" style={{ fontSize: 12 }}></i>}
-                          {new Date(t.deadline).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
-                        </div>
-                      ) : (
-                        <span style={{ color: '#d1d5db' }}>—</span>
-                      )}
-                    </td>
-                    <td style={{ ...tdStyle(), textAlign: 'center' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                        <button
-                          onClick={() => openEdit(t)}
-                          title="Edit tugas"
-                          style={{ width: 30, height: 30, border: '1px solid #bfdbfe', background: '#eff6ff', borderRadius: 7, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
-                          onMouseEnter={e => { e.currentTarget.style.background = '#dbeafe'; e.currentTarget.style.borderColor = '#93c5fd' }}
-                          onMouseLeave={e => { e.currentTarget.style.background = '#eff6ff'; e.currentTarget.style.borderColor = '#bfdbfe' }}
-                        >
-                          <i className="bi bi-pencil" style={{ color: '#3b82f6', fontSize: 12 }}></i>
-                        </button>
-                        <button
-                          onClick={() => setDeleteConfirm(t)}
-                          title="Hapus tugas"
-                          style={{ width: 30, height: 30, border: '1px solid #fecaca', background: '#fef2f2', borderRadius: 7, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
-                          onMouseEnter={e => { e.currentTarget.style.background = '#fee2e2'; e.currentTarget.style.borderColor = '#fca5a5' }}
-                          onMouseLeave={e => { e.currentTarget.style.background = '#fef2f2'; e.currentTarget.style.borderColor = '#fecaca' }}
-                        >
-                          <i className="bi bi-trash" style={{ color: '#dc2626', fontSize: 12 }}></i>
-                        </button>
-                      </div>
-                    </td>
+
+          {/* Table */}
+          <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #f0f0f0', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
+            {loading ? (
+              <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                <div style={{ width: 36, height: 36, border: `3px solid ${ACCENT}30`, borderTopColor: ACCENT, borderRadius: '50%', animation: 'spin 0.7s linear infinite', display: 'inline-block' }} />
+              </div>
+            ) : filtered.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '48px 0', color: '#9ca3af', fontSize: 13 }}>
+                <i className="bi bi-inbox" style={{ fontSize: 32, display: 'block', marginBottom: 10, opacity: 0.35 }}></i>
+                Tidak ada tugas ditemukan
+              </div>
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                <thead>
+                  <tr style={{ background: '#f8f9fa', borderBottom: '2px solid #f0f0f0' }}>
+                    <th style={thStyle('40px')}>#</th>
+                    <th style={thStyle()}>Jenis Data</th>
+                    <th style={thStyle('150px')}>Kontributor</th>
+                    <th style={thStyle('110px')}>Status</th>
+                    <th style={thStyle('110px')}>Deadline</th>
+                    <th style={{ ...thStyle('120px'), textAlign: 'center' }}>Aksi</th>
                   </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        )}
-      </div>
+                </thead>
+                <tbody>
+                  {filtered.map((t, i) => {
+                    const s = STATUS_LABEL[t.status] || { label: t.status, colorHex: '#6b7280', bg: '#f3f4f6', border: '#e5e7eb' }
+                    const isOverdue = t.deadline && new Date(t.deadline) < new Date() && t.status !== 'approved'
+                    return (
+                      <tr key={t.id} className="task-row" style={{ borderBottom: '1px solid #f3f4f6' }}>
+                        <td style={tdStyle({ color: '#d1d5db', fontWeight: 600, fontSize: 11 })}>{i + 1}</td>
+                        <td style={tdStyle()}>
+                          <div style={{ fontWeight: 600, color: '#1a1f2e' }}>{t.data_type_name || '—'}</div>
+                          {t.description && (
+                            <div style={{ color: '#9ca3af', fontSize: 11, marginTop: 2 }}>{t.description.slice(0, 80)}{t.description.length > 80 ? '…' : ''}</div>
+                          )}
+                        </td>
+                        <td style={tdStyle()}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                              <i className="bi bi-person-fill" style={{ color: '#3b82f6', fontSize: 11 }}></i>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                              <span style={{ color: '#374151', fontSize: 12, fontWeight: 500 }}>{t.assignee_username}</span>
+                              {t.assignee_whatsapp && (
+                                <span style={{ color: '#16a34a', fontSize: 10, display: 'flex', alignItems: 'center', gap: 3 }}>
+                                  <i className="bi bi-whatsapp"></i>{t.assignee_whatsapp}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td style={tdStyle()}>
+                          <span style={{ background: s.bg, border: `1px solid ${s.border}`, color: s.colorHex, borderRadius: 20, padding: '3px 11px', fontSize: 11, fontWeight: 600 }}>{s.label}</span>
+                        </td>
+                        <td style={tdStyle()}>
+                          {t.deadline ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: isOverdue ? '#dc2626' : '#6b7280', fontWeight: isOverdue ? 600 : 400, fontSize: 12 }}>
+                              {isOverdue && <i className="bi bi-exclamation-circle-fill" style={{ fontSize: 12 }}></i>}
+                              {new Date(t.deadline).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+                            </div>
+                          ) : (
+                            <span style={{ color: '#d1d5db' }}>—</span>
+                          )}
+                        </td>
+                        <td style={{ ...tdStyle(), textAlign: 'center' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                            <button
+                              onClick={() => openEdit(t)}
+                              title="Edit tugas"
+                              style={{ width: 30, height: 30, border: '1px solid #bfdbfe', background: '#eff6ff', borderRadius: 7, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+                              onMouseEnter={e => { e.currentTarget.style.background = '#dbeafe'; e.currentTarget.style.borderColor = '#93c5fd' }}
+                              onMouseLeave={e => { e.currentTarget.style.background = '#eff6ff'; e.currentTarget.style.borderColor = '#bfdbfe' }}
+                            >
+                              <i className="bi bi-pencil" style={{ color: '#3b82f6', fontSize: 12 }}></i>
+                            </button>
+                            <button
+                              onClick={() => setDeleteConfirm(t)}
+                              title="Hapus tugas"
+                              style={{ width: 30, height: 30, border: '1px solid #fecaca', background: '#fef2f2', borderRadius: 7, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+                              onMouseEnter={e => { e.currentTarget.style.background = '#fee2e2'; e.currentTarget.style.borderColor = '#fca5a5' }}
+                              onMouseLeave={e => { e.currentTarget.style.background = '#fef2f2'; e.currentTarget.style.borderColor = '#fecaca' }}
+                            >
+                              <i className="bi bi-trash" style={{ color: '#dc2626', fontSize: 12 }}></i>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* Tab Content 2: Grouped Contributors with Pending/Revision Tasks */}
+      {activeTab === 'contributors' && (
+        <>
+          {/* Quick search */}
+          <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #f0f0f0', padding: '16px 20px', marginBottom: 20, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', border: '1.5px solid #e5e7eb', borderRadius: 8, overflow: 'hidden', background: '#fff', maxWidth: 450 }}>
+              <span style={{ padding: '0 12px', color: '#9ca3af', background: '#f9fafb', borderRight: '1px solid #e5e7eb', height: 38, display: 'flex', alignItems: 'center' }}><i className="bi bi-search"></i></span>
+              <input style={{ flex: 1, border: 'none', outline: 'none', padding: '0 12px', fontSize: 13, height: 38, fontFamily: "'Inter', sans-serif" }} placeholder="Cari nama dinas atau tugas..." value={search} onChange={(e) => setSearch(e.target.value)} />
+            </div>
+          </div>
+
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '40px 0' }}>
+              <div style={{ width: 36, height: 36, border: `3px solid ${ACCENT}30`, borderTopColor: ACCENT, borderRadius: '50%', animation: 'spin 0.7s linear infinite', display: 'inline-block' }} />
+            </div>
+          ) : contributorsWithPending.length === 0 ? (
+            <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #f0f0f0', textAlign: 'center', padding: '48px 0', color: '#16a34a', fontSize: 13, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+              <i className="bi bi-check-circle-fill" style={{ fontSize: 40, display: 'block', marginBottom: 12, opacity: 0.8 }}></i>
+              Luar biasa! Semua kontributor sudah menyelesaikan dan mengirimkan data tugas mereka.
+            </div>
+          ) : (
+            <div className="row g-3">
+              {contributorsWithPending.map(c => (
+                <div key={c.id} className="col-md-6">
+                  <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #f0f0f0', padding: 18, boxShadow: '0 2px 8px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', height: '100%' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                      <div>
+                        <h6 style={{ fontWeight: 700, fontSize: 14, color: '#1a1f2e', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <i className="bi bi-person-fill" style={{ color: '#3b82f6', fontSize: 12 }}></i>
+                          </div>
+                          {c.username}
+                        </h6>
+                        {c.whatsapp ? (
+                          <div style={{ fontSize: 12, color: '#16a34a', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <i className="bi bi-whatsapp"></i> {c.whatsapp}
+                          </div>
+                        ) : (
+                          <div style={{ fontSize: 11, color: '#dc2626', marginTop: 4 }}>
+                            <i className="bi bi-exclamation-triangle-fill"></i> No WA belum terdaftar
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => handleSendWaReminder(c.pending_tasks[0])}
+                        disabled={!c.whatsapp}
+                        style={{
+                          background: c.whatsapp ? '#f0fdf4' : '#f9fafb',
+                          border: `1px solid ${c.whatsapp ? '#bbf7d0' : '#e5e7eb'}`,
+                          color: c.whatsapp ? '#16a34a' : '#9ca3af',
+                          borderRadius: 8, padding: '6px 14px', fontSize: 12, fontWeight: 600,
+                          cursor: c.whatsapp ? 'pointer' : 'not-allowed',
+                          display: 'flex', alignItems: 'center', gap: 6, fontFamily: "'Inter', sans-serif"
+                        }}
+                      >
+                        <i className="bi bi-whatsapp"></i> Kirim WA
+                      </button>
+                    </div>
+
+                    <div style={{ borderTop: '1px solid #f9f9f9', paddingTop: 10, flex: 1 }}>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>Tugas Belum Dikirim ({c.pending_tasks.length})</div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        {c.pending_tasks.map(t => {
+                          const isRev = t.status === 'revision'
+                          return (
+                            <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fafafa', borderRadius: 8, padding: '8px 12px', border: '1px solid #f3f4f6' }}>
+                              <span style={{ fontSize: 12, fontWeight: 500, color: '#374151' }}>{t.title}</span>
+                              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                                <span style={{
+                                  background: isRev ? '#fef2f2' : '#fff7ed',
+                                  border: `1px solid ${isRev ? '#fecaca' : '#fed7aa'}`,
+                                  color: isRev ? '#dc2626' : '#f5a623',
+                                  borderRadius: 12, padding: '2px 8px', fontSize: 10, fontWeight: 600
+                                }}>
+                                  {isRev ? 'Revisi' : 'Menunggu'}
+                                </span>
+                                {t.deadline && (
+                                  <span style={{ fontSize: 11, color: '#6b7280' }}>
+                                    Batas: {new Date(t.deadline).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' })}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
 
       {/* Form Modal */}
       {showModal && (
@@ -276,39 +480,43 @@ export default function AdminTasks() {
               <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: 20 }}><i className="bi bi-x"></i></button>
             </div>
             <form onSubmit={handleSave}>
-              <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 14, maxHeight: '65vh', overflowY: 'auto' }}>
+              <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
                 {error && <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', borderRadius: 8, padding: '8px 12px', fontSize: 12 }}>{error}</div>}
+
                 <div>
                   <label style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 5, letterSpacing: 0.5 }}>JUDUL TUGAS <span style={{ color: '#dc2626' }}>*</span></label>
-                  <input style={{ width: '100%', border: '1.5px solid #e5e7eb', borderRadius: 8, padding: '8px 12px', fontSize: 13, outline: 'none', fontFamily: "'Inter', sans-serif" }} value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} required placeholder="contoh: Pengumpulan Data Penduduk RT 01" />
+                  <input className="form-control" required placeholder="contoh: Data Kemiskinan Triwulan I" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} style={{ fontSize: 13, fontFamily: "'Inter',sans-serif" }} />
                 </div>
+
                 <div>
-                  <label style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 5, letterSpacing: 0.5 }}>DESKRIPSI</label>
-                  <textarea style={{ width: '100%', border: '1.5px solid #e5e7eb', borderRadius: 8, padding: '8px 12px', fontSize: 13, outline: 'none', fontFamily: "'Inter', sans-serif", resize: 'vertical' }} rows={2} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Instruksi atau keterangan tambahan..." />
+                  <label style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 5, letterSpacing: 0.5 }}>DESKRIPSI TUGAS</label>
+                  <textarea className="form-control" rows={3} placeholder="Penjelasan singkat mengenai data yang perlu dikumpulkan..." value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} style={{ fontSize: 13, fontFamily: "'Inter',sans-serif" }} />
                 </div>
+
                 <div>
-                  <label style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 5, letterSpacing: 0.5 }}>JENIS DATA <span style={{ color: '#dc2626' }}>*</span></label>
-                  <select className="form-select" style={{ fontSize: 13 }} value={form.data_type_id} onChange={e => setForm({ ...form, data_type_id: e.target.value })} required>
-                    <option value="">-- Pilih jenis data --</option>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 5, letterSpacing: 0.5 }}>JENIS DATA / TEMPLATE <span style={{ color: '#dc2626' }}>*</span></label>
+                  <select className="form-select" required value={form.data_type_id} onChange={e => setForm({ ...form, data_type_id: e.target.value })} style={{ fontSize: 13, fontFamily: "'Inter',sans-serif" }}>
+                    <option value="">Pilih jenis data...</option>
                     {dataTypes.map(dt => <option key={dt.id} value={dt.id}>{dt.name}</option>)}
                   </select>
                 </div>
+
                 <div>
-                  <label style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 5, letterSpacing: 0.5 }}>KONTRIBUTOR <span style={{ color: '#dc2626' }}>*</span></label>
-                  <select className="form-select" style={{ fontSize: 13 }} value={form.assigned_to} onChange={e => setForm({ ...form, assigned_to: e.target.value })} required>
-                    <option value="">-- Pilih kontributor --</option>
-                    {contributors.map(c => <option key={c.id} value={c.id}>{c.username} ({c.email})</option>)}
+                  <label style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 5, letterSpacing: 0.5 }}>TUGASKAN KEPADA <span style={{ color: '#dc2626' }}>*</span></label>
+                  <select className="form-select" required value={form.assigned_to} onChange={e => setForm({ ...form, assigned_to: e.target.value })} style={{ fontSize: 13, fontFamily: "'Inter',sans-serif" }}>
+                    <option value="">Pilih kontributor...</option>
+                    {contributors.map(u => <option key={u.id} value={u.id}>{u.username}</option>)}
                   </select>
-                  {contributors.length === 0 && <div style={{ fontSize: 11, color: '#f5a623', marginTop: 4 }}><i className="bi bi-exclamation-triangle me-1"></i>Belum ada kontributor. Tambahkan di menu Pengguna.</div>}
                 </div>
+
                 <div>
-                  <label style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 5, letterSpacing: 0.5 }}>DEADLINE</label>
-                  <input type="date" style={{ width: '100%', border: '1.5px solid #e5e7eb', borderRadius: 8, padding: '8px 12px', fontSize: 13, outline: 'none', fontFamily: "'Inter', sans-serif" }} value={form.deadline} onChange={e => setForm({ ...form, deadline: e.target.value })} />
+                  <label style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 5, letterSpacing: 0.5 }}>BATAS WAKTU (DEADLINE)</label>
+                  <input className="form-control" type="date" value={form.deadline} onChange={e => setForm({ ...form, deadline: e.target.value })} style={{ fontSize: 13, fontFamily: "'Inter',sans-serif" }} />
                 </div>
               </div>
               <div style={{ borderTop: '1px solid #f0f0f0', padding: '14px 20px', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
                 <button type="button" onClick={() => setShowModal(false)} style={{ background: '#f3f4f6', border: '1px solid #e5e7eb', color: '#374151', borderRadius: 8, padding: '8px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Inter', sans-serif" }}>Batal</button>
-                <button type="submit" disabled={saving} style={{ background: ACCENT, border: 'none', color: '#fff', borderRadius: 8, padding: '8px 20px', fontSize: 13, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', fontFamily: "'Inter', sans-serif", opacity: saving ? 0.8 : 1, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <button type="submit" disabled={saving} style={{ background: ACCENT, border: 'none', color: '#fff', borderRadius: 8, padding: '8px 20px', fontSize: 13, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', fontFamily: "'Inter', sans-serif", opacity: saving ? 0.8 : 1 }}>
                   {saving ? <><span className="spinner-border spinner-border-sm" style={{ width: 14, height: 14, borderWidth: 2 }} /> Menyimpan...</> : 'Simpan'}
                 </button>
               </div>
@@ -320,9 +528,9 @@ export default function AdminTasks() {
       {/* Delete Confirmation Modal */}
       {deleteConfirm && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1050, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-          <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 20px 60px rgba(0,0,0,0.2)', width: '100%', maxWidth: 420, overflow: 'hidden', fontFamily: "'Inter', sans-serif" }}>
+          <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 20px 60px rgba(0,0,0,0.2)', width: '100%', maxWidth: 400, overflow: 'hidden', fontFamily: "'Inter', sans-serif" }}>
             <div style={{ background: '#fef2f2', borderBottom: '1px solid #fecaca', padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 10 }}>
-              <i className="bi bi-trash" style={{ color: '#dc2626', fontSize: 18 }}></i>
+              <i className="bi bi-exclamation-triangle-fill" style={{ color: '#dc2626', fontSize: 18 }}></i>
               <span style={{ fontWeight: 700, fontSize: 15, color: '#dc2626' }}>Hapus Tugas</span>
               <button onClick={() => setDeleteConfirm(null)} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: 18 }}><i className="bi bi-x"></i></button>
             </div>

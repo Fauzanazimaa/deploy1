@@ -61,6 +61,8 @@ export const downloadAdminTemplate = (id) =>
 export const deleteTemplate = (id) => api.delete(`/admin/templates/${id}`)
 export const parseTemplateStructure = (formData) =>
   api.post('/admin/templates/parse', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+export const previewTemplateGrid = (templateId) => api.get(`/admin/templates/${templateId}/preview-grid`)
+export const previewDataTypeTemplateGrid = (dtId) => api.get(`/admin/data-types/${dtId}/template-preview-grid`)
 
 // ─── Admin – Submissions ──────────────────────────────────────────────────────
 export const getSubmissions = () => api.get('/admin/submissions')
@@ -92,6 +94,9 @@ export const submitTaskForm = (taskId, formData) =>
 export const getTaskTemplateGrid = (taskId) =>
   api.get(`/contributor/tasks/${taskId}/template-grid`)
 export const getMySubmissions = () => api.get('/contributor/submissions')
+export const downloadContributorSubmission = (id) =>
+  api.get(`/contributor/submissions/${id}/download`, { responseType: 'blob' })
+export const previewContributorSubmission = (id) => api.get(`/contributor/submissions/${id}/preview`)
 export const getContributorStats = () => api.get('/contributor/dashboard/stats')
 
 // ─── Viewer ───────────────────────────────────────────────────────────────────

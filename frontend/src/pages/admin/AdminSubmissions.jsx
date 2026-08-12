@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { getSubmissions, approveSubmission, revisionSubmission, downloadSubmission, previewSubmission } from '../../api'
+import { ExcelGrid } from '../admin/AdminDataSchema'
 
 const STATUS_LABEL = {
   pending:  { label: 'Menunggu',  colorHex: '#f5a623', bg: '#fff7ed', border: '#fed7aa' },
@@ -30,69 +31,114 @@ function PreviewTable({ grid, loading, error }) {
     <p style={{ textAlign: 'center', color: '#9ca3af', fontSize: 13, padding: '24px 0' }}>Tidak ada data.</p>
   )
 
+  // Pisahkan header rows dan data rows
+  // Backend mengembalikan is_header=true untuk baris header
+  // Kita tentukan batas header dari baris pertama yang is_header=false
+  let splitIdx = 0
+  for (let i = 0; i < grid.length; i++) {
+    if (grid[i].length > 0 && grid[i][0].is_header === false) { splitIdx = i; break }
+    if (i === grid.length - 1) splitIdx = i + 1
+  }
+  const headerRows = grid.slice(0, splitIdx)
+  const dataRows   = grid.slice(splitIdx)
+
   return (
-    <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: 460, border: '1px solid #e5e7eb', borderRadius: 8 }}>
-      <table style={{ borderCollapse: 'collapse', fontSize: 12, minWidth: '100%', tableLayout: 'auto' }}>
-        <tbody>
-          {grid.map((row, ri) => (
-            <tr key={ri}>
-              {/* Nomor baris (hanya untuk data rows) */}
-              {ri === 0 && (
-                <td
-                  rowSpan={grid.length}
-                  style={{
-                    padding: '0',
-                    width: 28,
-                    minWidth: 28,
-                    background: '#1a1f2e',
-                    verticalAlign: 'top',
-                  }}
-                >
-                  {grid.map((_, i) => (
-                    <div
-                      key={i}
+    <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: 520, border: '1px solid #e5e7eb', borderRadius: 8 }}>
+      <table style={{
+        borderCollapse: 'collapse',
+        fontSize: 12,
+        minWidth: '100%',
+        tableLayout: 'auto',
+      }}>
+        {/* Header */}
+        {headerRows.length > 0 && (
+          <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
+            {headerRows.map((row, ri) => (
+              <tr key={ri}>
+                {row.map((cell, ci) => {
+                  if (cell.is_merged_child) return null;
+                  return (
+                    <th
+                      key={ci}
+                      rowSpan={cell.rowspan || 1}
+                      colSpan={cell.colspan || 1}
                       style={{
-                        height: 32,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: 'rgba(255,255,255,0.4)',
-                        fontSize: 10,
-                        borderBottom: '1px solid rgba(255,255,255,0.06)',
-                        fontWeight: 500,
+                        background:    cell.bg || '#1e3a5f',
+                        color:         '#fff',
+                        fontWeight:    700,
+                        fontSize:      11,
+                        padding:       '7px 10px',
+                        textAlign:     'center',
+                        verticalAlign: 'middle',
+                        border:        '1px solid rgba(255,255,255,0.15)',
+                        whiteSpace:    'pre-wrap',
+                        wordBreak:     'break-word',
+                        minWidth:      70,
+                        lineHeight:    1.4,
                       }}
                     >
-                      {i + 1}
-                    </div>
-                  ))}
-                </td>
-              )}
-              {row.map((cell, ci) => {
-                const isHeader = cell.is_header
-                const bg = cell.bg || (isHeader ? '#1e3a5f' : (ri % 2 === 0 ? '#fff' : '#f9fafb'))
-                const textColor = isHeader ? '#fff' : '#374151'
+                      {cell.value || ''}
+                    </th>
+                  );
+                })}
+              </tr>
+            ))}
+          </thead>
+        )}
 
+        {/* Data body */}
+        <tbody>
+          {dataRows.length === 0 ? (
+            <tr>
+              <td colSpan={100} style={{ textAlign: 'center', padding: '20px', color: '#9ca3af', fontSize: 12 }}>
+                Belum ada data
+              </td>
+            </tr>
+          ) : dataRows.map((row, ri) => (
+            <tr key={ri} style={{ background: ri % 2 === 0 ? '#fff' : '#f9fafb' }}>
+              {/* Nomor baris */}
+              <td style={{
+                padding:       '0 8px',
+                color:         '#9ca3af',
+                fontSize:      10,
+                textAlign:     'right',
+                verticalAlign: 'middle',
+                background:    '#f8fafc',
+                border:        '1px solid #e5e7eb',
+                minWidth:      28,
+                userSelect:    'none',
+              }}>
+                {ri + 1}
+              </td>
+              {row.map((cell, ci) => {
+                if (cell.is_merged_child) return null;
+                const isFirstCol = cell.is_first_col
+                const bg = isFirstCol
+                  ? '#fef9c3'
+                  : (ri % 2 === 0 ? '#fff' : '#f9fafb')
                 return (
                   <td
                     key={ci}
                     rowSpan={cell.rowspan || 1}
                     colSpan={cell.colspan || 1}
                     style={{
-                      padding: '6px 10px',
-                      background: bg,
-                      color: textColor,
-                      fontWeight: isHeader ? 600 : 400,
-                      fontSize: isHeader ? 11 : 12,
-                      textAlign: isHeader ? 'center' : 'left',
+                      padding:       '6px 10px',
+                      background:    bg,
+                      color:         isFirstCol ? '#92400e' : '#374151',
+                      fontWeight:    isFirstCol ? 600 : 400,
+                      fontSize:      12,
                       verticalAlign: 'middle',
-                      border: isHeader ? '1px solid rgba(255,255,255,0.12)' : '1px solid #e5e7eb',
-                      whiteSpace: isHeader ? 'normal' : 'nowrap',
-                      wordBreak: isHeader ? 'break-word' : 'normal',
-                      minWidth: isHeader ? 80 : 70,
-                      lineHeight: 1.4,
+                      border:        '1px solid #e5e7eb',
+                      whiteSpace:    'pre-wrap',
+                      wordBreak:     'break-word',
+                      minWidth:      70,
+                      lineHeight:    1.4,
                     }}
                   >
-                    {cell.value || (isHeader ? '' : <span style={{ color: '#d1d5db' }}>—</span>)}
+                    {cell.value !== '' && cell.value !== null && cell.value !== undefined
+                      ? cell.value
+                      : <span style={{ color: '#d1d5db', fontSize: 10 }}>—</span>
+                    }
                   </td>
                 )
               })}
@@ -113,10 +159,11 @@ export default function AdminSubmissions() {
   const [revisionNotes, setRevisionNotes] = useState('')
   const [saving, setSaving] = useState(false)
   const [detailModal, setDetailModal] = useState(null)
-  const [previewModal, setPreviewModal] = useState(null)
-  const [previewGrid, setPreviewGrid] = useState([])
+  const [previewModal,   setPreviewModal]   = useState(null)
+  const [previewGrid,    setPreviewGrid]    = useState([])
+  const [previewHeaders, setPreviewHeaders] = useState(1)
   const [previewLoading, setPreviewLoading] = useState(false)
-  const [previewError, setPreviewError] = useState('')
+  const [previewError,   setPreviewError]   = useState('')
 
   const fetchSubmissions = async () => {
     try { const res = await getSubmissions(); setSubmissions(res.data) }
@@ -157,11 +204,13 @@ export default function AdminSubmissions() {
   const handlePreview = async (sub) => {
     setPreviewModal(sub)
     setPreviewGrid([])
+    setPreviewHeaders(1)
     setPreviewError('')
     setPreviewLoading(true)
     try {
       const res = await previewSubmission(sub.id)
       setPreviewGrid(res.data.grid || [])
+      setPreviewHeaders(res.data.num_header_rows || 1)
     } catch (err) {
       setPreviewError(err.response?.data?.error || 'Gagal memuat preview data')
     } finally {
@@ -298,11 +347,19 @@ export default function AdminSubmissions() {
               <button onClick={() => setPreviewModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: 20 }}><i className="bi bi-x"></i></button>
             </div>
             <div style={{ flex: 1, overflow: 'auto', padding: '16px 20px' }}>
-              <PreviewTable
-                grid={previewGrid}
-                loading={previewLoading}
-                error={previewError}
-              />
+              {previewLoading ? (
+                <div style={{ textAlign: 'center', padding: '32px 0' }}>
+                  <div style={{ width: 28, height: 28, border: '3px solid #e5e7eb', borderTopColor: '#3b82f6', borderRadius: '50%', animation: 'spin .7s linear infinite', display: 'inline-block' }}></div>
+                  <div style={{ color: '#9ca3af', fontSize: 13, marginTop: 8 }}>Memuat data...</div>
+                  <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+                </div>
+              ) : previewError ? (
+                <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '12px 16px', color: '#dc2626', fontSize: 13 }}>
+                  <i className="bi bi-exclamation-triangle me-2"></i>{previewError}
+                </div>
+              ) : (
+                <ExcelGrid grid={previewGrid} numHeaderRows={previewHeaders} maxHeight={440} />
+              )}
             </div>
             <div style={{ borderTop: '1px solid #f0f0f0', padding: '14px 20px', display: 'flex', justifyContent: 'flex-end', gap: 8, flexShrink: 0 }}>
               <button onClick={() => handleDownload(previewModal)} style={{ background: '#f9fafb', border: '1px solid #e5e7eb', color: '#374151', borderRadius: 8, padding: '8px 16px', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontFamily: "'Inter',sans-serif" }}><i className="bi bi-download"></i>Unduh File</button>

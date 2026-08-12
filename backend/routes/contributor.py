@@ -4,6 +4,7 @@ from werkzeug.utils import secure_filename
 from models import db, User, Task, Submission, ExcelTemplate
 from storage import upload_file, download_file, UPLOADS_BUCKET, TEMPLATES_BUCKET
 from utils.excel import normalize_schema, get_leaf_columns
+from utils.excel_parser import parse_excel_to_grid
 from datetime import datetime
 import io
 import uuid
@@ -186,7 +187,7 @@ def get_template_grid(task_id):
             return _schema_to_grid(schema), 200
         return jsonify({'error': 'File template tidak ditemukan'}), 404
 
-    return _excel_to_grid(file_bytes), 200
+    return parse_excel_to_grid(file_bytes), 200
 
 
 def _excel_to_grid(file_bytes: bytes):
@@ -459,3 +460,243 @@ def dashboard_stats():
         'pending_submissions': Submission.query.filter_by(contributor_id=user.id, status='pending').count(),
         'recent_tasks':       [t.to_dict() for t in recent_tasks],
     }), 200
+
+
+@contributor_bp.route('/submissions/<int:sub_id>/preview', methods=['GET'])
+@jwt_required()
+def preview_submission(sub_id):
+    user, err, code = require_contributor()
+    if err: return err, code
+    
+    submission = Submission.query.filter_by(id=sub_id, contributor_id=user.id).first_or_404()
+    
+    # ── Form submission → konversi ke format grid 2D dengan template overlay ──
+    if submission.source == 'form' and submission.form_data:
+        try:
+            import json as _json
+            form_data = _json.loads(submission.form_data)
+            rows_data = form_data if isinstance(form_data, list) else []
+            dt = submission.task.data_type if submission.task else None
+            
+            template = None
+            if dt:
+                from models import ExcelTemplate as _ET
+                template = (_ET.query
+                            .filter_by(data_type_id=dt.id)
+                            .order_by(_ET.created_at.desc())
+                            .first())
+            
+            grid_rows = []
+            if template:
+                try:
+                    from utils.excel_parser import parse_excel_to_preview_grid, _build_merge_index, detect_header_rows
+                    tmpl_bytes = download_file(TEMPLATES_BUCKET(), template.file_path)
+                    
+                    _wb = openpyxl.load_workbook(io.BytesIO(tmpl_bytes), data_only=True)
+                    _ws = _wb.active
+                    _max_col = _ws.max_column or 1
+                    _num_header_rows = detect_header_rows(_ws)
+                    _top_left, _non_tl = _build_merge_index(_ws)
+                    
+                    _has_first_col = False
+                    _mi1 = _top_left.get((1, 1))
+                    if _mi1 and _mi1['rowspan'] >= _num_header_rows and _num_header_rows > 1:
+                        _has_first_col = True
+                    elif _num_header_rows == 1:
+                        _data_start = _num_header_rows + 1
+                        _fc_vals = [str(_ws.cell(_r2, 1).value or '').strip()
+                                    for _r2 in range(_data_start, min(_data_start + 5, _ws.max_row + 1))
+                                    if _ws.cell(_r2, 1).value]
+                        _has_first_col = bool(_fc_vals)
+                    _wb.close()
+
+                    preview_res = parse_excel_to_preview_grid(tmpl_bytes)
+                    grid_rows = preview_res['grid']
+                    _num_data_cols = _max_col - (1 if _has_first_col else 0)
+
+                    for ri, row_obj in enumerate(rows_data):
+                        grid_idx = _num_header_rows + ri
+                        if grid_idx >= len(grid_rows):
+                            _row_cells = []
+                            if _has_first_col:
+                                _row_cells.append({
+                                    'value': str(row_obj.get('__row_label', '') or ''),
+                                    'rowspan': 1, 'colspan': 1,
+                                    'is_header': False, 'is_first_col': True,
+                                    'is_merged_child': False
+                                })
+                            for _i in range(_num_data_cols):
+                                _v = row_obj.get(f'__col_{_i}', row_obj.get(f'col_{_i}', ''))
+                                _row_cells.append({
+                                    'value': '' if _v is None else str(_v),
+                                    'rowspan': 1, 'colspan': 1,
+                                    'is_header': False,
+                                    'is_merged_child': False
+                                })
+                            grid_rows.append(_row_cells)
+                        else:
+                            if _has_first_col and len(grid_rows[grid_idx]) > 0:
+                                if '__row_label' in row_obj:
+                                    grid_rows[grid_idx][0]['value'] = str(row_obj.get('__row_label') or '')
+                                grid_rows[grid_idx][0]['is_first_col'] = True
+                            
+                            col_start = 1 if _has_first_col else 0
+                            for _i in range(_num_data_cols):
+                                cell_idx = col_start + _i
+                                if cell_idx < len(grid_rows[grid_idx]):
+                                    _v = row_obj.get(f'__col_{_i}', row_obj.get(f'col_{_i}', ''))
+                                    grid_rows[grid_idx][cell_idx]['value'] = '' if _v is None else str(_v)
+                    
+                    return jsonify({
+                        'grid': grid_rows,
+                        'num_header_rows': _num_header_rows,
+                        'total_cols': _max_col,
+                        'source': 'form'
+                    }), 200
+                except Exception as e:
+                    print(f"Error in contributor preview_submission: {str(e)}")
+                    pass
+
+            # Fallback schema
+            schema_raw = dt.get_fields_schema() if dt else {}
+            from utils.excel import normalize_schema, get_leaf_columns
+            schema    = normalize_schema(schema_raw)
+            first_col = schema.get('first_column', {})
+            has_first = first_col.get('enabled', False)
+            leaf_cols = get_leaf_columns(schema)
+            levels    = schema.get('header_levels', [[]])
+            num_levels = len(levels)
+
+            for li, level in enumerate(levels):
+                is_last = (li == num_levels - 1)
+                row_cells = []
+                if has_first and li == 0:
+                    row_cells.append({
+                        'value': first_col.get('label', 'Baris'),
+                        'rowspan': num_levels, 'colspan': 1,
+                        'is_header': True, 'level': 0
+                    })
+                if not is_last:
+                    for grp in level:
+                        row_cells.append({
+                            'value': grp.get('label', ''),
+                            'rowspan': 1, 'colspan': grp.get('span', 1),
+                            'is_header': True, 'level': li
+                        })
+                else:
+                    for f in level:
+                        row_cells.append({
+                            'value': f.get('label', f.get('name', '')),
+                            'rowspan': 1, 'colspan': 1,
+                            'is_header': True, 'level': li
+                        })
+                grid_rows.append(row_cells)
+
+            num_leaf = len(leaf_cols)
+            for row_obj in rows_data:
+                row_cells = []
+                if has_first:
+                    row_cells.append({
+                        'value': str(row_obj.get('__row_label', '') or ''),
+                        'rowspan': 1, 'colspan': 1,
+                        'is_header': False, 'is_first_col': True
+                    })
+                for _i, f in enumerate(leaf_cols):
+                    fname = f.get('name', '')
+                    v = row_obj.get(f'__col_{_i}', row_obj.get(f'col_{_i}', row_obj.get(fname, '')))
+                    row_cells.append({
+                        'value': '' if v is None else str(v),
+                        'rowspan': 1, 'colspan': 1,
+                        'is_header': False
+                    })
+                grid_rows.append(row_cells)
+
+            return jsonify({
+                'grid': grid_rows,
+                'num_header_rows': num_levels,
+                'total_cols': (1 if has_first else 0) + num_leaf,
+                'source': 'form'
+            }), 200
+        except Exception as e:
+            return jsonify({'error': f'Gagal membaca form data: {str(e)}'}), 400
+
+    # ── Excel submission → baca file mentah sebagai grid 2D ──────────────────
+    if not submission.file_path:
+        return jsonify({'error': 'Submission tidak memiliki file'}), 404
+
+    try:
+        file_bytes = download_file(UPLOADS_BUCKET(), submission.file_path)
+    except Exception:
+        return jsonify({'error': 'File tidak ditemukan di storage'}), 404
+
+    try:
+        from utils.excel_parser import parse_excel_to_preview_grid, read_submission_data
+        result = parse_excel_to_preview_grid(file_bytes)
+        data_rows = read_submission_data(file_bytes)
+        result['rows']  = data_rows
+        result['total'] = len(data_rows)
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({'error': f'Gagal membaca file: {str(e)}'}), 400
+
+
+@contributor_bp.route('/submissions/<int:sub_id>/download', methods=['GET'])
+@jwt_required()
+def download_submission(sub_id):
+    user, err, code = require_contributor()
+    if err: return err, code
+
+    submission = Submission.query.filter_by(id=sub_id, contributor_id=user.id).first_or_404()
+
+    if submission.source == 'form' and submission.form_data:
+        try:
+            import json as _json
+            from routes.admin import _form_data_to_excel_from_template, _form_data_to_excel
+
+            form_data = _json.loads(submission.form_data)
+            dt = submission.task.data_type if submission.task else None
+
+            template = None
+            if dt:
+                from models import ExcelTemplate as _ET2
+                template = (_ET2.query
+                            .filter_by(data_type_id=dt.id)
+                            .order_by(_ET2.created_at.desc())
+                            .first())
+
+            if template:
+                try:
+                    tmpl_bytes = download_file(TEMPLATES_BUCKET(), template.file_path)
+                    file_bytes = _form_data_to_excel_from_template(form_data, tmpl_bytes, dt.name if dt else 'Data')
+                except Exception:
+                    schema_raw = dt.get_fields_schema() if dt else {}
+                    from utils.excel import normalize_schema as _ns
+                    schema = _ns(schema_raw)
+                    file_bytes = _form_data_to_excel(form_data, schema, dt.name if dt else 'Data')
+            else:
+                schema_raw = dt.get_fields_schema() if dt else {}
+                from utils.excel import normalize_schema as _ns
+                schema = _ns(schema_raw)
+                file_bytes = _form_data_to_excel(form_data, schema, dt.name if dt else 'Data')
+
+            fname = f"submission_{sub_id}_{(dt.name if dt else 'data').replace(' ','_')}.xlsx"
+            return send_file(
+                io.BytesIO(file_bytes),
+                as_attachment=True,
+                download_name=fname,
+                mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            )
+        except Exception as e:
+            return jsonify({'error': f'Gagal konversi form ke Excel: {str(e)}'}), 500
+
+    try:
+        file_bytes = download_file(UPLOADS_BUCKET(), submission.file_path)
+    except Exception:
+        return jsonify({'error': 'File not found in storage'}), 404
+
+    return send_file(
+        io.BytesIO(file_bytes),
+        as_attachment=True,
+        download_name=submission.file_path.split('_', 1)[-1] if '_' in submission.file_path else submission.file_path,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    )

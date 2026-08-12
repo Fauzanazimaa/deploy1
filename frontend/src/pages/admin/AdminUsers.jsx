@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { getUsers, createUser, updateUser, deleteUser } from '../../api'
 
-const emptyForm = { username: '', email: '', password: '', role: 'contributor', is_active: true }
+const emptyForm = { username: '', email: '', password: '', role: 'contributor', is_active: true, whatsapp: '' }
 
 export default function AdminUsers() {
   const [users, setUsers] = useState([])
@@ -36,7 +36,7 @@ export default function AdminUsers() {
 
   const openEdit = (u) => {
     setEditUser(u)
-    setForm({ username: u.username, email: u.email, password: '', role: u.role, is_active: u.is_active })
+    setForm({ username: u.username, email: u.email, password: '', role: u.role, is_active: u.is_active, whatsapp: u.whatsapp || '' })
     setError('')
     setShowModal(true)
   }
@@ -83,12 +83,12 @@ export default function AdminUsers() {
 
   const filtered = users.filter((u) => {
     const matchSearch = u.username.toLowerCase().includes(search.toLowerCase()) ||
-      u.email.toLowerCase().includes(search.toLowerCase())
+      u.email.toLowerCase().includes(search.toLowerCase()) ||
+      (u.whatsapp || '').includes(search)
     const matchRole = filterRole === 'all' || u.role === filterRole
     return matchSearch && matchRole
   })
 
-  const roleBadge = { admin: 'danger', contributor: 'primary', viewer: 'success' }
   const roleBadgeStyle = {
     admin:       { bg: '#fef2f2', color: '#dc2626', border: '#fecaca' },
     contributor: { bg: '#eff6ff', color: '#3b82f6', border: '#bfdbfe' },
@@ -101,7 +101,7 @@ export default function AdminUsers() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
         <div>
           <h4 style={{ fontWeight: 700, fontSize: 20, color: '#1a1f2e', margin: 0 }}>Kelola Pengguna</h4>
-          <p style={{ color: '#6b7280', fontSize: 13, margin: '4px 0 0' }}>Tambah, edit, dan kelola akun pengguna</p>
+          <p style={{ color: '#6b7280', fontSize: 13, margin: '4px 0 0' }}>Tambah, edit, dan kelola akun pengguna beserta nomor WhatsApp</p>
         </div>
         <button
           onClick={openCreate}
@@ -117,7 +117,7 @@ export default function AdminUsers() {
           <div className="col-md-6">
             <div style={{ display: 'flex', alignItems: 'center', border: '1.5px solid #e5e7eb', borderRadius: 8, overflow: 'hidden', background: '#fff' }}>
               <span style={{ padding: '0 12px', color: '#9ca3af', background: '#f9fafb', borderRight: '1px solid #e5e7eb', height: 38, display: 'flex', alignItems: 'center' }}><i className="bi bi-search"></i></span>
-              <input style={{ flex: 1, border: 'none', outline: 'none', padding: '0 12px', fontSize: 13, height: 38, fontFamily: "'Inter', sans-serif" }} placeholder="Cari username atau email..." value={search} onChange={(e) => setSearch(e.target.value)} />
+              <input style={{ flex: 1, border: 'none', outline: 'none', padding: '0 12px', fontSize: 13, height: 38, fontFamily: "'Inter', sans-serif" }} placeholder="Cari username, email, atau no WA..." value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
           </div>
           <div className="col-md-3">
@@ -145,14 +145,14 @@ export default function AdminUsers() {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
                 <tr style={{ background: '#fafafa', borderBottom: '1px solid #f0f0f0' }}>
-                  {['#', 'Username', 'Email', 'Role', 'Status', 'Bergabung', ''].map((h) => (
+                  {['#', 'Username', 'Email', 'No WhatsApp', 'Role', 'Status', 'Bergabung', ''].map((h) => (
                     <th key={h} style={{ padding: '10px 20px', textAlign: h === '' ? 'right' : 'left', fontWeight: 600, color: '#6b7280', fontSize: 12 }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {filtered.length === 0 ? (
-                  <tr><td colSpan={7} style={{ textAlign: 'center', padding: '32px 0', color: '#9ca3af', fontSize: 13 }}>Tidak ada pengguna</td></tr>
+                   <tr><td colSpan={8} style={{ textAlign: 'center', padding: '32px 0', color: '#9ca3af', fontSize: 13 }}>Tidak ada pengguna</td></tr>
                 ) : (
                   filtered.map((u, i) => {
                     const rb = roleBadgeStyle[u.role] || { bg: '#f3f4f6', color: '#374151', border: '#e5e7eb' }
@@ -168,6 +168,16 @@ export default function AdminUsers() {
                           </div>
                         </td>
                         <td style={{ padding: '11px 20px', color: '#6b7280', fontSize: 12 }}>{u.email}</td>
+                        <td style={{ padding: '11px 20px', color: '#6b7280', fontSize: 12 }}>
+                          {u.whatsapp ? (
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <i className="bi bi-whatsapp text-success"></i>
+                              {u.whatsapp}
+                            </span>
+                          ) : (
+                            <span style={{ color: '#d1d5db' }}>—</span>
+                          )}
+                        </td>
                         <td style={{ padding: '11px 20px' }}>
                           <span style={{ background: rb.bg, border: `1px solid ${rb.border}`, color: rb.color, borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 600, textTransform: 'capitalize' }}>{u.role}</span>
                         </td>
@@ -211,16 +221,28 @@ export default function AdminUsers() {
             <form onSubmit={handleSave}>
               <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
                 {error && <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', borderRadius: 8, padding: '8px 12px', fontSize: 12 }}>{error}</div>}
-                {[
-                  { label: 'Username', key: 'username', type: 'text', required: true },
-                  { label: 'Email', key: 'email', type: 'email', required: true },
-                  { label: editUser ? 'Password (kosongkan jika tidak diubah)' : 'Password', key: 'password', type: 'password', required: !editUser },
-                ].map(f => (
-                  <div key={f.key}>
-                    <label style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 5, letterSpacing: 0.5 }}>{f.label.toUpperCase()}{f.required && <span style={{ color: '#dc2626' }}> *</span>}</label>
-                    <input type={f.type} style={{ width: '100%', border: '1.5px solid #e5e7eb', borderRadius: 8, padding: '8px 12px', fontSize: 13, outline: 'none', fontFamily: "'Inter', sans-serif" }} value={form[f.key]} onChange={e => setForm({ ...form, [f.key]: e.target.value })} required={f.required} />
-                  </div>
-                ))}
+                
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 5, letterSpacing: 0.5 }}>USERNAME <span style={{ color: '#dc2626' }}> *</span></label>
+                  <input type="text" style={{ width: '100%', border: '1.5px solid #e5e7eb', borderRadius: 8, padding: '8px 12px', fontSize: 13, outline: 'none', fontFamily: "'Inter', sans-serif" }} value={form.username} onChange={e => setForm({ ...form, username: e.target.value })} required />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 5, letterSpacing: 0.5 }}>EMAIL <span style={{ color: '#dc2626' }}> *</span></label>
+                  <input type="email" style={{ width: '100%', border: '1.5px solid #e5e7eb', borderRadius: 8, padding: '8px 12px', fontSize: 13, outline: 'none', fontFamily: "'Inter', sans-serif" }} value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 5, letterSpacing: 0.5 }}>NOMOR WHATSAPP</label>
+                  <input type="text" placeholder="contoh: 08123456789 atau 628123456789" style={{ width: '100%', border: '1.5px solid #e5e7eb', borderRadius: 8, padding: '8px 12px', fontSize: 13, outline: 'none', fontFamily: "'Inter', sans-serif" }} value={form.whatsapp} onChange={e => setForm({ ...form, whatsapp: e.target.value })} />
+                  <span style={{ fontSize: 10, color: '#9ca3af', marginTop: 2 }}>Masukkan nomor WhatsApp aktif kontributor.</span>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 5, letterSpacing: 0.5 }}>{editUser ? 'PASSWORD (KOSONGKAN JIKA TIDAK DIUBAH)' : 'PASSWORD'}{!editUser && <span style={{ color: '#dc2626' }}> *</span>}</label>
+                  <input type="password" style={{ width: '100%', border: '1.5px solid #e5e7eb', borderRadius: 8, padding: '8px 12px', fontSize: 13, outline: 'none', fontFamily: "'Inter', sans-serif" }} value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} required={!editUser} />
+                </div>
+
                 <div className="row g-3">
                   <div className="col-6">
                     <label style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 5, letterSpacing: 0.5 }}>ROLE <span style={{ color: '#dc2626' }}>*</span></label>

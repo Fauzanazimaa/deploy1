@@ -123,7 +123,7 @@ if __name__ == '__main__':
     try:
         app = create_app()
         port = int(os.environ.get('PORT', 5001))
-        print(f'\n Flask running → http://localhost:{port}\n')
+        print(f'\n Flask running -> http://localhost:{port}\n')
         app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False, threaded=True)
     except OSError as e:
         if '10048' in str(e) or 'Address already in use' in str(e):

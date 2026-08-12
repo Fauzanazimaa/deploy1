@@ -14,6 +14,7 @@ class User(db.Model):
     role = db.Column(db.String(20), nullable=False, default='viewer')  # admin/contributor/viewer
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_active = db.Column(db.Boolean, default=True)
+    whatsapp = db.Column(db.String(30), nullable=True)
 
     tasks_assigned = db.relationship('Task', foreign_keys='Task.assigned_to', backref='assignee', lazy=True, cascade='all, delete-orphan')
     tasks_created = db.relationship('Task', foreign_keys='Task.assigned_by', backref='creator', lazy=True)
@@ -27,7 +28,8 @@ class User(db.Model):
             'email': self.email,
             'role': self.role,
             'created_at': self.created_at.isoformat(),
-            'is_active': self.is_active
+            'is_active': self.is_active,
+            'whatsapp': self.whatsapp
         }
 
 
@@ -83,6 +85,7 @@ class Task(db.Model):
             'data_type_name': self.data_type.name if self.data_type else None,
             'assigned_to': self.assigned_to,
             'assignee_username': self.assignee.username if self.assignee else None,
+            'assignee_whatsapp': self.assignee.whatsapp if self.assignee else None,
             'assigned_by': self.assigned_by,
             'creator_username': self.creator.username if self.creator else None,
             'status': self.status,

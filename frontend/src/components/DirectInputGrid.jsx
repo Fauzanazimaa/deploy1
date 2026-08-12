@@ -67,12 +67,12 @@ export default function DirectInputGrid({ taskId, onSubmitted, onCancel }) {
     const totalRows = rows.length
 
     const moveTo = (newRi, newCi) => {
-      // Lewati sel locked
+      // Lewati sel locked dan merged child
       let r = newRi, c = newCi
       // Cari sel yang bisa diedit
       let tries = 0
       while (r >= 0 && r < totalRows && c >= 0 && c < totalCols && tries < totalCols * totalRows) {
-        if (!rows[r][c]?.locked) {
+        if (!rows[r][c]?.locked && !rows[r][c]?.is_merged_child) {
           setActiveCell({ ri: r, ci: c })
           // Focus input
           setTimeout(() => {
@@ -273,36 +273,39 @@ export default function DirectInputGrid({ taskId, onSubmitted, onCancel }) {
             borderCollapse: 'collapse',
             minWidth: '100%',
             fontSize: 12,
-            tableLayout: 'fixed',
+            tableLayout: 'auto',
           }}
         >
           {/* Header rows — read only */}
           <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
             {headers.map((row, ri) => (
               <tr key={ri}>
-                {row.map((cell, ci) => (
-                  <th
-                    key={ci}
-                    rowSpan={cell.rowspan || 1}
-                    colSpan={cell.colspan || 1}
-                    style={{
-                      background: cell.bg || '#1e3a5f',
-                      color: '#fff',
-                      fontWeight: 700,
-                      fontSize: 11,
-                      padding: '7px 10px',
-                      textAlign: 'center',
-                      border: '1px solid rgba(255,255,255,0.15)',
-                      whiteSpace: 'pre-wrap',
-                      wordBreak: 'break-word',
-                      minWidth: 90,
-                      maxWidth: 180,
-                      userSelect: 'none',
-                    }}
-                  >
-                    {cell.value || ''}
-                  </th>
-                ))}
+                {row.map((cell, ci) => {
+                  if (cell.is_merged_child) return null;
+                  return (
+                    <th
+                      key={ci}
+                      rowSpan={cell.rowspan || 1}
+                      colSpan={cell.colspan || 1}
+                      style={{
+                        background: cell.bg || '#1e3a5f',
+                        color: '#fff',
+                        fontWeight: 700,
+                        fontSize: 11,
+                        padding: '7px 10px',
+                        textAlign: 'center',
+                        border: '1px solid rgba(255,255,255,0.15)',
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-word',
+                        minWidth: 90,
+                        maxWidth: 180,
+                        userSelect: 'none',
+                      }}
+                    >
+                      {cell.value || ''}
+                    </th>
+                  );
+                })}
               </tr>
             ))}
           </thead>
@@ -312,21 +315,23 @@ export default function DirectInputGrid({ taskId, onSubmitted, onCancel }) {
             {rows.map((row, ri) => (
               <tr key={ri} style={{ background: ri % 2 === 0 ? '#fff' : '#fafafa' }}>
                 {row.map((cell, ci) => {
-                  const isActive = activeCell?.ri === ri && activeCell?.ci === ci
+                  if (cell.is_merged_child) return null;
+                  const isActive   = activeCell?.ri === ri && activeCell?.ci === ci
                   const isFirstCol = has_first_col && ci === 0
-                  const locked = cell.locked
-                  const bg = locked
+                  const locked     = cell.locked
+                  const bg         = locked
                     ? (isFirstCol ? LOCKED_FC_BG : LOCKED_BG)
                     : EDIT_BG
 
                   return (
                     <td
                       key={ci}
+                      rowSpan={cell.rowspan || 1}
+                      colSpan={cell.colspan || 1}
                       style={{
                         border: `1px solid ${isActive ? ACCENT : '#e5e7eb'}`,
                         padding: 0,
-                        minWidth: 90,
-                        maxWidth: 180,
+                        minWidth: 80,
                         background: isActive ? `${ACCENT}18` : bg,
                         transition: 'background 0.1s',
                         outline: isActive ? `2px solid ${ACCENT}` : 'none',
@@ -334,7 +339,6 @@ export default function DirectInputGrid({ taskId, onSubmitted, onCancel }) {
                       }}
                     >
                       {locked ? (
-                        // Sel terkunci — hanya tampilkan teks
                         <div style={{
                           padding: '6px 10px',
                           fontSize: 12,
@@ -349,7 +353,6 @@ export default function DirectInputGrid({ taskId, onSubmitted, onCancel }) {
                           {cell.value || <span style={{ opacity: 0.35 }}>—</span>}
                         </div>
                       ) : (
-                        // Sel bisa diedit
                         <input
                           data-cell={`${ri}-${ci}`}
                           type="text"
