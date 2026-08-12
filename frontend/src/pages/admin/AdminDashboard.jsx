@@ -103,15 +103,14 @@ export default function AdminDashboard() {
   }
 
   const userBarData = {
-    labels: ['Admin', 'Kontributor', 'Viewer'],
+    labels: ['Admin', 'Kontributor'],
     datasets: [{
       label: 'Jumlah Pengguna',
       data: [
-        (stats?.total_users || 0) - (stats?.total_contributors || 0) - (stats?.total_viewers || 0),
+        (stats?.total_users || 0) - (stats?.total_contributors || 0),
         stats?.total_contributors || 0,
-        stats?.total_viewers || 0,
       ],
-      backgroundColor: [ACCENT, '#3b82f6', '#10b981'],
+      backgroundColor: [ACCENT, '#3b82f6'],
       borderRadius: 6,
       borderSkipped: false,
     }]
@@ -153,34 +152,24 @@ export default function AdminDashboard() {
         </button>
       </div>
 
-      {/* Stat Cards Row 1 */}
-      <div className="row g-3 mb-3">
-        <div className="col-6 col-md-3">
+      {/* Stat Cards Row */}
+      <div className="row g-3 mb-4">
+        <div className="col-6 col-md-2">
           <StatCard icon="bi-people-fill" label="Total Pengguna" value={stats?.total_users} color="#3b82f6" to="/admin/users" />
         </div>
-        <div className="col-6 col-md-3">
+        <div className="col-6 col-md-2">
           <StatCard icon="bi-clipboard2-check-fill" label="Total Tugas" value={stats?.total_tasks} color="#8b5cf6" to="/admin/tasks" />
         </div>
-        <div className="col-6 col-md-3">
+        <div className="col-6 col-md-2">
           <StatCard icon="bi-inbox-fill" label="Menunggu Verifikasi" value={stats?.pending_verifications} color={ACCENT} to="/admin/submissions" />
         </div>
-        <div className="col-6 col-md-3">
-          <StatCard icon="bi-pencil-square" label="Entri Manual" value={stats?.total_manual_entries} color="#10b981" />
-        </div>
-      </div>
-
-      {/* Stat Cards Row 2 */}
-      <div className="row g-3 mb-4">
-        <div className="col-6 col-md-3">
+        <div className="col-6 col-md-2">
           <StatCard icon="bi-person-badge-fill" label="Kontributor" value={stats?.total_contributors} color="#06b6d4" />
         </div>
-        <div className="col-6 col-md-3">
-          <StatCard icon="bi-eye-fill" label="Viewer" value={stats?.total_viewers} color="#64748b" />
-        </div>
-        <div className="col-6 col-md-3">
+        <div className="col-6 col-md-2">
           <StatCard icon="bi-grid-3x3-gap-fill" label="Jenis Data" value={stats?.total_data_types} color={ACCENT} to="/admin/data-schema" />
         </div>
-        <div className="col-6 col-md-3">
+        <div className="col-6 col-md-2">
           <StatCard icon="bi-check2-circle" label="Tugas Disetujui" value={stats?.task_status?.approved} color="#10b981" />
         </div>
       </div>
