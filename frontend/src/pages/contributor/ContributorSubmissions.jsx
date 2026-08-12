@@ -195,7 +195,7 @@ export default function ContributorSubmissions() {
                           )}
                         </td>
                         <td style={{ padding: '10px 16px' }}>
-                          <span style={{ background: st.bg, border: `1px solid ${st.border}`, color: st.colorHex, borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 600 }}>
+                          <span style={{ background: st.bg, border: `1px solid ${st.border}`, color: st.colorHex, borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap' }}>
                             <i className={`bi ${st.icon} me-1`}></i>{st.label}
                           </span>
                         </td>

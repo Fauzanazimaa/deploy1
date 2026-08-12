@@ -311,7 +311,7 @@ export default function AdminSubmissions() {
                       </td>
                       <td style={{ padding: '11px 20px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <span style={{ background: st.bg, border: `1px solid ${st.border}`, color: st.colorHex, borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 600 }}>{st.label}</span>
+                          <span style={{ background: st.bg, border: `1px solid ${st.border}`, color: st.colorHex, borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap' }}>{st.label}</span>
                           {s.status === 'revision' && s.revision_notes && (
                             <button onClick={() => setDetailModal(s)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', padding: 0, fontSize: 14 }}><i className="bi bi-info-circle"></i></button>
                           )}
