@@ -36,16 +36,22 @@ def get_my_tasks():
     if err:
         return err, code
 
-    tasks = Task.query.filter_by(assigned_to=user.id).order_by(Task.created_at.desc()).all()
+    from sqlalchemy.orm import joinedload
+    tasks = Task.query.filter_by(assigned_to=user.id)\
+        .options(
+            joinedload(Task.data_type),
+            joinedload(Task.assignee),
+            joinedload(Task.creator),
+            joinedload(Task.submissions)
+        )\
+        .order_by(Task.created_at.desc()).all()
     result = []
     for t in tasks:
         task_dict = t.to_dict()
-        latest_sub = (Submission.query
-                      .filter_by(task_id=t.id, contributor_id=user.id)
-                      .order_by(Submission.submitted_at.desc())
-                      .first())
+        # Find latest submission in memory (eager-loaded)
+        subs = sorted(t.submissions, key=lambda s: s.submitted_at, reverse=True)
+        latest_sub = subs[0] if subs else None
         task_dict['latest_submission'] = latest_sub.to_dict() if latest_sub else None
-        # Sertakan fields_schema dari DataType agar frontend bisa render form
         if t.data_type:
             task_dict['fields_schema'] = t.data_type.get_fields_schema()
         result.append(task_dict)
@@ -723,7 +729,9 @@ def get_my_assignment_letters():
         return jsonify([]), 200
 
     # Retrieve all assignment letters for these titles
-    letters = AssignmentLetter.query.filter(AssignmentLetter.task_title.in_(unique_titles)).all()
+    from sqlalchemy.orm import joinedload
+    letters = AssignmentLetter.query.options(joinedload(AssignmentLetter.creator))\
+        .filter(AssignmentLetter.task_title.in_(unique_titles)).all()
     
     return jsonify([l.to_dict() for l in letters]), 200
 
@@ -830,7 +838,8 @@ def get_my_signed_cover_letters():
         return err, code
 
     from models import SignedCoverLetter
-    signed = SignedCoverLetter.query.filter_by(contributor_id=user.id).all()
+    from sqlalchemy.orm import joinedload
+    signed = SignedCoverLetter.query.options(joinedload(SignedCoverLetter.contributor)).filter_by(contributor_id=user.id).all()
     return jsonify([s.to_dict() for s in signed]), 200
 
 

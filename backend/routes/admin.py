@@ -254,7 +254,14 @@ def get_tasks():
     user, err, code = require_admin()
     if err:
         return err, code
-    return jsonify([t.to_dict() for t in Task.query.all()]), 200
+    from models import Task
+    from sqlalchemy.orm import joinedload
+    tasks = Task.query.options(
+        joinedload(Task.data_type),
+        joinedload(Task.assignee),
+        joinedload(Task.creator)
+    ).all()
+    return jsonify([t.to_dict() for t in tasks]), 200
 
 
 @admin_bp.route('/tasks', methods=['POST'])
@@ -1214,7 +1221,8 @@ def get_assignment_letters():
         return err, code
 
     from models import AssignmentLetter
-    letters = AssignmentLetter.query.all()
+    from sqlalchemy.orm import joinedload
+    letters = AssignmentLetter.query.options(joinedload(AssignmentLetter.creator)).all()
     return jsonify([l.to_dict() for l in letters]), 200
 
 
@@ -1328,7 +1336,8 @@ def get_signed_cover_letters():
         return err, code
 
     from models import SignedCoverLetter
-    signed = SignedCoverLetter.query.all()
+    from sqlalchemy.orm import joinedload
+    signed = SignedCoverLetter.query.options(joinedload(SignedCoverLetter.contributor)).all()
     return jsonify([s.to_dict() for s in signed]), 200
 
 
