@@ -115,13 +115,13 @@ export default function ContributorLetters() {
             .table-data { width: 100%; border-collapse: collapse; margin-top: 15px; margin-bottom: 15px; }
             .table-data th, .table-data td { border: 1px solid #000; padding: 8px 12px; text-align: left; }
             .signature-block { margin-top: 50px; display: flex; justify-content: flex-end; }
-            .signature-wrapper { text-align: left; width: 300px; }
+            .signature-wrapper { text-align: center; width: 280px; }
             @media print {
               body { padding: 0; }
             }
           </style>
         </head>
-        <body onload="window.print(); window.close();">
+        <body onload="setTimeout(function() { window.print(); window.close(); }, 500);">
           <div class="letter-container">
             ${printArea.innerHTML}
           </div>
@@ -129,6 +129,37 @@ export default function ContributorLetters() {
       </html>
     `)
     win.document.close()
+  }
+
+  const [downloadingPdf, setDownloadingPdf] = useState(false)
+  const handleDownloadCoverLetterPdf = () => {
+    const element = document.getElementById('cover-letter-print-area')
+    if (!element) return
+    setDownloadingPdf(true)
+
+    // Load html2pdf dynamically from CDN
+    const script = document.createElement('script')
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js'
+    script.onload = () => {
+      const opt = {
+        margin:       [25.4, 25.4, 25.4, 25.4], // 2.54cm
+        filename:     `Surat_Pengantar_${(previewLetter?.task_title || 'Data').replace(/\s+/g, '_')}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      }
+      window.html2pdf().from(element).set(opt).save().then(() => {
+        setDownloadingPdf(false)
+      }).catch(err => {
+        console.error('PDF generation error:', err)
+        setDownloadingPdf(false)
+      })
+    }
+    script.onerror = () => {
+      alert('Gagal memuat pustaka PDF downloader. Pastikan Anda terhubung ke internet.')
+      setDownloadingPdf(false)
+    }
+    document.body.appendChild(script)
   }
 
   return (
@@ -276,8 +307,20 @@ export default function ContributorLetters() {
           <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 20px 60px rgba(0,0,0,0.2)', width: '100%', maxWidth: 760, maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', fontFamily: "'Inter', sans-serif" }}>
             <div style={{ borderBottom: '1px solid #f0f0f0', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
               <span style={{ fontWeight: 700, fontSize: 15, color: '#1a1f2e' }}>Pratinjau Cetak Surat Pengantar</span>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button onClick={handlePrintCoverLetter} className="btn btn-sm btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600 }}><i className="bi bi-printer"></i> Cetak</button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <button 
+                  onClick={handleDownloadCoverLetterPdf} 
+                  className="btn btn-sm btn-success" 
+                  disabled={downloadingPdf} 
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600 }}
+                >
+                  {downloadingPdf ? (
+                    <><span className="spinner-border spinner-border-sm" style={{ width: 12, height: 12, borderWidth: 2 }} /> Mengunduh...</>
+                  ) : (
+                    <><i className="bi bi-download"></i> Unduh PDF</>
+                  )}
+                </button>
+                <button onClick={handlePrintCoverLetter} className="btn btn-sm btn-outline-primary" style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600 }}><i className="bi bi-printer"></i> Cetak</button>
                 <button onClick={() => setPreviewLetter(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: 20 }}><i className="bi bi-x"></i></button>
               </div>
             </div>
@@ -316,7 +359,7 @@ export default function ContributorLetters() {
                   Data pada tabel-tabel tersebut sudah benar dan sudah bisa disajikan pada <strong>{letters.find(l => l.task_title === previewLetter.task_title)?.activity_name || '—'}</strong>. Demikian surat ini disampaikan, untuk dipergunakan sebagaimana mestinya.
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 40 }}>
-                  <div style={{ textAlign: 'left', width: 280 }}>
+                  <div style={{ textAlign: 'center', width: 280 }}>
                     <div>Sijunjung, {new Date(previewLetter.signed_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}</div>
                     <div style={{ textTransform: 'capitalize' }}>{previewLetter.signer_role}</div>
                     <div style={{ fontWeight: 600 }}>{previewLetter.agency_name}</div>
