@@ -145,6 +145,7 @@ export const analyzeDataType = (dataTypeId) => api.get('/admin/widgets/analyze',
 
 // ─── Cover Letters (Surat Pengantar Kesesuaian Data) ───────────────────────────
 export const getAdminSignedCoverLetters = () => api.get('/admin/signed-cover-letters')
+export const resetSignedCoverLetter = (id) => api.delete(`/admin/signed-cover-letters/${id}`)
 export const getContributorSignedCoverLetters = () => api.get('/contributor/signed-cover-letters')
 export const submitSignedCoverLetter = (data) => api.post('/contributor/signed-cover-letters', data)
 

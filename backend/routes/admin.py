@@ -1353,3 +1353,25 @@ def download_signature_image(signed_id):
         mimetype='image/png'
     )
 
+
+@admin_bp.route('/signed-cover-letters/<int:signed_id>', methods=['DELETE'])
+@jwt_required()
+def delete_signed_cover_letter(signed_id):
+    user, err, code = require_admin()
+    if err:
+        return err, code
+
+    from models import SignedCoverLetter
+    from storage import delete_file, SIGNATURES_BUCKET
+
+    signed = SignedCoverLetter.query.get_or_404(signed_id)
+    try:
+        delete_file(SIGNATURES_BUCKET(), signed.signature_img_path)
+    except Exception:
+        pass
+
+    db.session.delete(signed)
+    db.session.commit()
+
+    return jsonify({'message': 'Signed cover letter reset successfully'}), 200
+

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import api, {
   getAdminTasks, createTask, updateTask, deleteTask, getUsers, getDataTypes,
   getAdminAssignmentLetters, uploadAssignmentLetter, deleteAssignmentLetter, downloadAdminAssignmentLetter,
-  getAdminSignedCoverLetters
+  getAdminSignedCoverLetters, resetSignedCoverLetter
 } from '../../api'
 
 const emptyForm = {
@@ -134,6 +134,16 @@ export default function AdminTasks() {
     }
   }
 
+  const handleResetCoverLetter = async (signedId) => {
+    if (!window.confirm('Apakah Anda yakin ingin meminta ulang tanda tangan untuk surat pengantar ini? Surat pengantar yang ada akan dihapus dan kontributor harus menandatangani ulang.')) return
+    try {
+      await resetSignedCoverLetter(signedId)
+      fetchAll()
+    } catch (err) {
+      alert(err.response?.data?.error || 'Gagal meminta ulang tanda tangan surat pengantar')
+    }
+  }
+
   const handlePrintCoverLetter = () => {
     const printArea = document.getElementById('cover-letter-print-area')
     if (!printArea) return
@@ -145,8 +155,8 @@ export default function AdminTasks() {
           <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
           <style>
             @page {
-              size: auto;
-              margin: 20mm;
+              size: A4;
+              margin: 2.54cm;
             }
             body { font-family: 'Inter', sans-serif; padding: 0; color: #000; background: #fff; }
             .letter-container { max-width: 800px; margin: 0 auto; line-height: 1.6; }
@@ -763,13 +773,23 @@ export default function AdminTasks() {
                         </td>
                         <td style={{ padding: '12px 16px' }}>{new Date(sl.signed_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}</td>
                         <td style={{ padding: '12px 16px', textAlign: 'center' }}>
-                          <button
-                            onClick={() => handleOpenPrintModal(sl)}
-                            className="btn btn-sm btn-outline-primary"
-                            style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
-                          >
-                            <i className="bi bi-printer"></i> Cetak Surat
-                          </button>
+                          <div style={{ display: 'inline-flex', gap: 8 }}>
+                            <button
+                              onClick={() => handleOpenPrintModal(sl)}
+                              className="btn btn-sm btn-outline-primary"
+                              style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                            >
+                              <i className="bi bi-printer"></i> Cetak Surat
+                            </button>
+                            <button
+                              onClick={() => handleResetCoverLetter(sl.id)}
+                              className="btn btn-sm btn-outline-danger"
+                              style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                              title="Hapus tanda tangan dan minta kontributor menandatangani ulang"
+                            >
+                              <i className="bi bi-arrow-counterclockwise"></i> Minta Ulang TTD
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
