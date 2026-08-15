@@ -210,7 +210,7 @@ export default function AdminTasks() {
     message += `Terima kasih atas kerja samanya.\n\n`
     message += `Akun Login:\n`
     message += `Username: *${task.assignee_username}*\n`
-    message += `Password: *${task.assignee_password_plain || '—'}*\n\n`
+    message += `Password: *${task.assignee_password_plain || '(silakan hubungi admin untuk set ulang)'}*\n\n`
     message += `Terima Kasih banyak Bapak/Ibu atas kontribusinya.`
 
     const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`

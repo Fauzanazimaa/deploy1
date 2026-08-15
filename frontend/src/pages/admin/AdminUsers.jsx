@@ -20,6 +20,32 @@ export default function AdminUsers() {
     setVisiblePasswords(prev => ({ ...prev, [id]: !prev[id] }))
   }
 
+  const handleSendCredentialsWa = (u) => {
+    let phone = u.whatsapp || ''
+    if (!phone) {
+      alert(`Pengguna ${u.username} belum memiliki nomor WhatsApp terdaftar.`)
+      return
+    }
+
+    phone = phone.replace(/[^0-9]/g, '')
+    if (phone.startsWith('0')) {
+      phone = '62' + phone.slice(1)
+    } else if (phone.startsWith('8')) {
+      phone = '62' + phone
+    }
+
+    let message = `*INFORMASI AKUN APLIKASI SEJATI BPS KABUPATEN SIJUNJUNG*\n\n`
+    message += `Yth. Kontributor *${u.username}*,\n`
+    message += `Berikut detail akun Anda untuk masuk ke aplikasi SEJATI BPS Kabupaten Sijunjung:\n\n`
+    message += `Link Aplikasi: https://sejati-sijunjung.vercel.app/\n`
+    message += `Username: *${u.username}*\n`
+    message += `Password: *${u.password_plain || '(silakan hubungi admin untuk set ulang)'}*\n\n`
+    message += `Mohon simpan informasi ini baik-baik. Terima kasih.`
+
+    const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
+    window.open(waUrl, '_blank')
+  }
+
   const fetchUsers = async () => {
     try {
       const res = await getUsers()
@@ -215,6 +241,11 @@ export default function AdminUsers() {
                         <td style={{ padding: '11px 20px', color: '#6b7280', fontSize: 12 }}>{new Date(u.created_at).toLocaleDateString('id-ID')}</td>
                         <td style={{ padding: '11px 20px', textAlign: 'right' }}>
                           <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                            {u.role === 'contributor' && u.whatsapp && (
+                              <button onClick={() => handleSendCredentialsWa(u)} title="Kirim Akun ke WA" style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#16a34a', borderRadius: 7, padding: '5px 10px', fontSize: 14, cursor: 'pointer' }}>
+                                <i className="bi bi-whatsapp"></i>
+                              </button>
+                            )}
                             <button onClick={() => handleToggleActive(u)} title={u.is_active ? 'Nonaktifkan' : 'Aktifkan'} style={{ background: '#f3f4f6', border: '1px solid #e5e7eb', color: u.is_active ? '#16a34a' : '#6b7280', borderRadius: 7, padding: '5px 10px', fontSize: 14, cursor: 'pointer' }}>
                               <i className={`bi ${u.is_active ? 'bi-toggle-on' : 'bi-toggle-off'}`}></i>
                             </button>
