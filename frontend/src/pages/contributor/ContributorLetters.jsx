@@ -104,7 +104,11 @@ export default function ContributorLetters() {
           <title>Surat Pengantar Kesesuaian Data</title>
           <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
           <style>
-            body { font-family: 'Inter', sans-serif; padding: 40px; color: #000; background: #fff; }
+            @page {
+              size: auto;
+              margin: 20mm;
+            }
+            body { font-family: 'Inter', sans-serif; padding: 0; color: #000; background: #fff; }
             .letter-container { max-width: 800px; margin: 0 auto; line-height: 1.6; }
             .header-title { font-weight: 800; text-align: center; text-transform: uppercase; font-size: 18px; margin-bottom: 30px; text-decoration: underline; }
             .content-section { margin-top: 20px; margin-bottom: 20px; }
@@ -294,7 +298,7 @@ export default function ContributorLetters() {
                   <thead>
                     <tr>
                       <th style={{ border: '1px solid #000', padding: '8px 12px', width: '60px', textAlign: 'center', fontWeight: 700 }}>No.</th>
-                      <th style={{ border: '1px solid #000', padding: '8px 12px', fontWeight: 700 }}>Data / Tabel yang Dikirim</th>
+                      <th style={{ border: '1px solid #000', padding: '8px 12px', fontWeight: 700, textAlign: 'center' }}>Data / Tabel yang Dikirim</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -316,7 +320,7 @@ export default function ContributorLetters() {
                     <div>Sijunjung, {new Date(previewLetter.signed_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}</div>
                     <div style={{ textTransform: 'capitalize' }}>{previewLetter.signer_role}</div>
                     <div style={{ fontWeight: 600 }}>{previewLetter.agency_name}</div>
-                    <div style={{ height: 90, margin: '10px 0', display: 'flex', alignItems: 'center' }}>
+                    <div style={{ height: 90, margin: '10px 0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       {previewSignatureUrl ? (
                         <img src={previewSignatureUrl} alt="Tanda Tangan" style={{ maxHeight: 80, maxWidth: 200, objectFit: 'contain' }} />
                       ) : (
