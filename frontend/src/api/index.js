@@ -80,7 +80,7 @@ export const deleteManualEntry = (id) => api.delete(`/admin/manual-entries/${id}
 // ─── Admin – Dashboard ────────────────────────────────────────────────────────
 export const getAdminStats = () => api.get('/admin/dashboard/stats')
 
-// ─── Admin – Assignment Letters (Surat Tugas) ──────────────────────────────────
+// ─── Admin – Assignment Letters (Surat Permintaan Data) ─────────────────────────
 export const getAdminAssignmentLetters = () => api.get('/admin/assignment-letters')
 export const uploadAssignmentLetter = (formData) =>
   api.post('/admin/assignment-letters', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
@@ -107,7 +107,7 @@ export const downloadContributorSubmission = (id) =>
 export const previewContributorSubmission = (id) => api.get(`/contributor/submissions/${id}/preview`)
 export const getContributorStats = () => api.get('/contributor/dashboard/stats')
 
-// ─── Contributor – Assignment Letters (Surat Tugas) ────────────────────────────
+// ─── Contributor – Assignment Letters (Surat Permintaan Data) ───────────────────
 export const getContributorAssignmentLetters = () => api.get('/contributor/assignment-letters')
 export const downloadContributorAssignmentLetter = (id) =>
   api.get(`/contributor/assignment-letters/${id}/download`, { responseType: 'blob' })

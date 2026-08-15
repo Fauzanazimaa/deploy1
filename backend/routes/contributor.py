@@ -702,7 +702,7 @@ def download_submission(sub_id):
     )
 
 
-# ─── Assignment Letters (Surat Tugas) ──────────────────────────────────────
+# ─── Assignment Letters (Surat Permintaan Data) ──────────────────────────────
 
 @contributor_bp.route('/assignment-letters', methods=['GET'])
 @jwt_required()

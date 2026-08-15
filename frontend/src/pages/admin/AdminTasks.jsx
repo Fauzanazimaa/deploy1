@@ -75,19 +75,19 @@ export default function AdminTasks() {
       await uploadAssignmentLetter(fd)
       fetchAll()
     } catch (err) {
-      setLetterError(err.response?.data?.error || 'Gagal mengupload surat tugas')
+      setLetterError(err.response?.data?.error || 'Gagal mengupload surat permintaan data')
     } finally {
       setUploadingLetter(false)
     }
   }
 
   const handleDeleteLetter = async (id) => {
-    if (!window.confirm('Hapus surat tugas ini?')) return
+    if (!window.confirm('Hapus surat permintaan data ini?')) return
     try {
       await deleteAssignmentLetter(id)
       fetchAll()
     } catch (err) {
-      alert(err.response?.data?.error || 'Gagal menghapus surat tugas')
+      alert(err.response?.data?.error || 'Gagal menghapus surat permintaan data')
     }
   }
 
@@ -103,7 +103,7 @@ export default function AdminTasks() {
       a.remove()
       window.URL.revokeObjectURL(url)
     } catch (err) {
-      alert('Gagal mengunduh surat tugas')
+      alert('Gagal mengunduh surat permintaan data')
     }
   }
 
@@ -195,21 +195,23 @@ export default function AdminTasks() {
       (t.status === 'pending' || t.status === 'revision')
     )
 
-    let message = `*PENGUMPULAN DATA BPS KABUPATEN SIJUNJUNG*\n\n`
-    message += `Halo Bapak/Ibu Petugas *${task.assignee_username}*,\n`
-    message += `Mengingatkan untuk segera mengirimkan pengumpulan data pada aplikasi SEJATI BPS Kabupaten Sijunjung.\n\n`
-    message += `Berikut rincian tugas Anda yang belum dikirim:\n`
+    let message = `*PENGUMPULAN DATA BPS KABUPATEN SIJUNJUNG*\n`
+    message += `Assalamualaikum Wr.Wb. \n`
+    message += `Yth. Bapak/Ibu *${task.assignee_username}*, Mohon izin mengingatkan untuk pengisian permintaan data dari BPS Kabupaten Sijunjung pada aplikasi SEJATI BPS Kabupaten Sijunjung. Berikut rincian tugas Anda yang belum dikirim:\n`
     
     pendingTasks.forEach((t, index) => {
       const deadlineStr = t.deadline 
         ? new Date(t.deadline).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
         : 'Tanpa deadline'
-      message += `${index + 1}. *${t.title}* (Batas: ${deadlineStr})\n`
+      message += `${index + 1}. *${t.title} - ${t.data_type_name || ''}* (Batas: ${deadlineStr})\n`
     })
 
-    message += `\nSilakan akses aplikasi melalui link SEJATI berikut:\n`
-    message += `https://sejati-sijunjung.vercel.app/\n\n`
-    message += `Terima kasih atas kerja samanya.`
+    message += `Silakan akses aplikasi melalui link SEJATI berikut: https://sejati-sijunjung.vercel.app/\n`
+    message += `Terima kasih atas kerja samanya.\n\n`
+    message += `Akun Login:\n`
+    message += `Username: *${task.assignee_username}*\n`
+    message += `Password: *${task.assignee_password_plain || '—'}*\n\n`
+    message += `Terima Kasih banyak Bapak/Ibu atas kontribusinya.`
 
     const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
     window.open(waUrl, '_blank')
@@ -319,7 +321,7 @@ export default function AdminTasks() {
             fontFamily: "'Inter', sans-serif", transition: 'border-color 0.15s, color 0.15s'
           }}
         >
-          <i className="bi bi-file-earmark-text me-2"></i>Surat Tugas
+          <i className="bi bi-file-earmark-text me-2"></i>Surat Permintaan Data
         </button>
       </div>
 
@@ -546,8 +548,8 @@ export default function AdminTasks() {
       {/* Tab Content 3: Assignment Letters */}
       {activeTab === 'letters' && (
         <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #f0f0f0', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', padding: '24px 20px' }}>
-          <h5 style={{ fontWeight: 700, fontSize: 16, color: '#1a1f2e', marginBottom: 6 }}>Manajemen Surat Tugas</h5>
-          <p style={{ color: '#6b7280', fontSize: 13, marginBottom: 20 }}>Upload dan kelola surat tugas (format PDF) berdasarkan judul kegiatan/tugas</p>
+          <h5 style={{ fontWeight: 700, fontSize: 16, color: '#1a1f2e', marginBottom: 6 }}>Manajemen Surat Permintaan Data</h5>
+          <p style={{ color: '#6b7280', fontSize: 13, marginBottom: 20 }}>Upload dan kelola surat permintaan data (format PDF) berdasarkan judul kegiatan/tugas</p>
           
           {letterError && (
             <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', borderRadius: 8, padding: '10px 14px', fontSize: 13, marginBottom: 16 }}>
@@ -566,7 +568,7 @@ export default function AdminTasks() {
                 <thead>
                   <tr style={{ background: '#f8f9fa' }}>
                     <th style={{ width: '40%', padding: '10px 16px' }}>Judul Kegiatan / Tugas</th>
-                    <th style={{ width: '35%', padding: '10px 16px' }}>File Surat Tugas (PDF)</th>
+                    <th style={{ width: '35%', padding: '10px 16px' }}>File Surat Permintaan Data (PDF)</th>
                     <th style={{ width: '25%', padding: '10px 16px', textAlign: 'center' }}>Aksi</th>
                   </tr>
                 </thead>

@@ -11,6 +11,7 @@ class User(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)
+    password_plain = db.Column(db.String(256), nullable=True)
     role = db.Column(db.String(20), nullable=False, default='viewer')  # admin/contributor/viewer
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_active = db.Column(db.Boolean, default=True)
@@ -29,7 +30,8 @@ class User(db.Model):
             'role': self.role,
             'created_at': self.created_at.isoformat(),
             'is_active': self.is_active,
-            'whatsapp': self.whatsapp
+            'whatsapp': self.whatsapp,
+            'password_plain': self.password_plain
         }
 
 
@@ -86,6 +88,7 @@ class Task(db.Model):
             'assigned_to': self.assigned_to,
             'assignee_username': self.assignee.username if self.assignee else None,
             'assignee_whatsapp': self.assignee.whatsapp if self.assignee else None,
+            'assignee_password_plain': self.assignee.password_plain if self.assignee else None,
             'assigned_by': self.assigned_by,
             'creator_username': self.creator.username if self.creator else None,
             'status': self.status,

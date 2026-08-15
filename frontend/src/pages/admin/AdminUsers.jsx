@@ -13,6 +13,12 @@ export default function AdminUsers() {
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
   const [filterRole, setFilterRole] = useState('all')
+  const [showPassword, setShowPassword] = useState(false)
+  const [visiblePasswords, setVisiblePasswords] = useState({})
+
+  const togglePasswordVisibility = (id) => {
+    setVisiblePasswords(prev => ({ ...prev, [id]: !prev[id] }))
+  }
 
   const fetchUsers = async () => {
     try {
@@ -30,13 +36,15 @@ export default function AdminUsers() {
   const openCreate = () => {
     setEditUser(null)
     setForm(emptyForm)
+    setShowPassword(false)
     setError('')
     setShowModal(true)
   }
 
   const openEdit = (u) => {
     setEditUser(u)
-    setForm({ username: u.username, email: u.email, password: '', role: u.role, is_active: u.is_active, whatsapp: u.whatsapp || '' })
+    setForm({ username: u.username, email: u.email, password: u.password_plain || '', role: u.role, is_active: u.is_active, whatsapp: u.whatsapp || '' })
+    setShowPassword(false)
     setError('')
     setShowModal(true)
   }
@@ -145,14 +153,14 @@ export default function AdminUsers() {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
                 <tr style={{ background: '#fafafa', borderBottom: '1px solid #f0f0f0' }}>
-                  {['#', 'Username', 'Email', 'No WhatsApp', 'Role', 'Status', 'Bergabung', ''].map((h) => (
+                  {['#', 'Username', 'Password', 'Email', 'No WhatsApp', 'Role', 'Status', 'Bergabung', ''].map((h) => (
                     <th key={h} style={{ padding: '10px 20px', textAlign: h === '' ? 'right' : 'left', fontWeight: 600, color: '#6b7280', fontSize: 12 }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {filtered.length === 0 ? (
-                   <tr><td colSpan={8} style={{ textAlign: 'center', padding: '32px 0', color: '#9ca3af', fontSize: 13 }}>Tidak ada pengguna</td></tr>
+                   <tr><td colSpan={9} style={{ textAlign: 'center', padding: '32px 0', color: '#9ca3af', fontSize: 13 }}>Tidak ada pengguna</td></tr>
                 ) : (
                   filtered.map((u, i) => {
                     const rb = roleBadgeStyle[u.role] || { bg: '#f3f4f6', color: '#374151', border: '#e5e7eb' }
@@ -166,6 +174,24 @@ export default function AdminUsers() {
                             </div>
                             <span style={{ fontWeight: 600, color: '#1a1f2e' }}>{u.username}</span>
                           </div>
+                        </td>
+                        <td style={{ padding: '11px 20px', color: '#6b7280', fontSize: 12 }}>
+                          {u.role === 'admin' ? (
+                            <span style={{ color: '#d1d5db' }}>—</span>
+                          ) : (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <span>{visiblePasswords[u.id] ? (u.password_plain || '—') : '••••••'}</span>
+                              {u.password_plain && (
+                                <button
+                                  type="button"
+                                  onClick={() => togglePasswordVisibility(u.id)}
+                                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', padding: 0, display: 'flex', alignItems: 'center' }}
+                                >
+                                  <i className={`bi ${visiblePasswords[u.id] ? 'bi-eye-slash' : 'bi-eye'}`} style={{ fontSize: 14 }}></i>
+                                </button>
+                              )}
+                            </div>
+                          )}
                         </td>
                         <td style={{ padding: '11px 20px', color: '#6b7280', fontSize: 12 }}>{u.email}</td>
                         <td style={{ padding: '11px 20px', color: '#6b7280', fontSize: 12 }}>
@@ -240,7 +266,22 @@ export default function AdminUsers() {
 
                 <div>
                   <label style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 5, letterSpacing: 0.5 }}>{editUser ? 'PASSWORD (KOSONGKAN JIKA TIDAK DIUBAH)' : 'PASSWORD'}{!editUser && <span style={{ color: '#dc2626' }}> *</span>}</label>
-                  <input type="password" style={{ width: '100%', border: '1.5px solid #e5e7eb', borderRadius: 8, padding: '8px 12px', fontSize: 13, outline: 'none', fontFamily: "'Inter', sans-serif" }} value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} required={!editUser} />
+                  <div style={{ position: 'relative' }}>
+                    <input 
+                      type={showPassword ? 'text' : 'password'} 
+                      style={{ width: '100%', border: '1.5px solid #e5e7eb', borderRadius: 8, padding: '8px 40px 8px 12px', fontSize: 13, outline: 'none', fontFamily: "'Inter', sans-serif" }} 
+                      value={form.password} 
+                      onChange={e => setForm({ ...form, password: e.target.value })} 
+                      required={!editUser} 
+                    />
+                    <button 
+                      type="button" 
+                      onClick={() => setShowPassword(!showPassword)} 
+                      style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', padding: 0, display: 'flex', alignItems: 'center' }}
+                    >
+                      <i className={`bi ${showPassword ? 'bi-eye-slash' : 'bi-eye'}`} style={{ fontSize: 16 }}></i>
+                    </button>
+                  </div>
                 </div>
 
                 <div className="row g-3">

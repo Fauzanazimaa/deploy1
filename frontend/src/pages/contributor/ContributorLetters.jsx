@@ -14,7 +14,7 @@ export default function ContributorLetters() {
       setLetters(res.data)
     } catch (err) {
       console.error(err)
-      setError('Gagal memuat daftar surat tugas')
+      setError('Gagal memuat daftar surat permintaan data')
     } finally {
       setLoading(false)
     }
@@ -36,15 +36,15 @@ export default function ContributorLetters() {
       a.remove()
       window.URL.revokeObjectURL(url)
     } catch (err) {
-      alert('Gagal mengunduh surat tugas')
+      alert('Gagal mengunduh surat permintaan data')
     }
   }
 
   return (
     <div style={{ fontFamily: "'Inter', sans-serif" }}>
       <div style={{ marginBottom: 24 }}>
-        <h4 style={{ fontWeight: 700, fontSize: 20, color: '#1a1f2e', margin: 0 }}>Surat Tugas</h4>
-        <p style={{ color: '#6b7280', fontSize: 13, margin: '4px 0 0' }}>Daftar surat tugas kedinasan / pengumpulan data yang didelegasikan kepada Anda</p>
+        <h4 style={{ fontWeight: 700, fontSize: 20, color: '#1a1f2e', margin: 0 }}>Surat Permintaan Data</h4>
+        <p style={{ color: '#6b7280', fontSize: 13, margin: '4px 0 0' }}>Daftar surat permintaan data kedinasan / pengumpulan data yang didelegasikan kepada Anda</p>
       </div>
 
       {error && (
@@ -61,7 +61,7 @@ export default function ContributorLetters() {
       ) : letters.length === 0 ? (
         <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #f0f0f0', textAlign: 'center', padding: '48px 0', color: '#9ca3af', fontSize: 13, boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
           <i className="bi bi-file-earmark-text" style={{ fontSize: 40, display: 'block', marginBottom: 12, opacity: 0.4 }}></i>
-          Belum ada surat tugas yang diunggah untuk kegiatan Anda saat ini.
+          Belum ada surat permintaan data yang diunggah untuk kegiatan Anda saat ini.
         </div>
       ) : (
         <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #f0f0f0', overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>

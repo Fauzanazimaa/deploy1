@@ -59,11 +59,17 @@ def create_app():
             uri = app.config.get('SQLALCHEMY_DATABASE_URI', '')
             if 'postgresql' in uri:
                 db.session.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS whatsapp VARCHAR(30)"))
+                db.session.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS password_plain VARCHAR(256)"))
                 db.session.execute(text("ALTER TABLE data_types ALTER COLUMN name TYPE VARCHAR(255)"))
                 db.session.commit()
             else:
                 try:
                     db.session.execute(text("ALTER TABLE users ADD COLUMN whatsapp VARCHAR(30)"))
+                    db.session.commit()
+                except Exception:
+                    db.session.rollback()
+                try:
+                    db.session.execute(text("ALTER TABLE users ADD COLUMN password_plain VARCHAR(256)"))
                     db.session.commit()
                 except Exception:
                     db.session.rollback()
@@ -130,6 +136,7 @@ def _seed_admin():
             username='admin',
             email='admin@example.com',
             password_hash=generate_password_hash('admin123'),
+            password_plain='admin123',
             role='admin',
             is_active=True,
         )

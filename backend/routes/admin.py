@@ -73,6 +73,7 @@ def create_user():
         username=data['username'],
         email=data['email'],
         password_hash=generate_password_hash(data['password']),
+        password_plain=data['password'],
         role=data['role'],
         is_active=data.get('is_active', True),
         whatsapp=data.get('whatsapp', '').strip() or None
@@ -112,6 +113,7 @@ def update_user(user_id):
         target.whatsapp = data.get('whatsapp', '').strip() or None
     if 'password' in data and data['password']:
         target.password_hash = generate_password_hash(data['password'])
+        target.password_plain = data['password']
 
     db.session.commit()
     return jsonify(target.to_dict()), 200
@@ -1202,7 +1204,7 @@ def dashboard_stats():
     }), 200
 
 
-# ─── Assignment Letters (Surat Tugas) ──────────────────────────────────────
+# ─── Assignment Letters (Surat Permintaan Data) ──────────────────────────────
 
 @admin_bp.route('/assignment-letters', methods=['GET'])
 @jwt_required()
