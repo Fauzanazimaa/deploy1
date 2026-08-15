@@ -53,6 +53,22 @@ export default function AdminTasks() {
   const [activeSignatureUrl, setActiveSignatureUrl] = useState('')
   const [showPrintModal, setShowPrintModal] = useState(false)
 
+  const [customDialog, setCustomDialog] = useState({
+    isOpen: false,
+    type: 'alert',
+    title: '',
+    message: '',
+    onConfirm: null
+  })
+
+  const showCustomAlert = (title, message) => {
+    setCustomDialog({ isOpen: true, type: 'alert', title, message, onConfirm: null })
+  }
+
+  const showCustomConfirm = (title, message, onConfirm) => {
+    setCustomDialog({ isOpen: true, type: 'confirm', title, message, onConfirm })
+  }
+
   const fetchAll = async () => {
     try {
       const [tasksRes, usersRes, dtRes, lettersRes, signedRes] = await Promise.all([
@@ -97,14 +113,15 @@ export default function AdminTasks() {
     }
   }
 
-  const handleDeleteLetter = async (id) => {
-    if (!window.confirm('Hapus surat permintaan data ini?')) return
-    try {
-      await deleteAssignmentLetter(id)
-      fetchAll()
-    } catch (err) {
-      alert(err.response?.data?.error || 'Gagal menghapus surat permintaan data')
-    }
+  const handleDeleteLetter = (id) => {
+    showCustomConfirm('Hapus Surat Permintaan', 'Apakah Anda yakin ingin menghapus surat permintaan data ini?', async () => {
+      try {
+        await deleteAssignmentLetter(id)
+        fetchAll()
+      } catch (err) {
+        showCustomAlert('Gagal', err.response?.data?.error || 'Gagal menghapus surat permintaan data')
+      }
+    })
   }
 
   const openUploadModal = (title, existingLetter = null) => {
@@ -134,14 +151,15 @@ export default function AdminTasks() {
     }
   }
 
-  const handleResetCoverLetter = async (signedId) => {
-    if (!window.confirm('Apakah Anda yakin ingin meminta ulang tanda tangan untuk surat pengantar ini? Surat pengantar yang ada akan dihapus dan kontributor harus menandatangani ulang.')) return
-    try {
-      await resetSignedCoverLetter(signedId)
-      fetchAll()
-    } catch (err) {
-      alert(err.response?.data?.error || 'Gagal meminta ulang tanda tangan surat pengantar')
-    }
+  const handleResetCoverLetter = (signedId) => {
+    showCustomConfirm('Minta Ulang TTD', 'Apakah Anda yakin ingin meminta ulang tanda tangan untuk surat pengantar ini? Surat pengantar yang ada akan dihapus dan kontributor harus menandatangani ulang.', async () => {
+      try {
+        await resetSignedCoverLetter(signedId)
+        fetchAll()
+      } catch (err) {
+        showCustomAlert('Gagal', err.response?.data?.error || 'Gagal meminta ulang tanda tangan surat pengantar')
+      }
+    })
   }
 
   const handlePrintCoverLetter = () => {
@@ -207,7 +225,7 @@ export default function AdminTasks() {
       })
     }
     script.onerror = () => {
-      alert('Gagal memuat pustaka PDF downloader. Pastikan Anda terhubung ke internet.')
+      showCustomAlert('Error', 'Gagal memuat pustaka PDF downloader. Pastikan Anda terhubung ke internet.')
       setDownloadingPdf(false)
     }
     document.body.appendChild(script)
@@ -225,7 +243,7 @@ export default function AdminTasks() {
       a.remove()
       window.URL.revokeObjectURL(url)
     } catch (err) {
-      alert('Gagal mengunduh surat permintaan data')
+      showCustomAlert('Gagal', 'Gagal mengunduh surat permintaan data')
     }
   }
 
@@ -290,7 +308,7 @@ export default function AdminTasks() {
       setDeleteConfirm(null)
       fetchAll()
     } catch (err) {
-      alert(err.response?.data?.error || 'Gagal menghapus tugas')
+      showCustomAlert('Gagal', err.response?.data?.error || 'Gagal menghapus tugas')
     } finally {
       setDeleting(false)
     }
@@ -299,7 +317,7 @@ export default function AdminTasks() {
   const handleSendWaReminder = (task) => {
     let phone = task.assignee_whatsapp || ''
     if (!phone) {
-      alert(`Kontributor ${task.assignee_username} belum memiliki nomor WhatsApp terdaftar. Silakan tambahkan di menu Kelola Pengguna.`)
+      showCustomAlert('WhatsApp Tidak Terdaftar', `Kontributor ${task.assignee_username} belum memiliki nomor WhatsApp terdaftar. Silakan tambahkan di menu Kelola Pengguna.`)
       return
     }
 
@@ -1037,6 +1055,58 @@ export default function AdminTasks() {
           </div>
         </div>
       )}
+      {/* Reusable Custom Alert/Confirm Modal */}
+      {customDialog.isOpen && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 20px 60px rgba(0,0,0,0.2)', width: '100%', maxWidth: 420, overflow: 'hidden', fontFamily: "'Inter', sans-serif" }}>
+            <div style={{ borderBottom: '1px solid #f1f5f9', padding: '18px 24px', display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ 
+                width: 36, height: 36, borderRadius: '50%', 
+                background: customDialog.type === 'confirm' ? '#fef3c7' : '#fee2e2',
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}>
+                <i className={customDialog.type === 'confirm' ? "bi bi-question-circle-fill text-warning" : "bi bi-exclamation-triangle-fill text-danger"} style={{ fontSize: 18 }}></i>
+              </div>
+              <span style={{ fontWeight: 700, fontSize: 16, color: '#0f172a' }}>{customDialog.title}</span>
+            </div>
+            <div style={{ padding: '20px 24px', fontSize: 14, color: '#475569', lineHeight: 1.6 }}>
+              {customDialog.message}
+            </div>
+            <div style={{ borderTop: '1px solid #f1f5f9', padding: '14px 24px', display: 'flex', justifyContent: 'flex-end', gap: 8, background: '#f8fafc' }}>
+              {customDialog.type === 'confirm' ? (
+                <>
+                  <button 
+                    onClick={() => setCustomDialog({ ...customDialog, isOpen: false })} 
+                    className="btn btn-sm btn-outline-secondary" 
+                    style={{ padding: '7px 16px', fontSize: 13, fontWeight: 600 }}
+                  >
+                    Batal
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setCustomDialog({ ...customDialog, isOpen: false })
+                      if (customDialog.onConfirm) customDialog.onConfirm()
+                    }} 
+                    className="btn btn-sm btn-primary" 
+                    style={{ background: '#f5a623', borderColor: '#f5a623', color: '#fff', padding: '7px 16px', fontSize: 13, fontWeight: 600 }}
+                  >
+                    Ya, Lanjutkan
+                  </button>
+                </>
+              ) : (
+                <button 
+                  onClick={() => setCustomDialog({ ...customDialog, isOpen: false })} 
+                  className="btn btn-sm btn-primary" 
+                  style={{ background: '#f5a623', borderColor: '#f5a623', color: '#fff', padding: '7px 20px', fontSize: 13, fontWeight: 600 }}
+                >
+                  OK
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <style>{`
         .task-row:hover { background: #fafbff; }
         .task-row:hover .row-actions { opacity: 1; }
