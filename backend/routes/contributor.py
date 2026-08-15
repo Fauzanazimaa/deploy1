@@ -757,3 +757,104 @@ def download_my_assignment_letter(letter_id):
         mimetype='application/pdf'
     )
 
+
+@contributor_bp.route('/signed-cover-letters', methods=['POST'])
+@jwt_required()
+def submit_signed_cover_letter():
+    user, err, code = require_contributor()
+    if err:
+        return err, code
+
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+
+    required_fields = ['task_title', 'signer_role', 'agency_name', 'signer_name', 'signature_base64']
+    for f in required_fields:
+        if not data.get(f):
+            return jsonify({'error': f'{f} is required'}), 400
+
+    import base64
+    import uuid
+    from models import SignedCoverLetter
+    from storage import upload_file, delete_file, SIGNATURES_BUCKET
+
+    task_title = data['task_title']
+
+    # Delete existing signed cover letter for this title & contributor
+    existing = SignedCoverLetter.query.filter_by(task_title=task_title, contributor_id=user.id).first()
+    if existing:
+        try:
+            delete_file(SIGNATURES_BUCKET(), existing.signature_img_path)
+        except Exception:
+            pass
+        db.session.delete(existing)
+
+    # Decode signature image
+    sig_str = data['signature_base64']
+    if ',' in sig_str:
+        sig_str = sig_str.split(',')[1]
+    
+    try:
+        file_bytes = base64.b64decode(sig_str)
+    except Exception:
+        return jsonify({'error': 'Invalid base64 signature'}), 400
+
+    filename = f"sig_{uuid.uuid4()}_{user.username}.png"
+
+    # Upload to storage
+    upload_file(
+        SIGNATURES_BUCKET(), filename, file_bytes,
+        content_type='image/png'
+    )
+
+    signed_letter = SignedCoverLetter(
+        task_title=task_title,
+        contributor_id=user.id,
+        signer_role=data['signer_role'],
+        agency_name=data['agency_name'],
+        signer_name=data['signer_name'],
+        signature_img_path=filename
+    )
+    db.session.add(signed_letter)
+    db.session.commit()
+
+    return jsonify(signed_letter.to_dict()), 201
+
+
+@contributor_bp.route('/signed-cover-letters', methods=['GET'])
+@jwt_required()
+def get_my_signed_cover_letters():
+    user, err, code = require_contributor()
+    if err:
+        return err, code
+
+    from models import SignedCoverLetter
+    signed = SignedCoverLetter.query.filter_by(contributor_id=user.id).all()
+    return jsonify([s.to_dict() for s in signed]), 200
+
+
+@contributor_bp.route('/signed-cover-letters/<int:signed_id>/signature/download', methods=['GET'])
+@jwt_required()
+def download_my_signature_image(signed_id):
+    user, err, code = require_contributor()
+    if err:
+        return err, code
+
+    from models import SignedCoverLetter
+    from storage import download_file, SIGNATURES_BUCKET
+
+    signed = SignedCoverLetter.query.get_or_404(signed_id)
+    if signed.contributor_id != user.id:
+        return jsonify({'error': 'Access denied'}), 403
+
+    try:
+        file_bytes = download_file(SIGNATURES_BUCKET(), signed.signature_img_path)
+    except Exception:
+        return jsonify({'error': 'Signature image not found in storage'}), 404
+
+    return send_file(
+        io.BytesIO(file_bytes),
+        mimetype='image/png'
+    )
+

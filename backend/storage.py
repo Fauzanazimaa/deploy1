@@ -33,6 +33,9 @@ def TEMPLATES_BUCKET():
 def LETTERS_BUCKET():
     return os.getenv('SUPABASE_LETTERS_BUCKET', 'assignment_letters')
 
+def SIGNATURES_BUCKET():
+    return os.getenv('SUPABASE_SIGNATURES_BUCKET', 'signatures')
+
 
 # ── Local backend ─────────────────────────────────────────────────────────────
 
@@ -48,6 +51,10 @@ def _local_letters_dir():
     base = os.path.abspath(os.path.join(os.path.dirname(__file__)))
     return os.path.join(base, 'assignment_letters')
 
+def _local_signatures_dir():
+    base = os.path.abspath(os.path.join(os.path.dirname(__file__)))
+    return os.path.join(base, 'signatures')
+
 def _bucket_to_local_dir(bucket_fn):
     """Map bucket name ke folder lokal."""
     name = bucket_fn() if callable(bucket_fn) else bucket_fn
@@ -55,6 +62,8 @@ def _bucket_to_local_dir(bucket_fn):
         return _local_templates_dir()
     if 'letter' in name or 'assignment' in name:
         return _local_letters_dir()
+    if 'signature' in name:
+        return _local_signatures_dir()
     return _local_uploads_dir()
 
 

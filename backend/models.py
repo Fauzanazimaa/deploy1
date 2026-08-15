@@ -253,6 +253,8 @@ class AssignmentLetter(db.Model):
     task_title = db.Column(db.String(200), nullable=False, unique=True)
     file_path = db.Column(db.String(500), nullable=False)
     original_filename = db.Column(db.String(255), nullable=False)
+    reference_number = db.Column(db.String(100), nullable=True)
+    activity_name = db.Column(db.String(255), nullable=True)
     created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -264,9 +266,43 @@ class AssignmentLetter(db.Model):
             'task_title': self.task_title,
             'file_path': self.file_path,
             'original_filename': self.original_filename,
+            'reference_number': self.reference_number,
+            'activity_name': self.activity_name,
             'created_by': self.created_by,
             'creator_username': self.creator.username if self.creator else None,
             'created_at': self.created_at.isoformat()
         }
+
+
+class SignedCoverLetter(db.Model):
+    __tablename__ = 'signed_cover_letters'
+    id = db.Column(db.Integer, primary_key=True)
+    task_title = db.Column(db.String(200), nullable=False)
+    contributor_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    signer_role = db.Column(db.String(200), nullable=False)
+    agency_name = db.Column(db.String(200), nullable=False)
+    signer_name = db.Column(db.String(200), nullable=False)
+    signature_img_path = db.Column(db.String(500), nullable=False)
+    signed_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    contributor = db.relationship('User', foreign_keys=[contributor_id])
+
+    __table_args__ = (db.UniqueConstraint('task_title', 'contributor_id', name='_task_contributor_uc'),)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'task_title': self.task_title,
+            'contributor_id': self.contributor_id,
+            'contributor_username': self.contributor.username if self.contributor else None,
+            'signer_role': self.signer_role,
+            'agency_name': self.agency_name,
+            'signer_name': self.signer_name,
+            'signature_img_path': self.signature_img_path,
+            'signed_at': self.signed_at.isoformat(),
+            'created_at': self.created_at.isoformat()
+        }
+
 
 

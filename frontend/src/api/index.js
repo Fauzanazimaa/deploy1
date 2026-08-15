@@ -143,4 +143,9 @@ export const getVerifiedSubmissions = () => api.get('/admin/verified-submissions
 export const getAdminDataTypes = () => api.get('/admin/data-types')
 export const analyzeDataType = (dataTypeId) => api.get('/admin/widgets/analyze', { params: { data_type_id: dataTypeId } })
 
+// ─── Cover Letters (Surat Pengantar Kesesuaian Data) ───────────────────────────
+export const getAdminSignedCoverLetters = () => api.get('/admin/signed-cover-letters')
+export const getContributorSignedCoverLetters = () => api.get('/contributor/signed-cover-letters')
+export const submitSignedCoverLetter = (data) => api.post('/contributor/signed-cover-letters', data)
+
 export default api

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react'
-import {
+import api, {
   getAdminTasks, createTask, updateTask, deleteTask, getUsers, getDataTypes,
-  getAdminAssignmentLetters, uploadAssignmentLetter, deleteAssignmentLetter, downloadAdminAssignmentLetter
+  getAdminAssignmentLetters, uploadAssignmentLetter, deleteAssignmentLetter, downloadAdminAssignmentLetter,
+  getAdminSignedCoverLetters
 } from '../../api'
 
 const emptyForm = {
@@ -43,18 +44,29 @@ export default function AdminTasks() {
   const [uploadingLetter, setUploadingLetter] = useState(false)
   const [letterError, setLetterError] = useState('')
 
+  const [uploadModalOpen, setUploadModalOpen] = useState(false)
+  const [uploadForm, setUploadForm] = useState({ file: null, referenceNumber: '', activityName: '' })
+  const [activeUploadTitle, setActiveUploadTitle] = useState('')
+
+  const [signedLetters, setSignedLetters] = useState([])
+  const [activeSignedLetter, setActiveSignedLetter] = useState(null)
+  const [activeSignatureUrl, setActiveSignatureUrl] = useState('')
+  const [showPrintModal, setShowPrintModal] = useState(false)
+
   const fetchAll = async () => {
     try {
-      const [tasksRes, usersRes, dtRes, lettersRes] = await Promise.all([
+      const [tasksRes, usersRes, dtRes, lettersRes, signedRes] = await Promise.all([
         getAdminTasks(),
         getUsers(),
         getDataTypes(),
-        getAdminAssignmentLetters()
+        getAdminAssignmentLetters(),
+        getAdminSignedCoverLetters()
       ])
       setTasks(tasksRes.data)
       setContributors(usersRes.data.filter((u) => u.role === 'contributor'))
       setDataTypes(dtRes.data)
       setAssignmentLetters(lettersRes.data)
+      setSignedLetters(signedRes.data)
     } catch (e) {
       console.error(e)
     } finally {
@@ -64,7 +76,7 @@ export default function AdminTasks() {
 
   useEffect(() => { fetchAll() }, [])
 
-  const handleUploadLetter = async (title, file) => {
+  const handleUploadLetter = async (title, file, referenceNumber, activityName) => {
     if (!file) return
     setUploadingLetter(true)
     setLetterError('')
@@ -72,7 +84,11 @@ export default function AdminTasks() {
       const fd = new FormData()
       fd.append('file', file)
       fd.append('task_title', title)
+      fd.append('reference_number', referenceNumber || '')
+      fd.append('activity_name', activityName || '')
       await uploadAssignmentLetter(fd)
+      setUploadModalOpen(false)
+      setUploadForm({ file: null, referenceNumber: '', activityName: '' })
       fetchAll()
     } catch (err) {
       setLetterError(err.response?.data?.error || 'Gagal mengupload surat permintaan data')
@@ -89,6 +105,67 @@ export default function AdminTasks() {
     } catch (err) {
       alert(err.response?.data?.error || 'Gagal menghapus surat permintaan data')
     }
+  }
+
+  const openUploadModal = (title, existingLetter = null) => {
+    setActiveUploadTitle(title)
+    if (existingLetter) {
+      setUploadForm({
+        file: null,
+        referenceNumber: existingLetter.reference_number || '',
+        activityName: existingLetter.activity_name || ''
+      })
+    } else {
+      setUploadForm({ file: null, referenceNumber: '', activityName: '' })
+    }
+    setUploadModalOpen(true)
+  }
+
+  const handleOpenPrintModal = async (signedLetter) => {
+    setActiveSignedLetter(signedLetter)
+    setShowPrintModal(true)
+    setActiveSignatureUrl('')
+    try {
+      const res = await api.get(`/admin/signed-cover-letters/${signedLetter.id}/signature/download`, { responseType: 'blob' })
+      const url = window.URL.createObjectURL(new Blob([res.data]))
+      setActiveSignatureUrl(url)
+    } catch (err) {
+      console.error('Failed to download signature:', err)
+    }
+  }
+
+  const handlePrintCoverLetter = () => {
+    const printArea = document.getElementById('cover-letter-print-area')
+    if (!printArea) return
+    const win = window.open('', '_blank')
+    win.document.write(`
+      <html>
+        <head>
+          <title>Surat Pengantar Kesesuaian Data</title>
+          <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+          <style>
+            body { font-family: 'Inter', sans-serif; padding: 40px; color: #000; background: #fff; }
+            .letter-container { max-width: 800px; margin: 0 auto; line-height: 1.6; }
+            .header-title { font-weight: 800; text-align: center; text-transform: uppercase; font-size: 18px; margin-bottom: 30px; text-decoration: underline; }
+            .content-section { margin-top: 20px; margin-bottom: 20px; }
+            .table-data { width: 100%; border-collapse: collapse; margin-top: 15px; margin-bottom: 15px; }
+            .table-data th, .table-data td { border: 1px solid #000; padding: 8px 12px; text-align: left; }
+            .signature-block { margin-top: 50px; display: flex; justify-content: flex-end; }
+            .signature-wrapper { text-align: left; width: 300px; }
+            @media print {
+              body { padding: 0; }
+              .no-print { display: none; }
+            }
+          </style>
+        </head>
+        <body onload="window.print(); window.close();">
+          <div class="letter-container">
+            ${printArea.innerHTML}
+          </div>
+        </body>
+      </html>
+    `)
+    win.document.close()
   }
 
   const handleDownloadLetter = async (letter) => {
@@ -549,7 +626,7 @@ export default function AdminTasks() {
       {activeTab === 'letters' && (
         <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #f0f0f0', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', padding: '24px 20px' }}>
           <h5 style={{ fontWeight: 700, fontSize: 16, color: '#1a1f2e', marginBottom: 6 }}>Manajemen Surat Permintaan Data</h5>
-          <p style={{ color: '#6b7280', fontSize: 13, marginBottom: 20 }}>Upload dan kelola surat permintaan data (format PDF) berdasarkan judul kegiatan/tugas</p>
+          <p style={{ color: '#6b7280', fontSize: 13, marginBottom: 20 }}>Upload dan kelola surat permintaan data (format PDF) beserta rincian informasi kegiatan</p>
           
           {letterError && (
             <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', borderRadius: 8, padding: '10px 14px', fontSize: 13, marginBottom: 16 }}>
@@ -567,9 +644,10 @@ export default function AdminTasks() {
               <table className="table align-middle text-start" style={{ fontSize: 13 }}>
                 <thead>
                   <tr style={{ background: '#f8f9fa' }}>
-                    <th style={{ width: '40%', padding: '10px 16px' }}>Judul Kegiatan / Tugas</th>
-                    <th style={{ width: '35%', padding: '10px 16px' }}>File Surat Permintaan Data (PDF)</th>
-                    <th style={{ width: '25%', padding: '10px 16px', textAlign: 'center' }}>Aksi</th>
+                    <th style={{ width: '30%', padding: '10px 16px' }}>Judul Kegiatan / Tugas</th>
+                    <th style={{ width: '30%', padding: '10px 16px' }}>Detail Pengenal</th>
+                    <th style={{ width: '25%', padding: '10px 16px' }}>File Surat (PDF)</th>
+                    <th style={{ width: '15%', padding: '10px 16px', textAlign: 'center' }}>Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -580,9 +658,19 @@ export default function AdminTasks() {
                         <td style={{ fontWeight: 600, color: '#1a1f2e', padding: '12px 16px' }}>{title}</td>
                         <td style={{ padding: '12px 16px' }}>
                           {letter ? (
+                            <div>
+                              <div>No: <strong>{letter.reference_number || '—'}</strong></div>
+                              <div style={{ color: '#6b7280', fontSize: 11 }}>Kegiatan: {letter.activity_name || '—'}</div>
+                            </div>
+                          ) : (
+                            <span style={{ color: '#9ca3af', fontStyle: 'italic' }}>Belum dikonfigurasi</span>
+                          )}
+                        </td>
+                        <td style={{ padding: '12px 16px' }}>
+                          {letter ? (
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#16a34a', fontWeight: 500 }}>
                               <i className="bi bi-file-earmark-pdf-fill" style={{ fontSize: 16, color: '#ef4444' }}></i>
-                              <span style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={letter.original_filename}>
+                              <span style={{ maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={letter.original_filename}>
                                 {letter.original_filename}
                               </span>
                             </div>
@@ -591,43 +679,42 @@ export default function AdminTasks() {
                           )}
                         </td>
                         <td style={{ padding: '12px 16px' }}>
-                          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
+                          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 6 }}>
                             {letter ? (
                               <>
                                 <button
                                   onClick={() => handleDownloadLetter(letter)}
                                   className="btn btn-sm btn-outline-success"
-                                  style={{ display: 'flex', alignItems: 'center', gap: 4 }}
+                                  title="Unduh PDF"
+                                  style={{ padding: '4px 8px' }}
                                 >
-                                  <i className="bi bi-download"></i> Unduh
+                                  <i className="bi bi-download"></i>
+                                </button>
+                                <button
+                                  onClick={() => openUploadModal(title, letter)}
+                                  className="btn btn-sm btn-outline-primary"
+                                  title="Edit Rincian"
+                                  style={{ padding: '4px 8px' }}
+                                >
+                                  <i className="bi bi-pencil-square"></i>
                                 </button>
                                 <button
                                   onClick={() => handleDeleteLetter(letter.id)}
                                   className="btn btn-sm btn-outline-danger"
-                                  style={{ display: 'flex', alignItems: 'center', gap: 4 }}
+                                  title="Hapus"
+                                  style={{ padding: '4px 8px' }}
                                 >
-                                  <i className="bi bi-trash"></i> Hapus
+                                  <i className="bi bi-trash"></i>
                                 </button>
                               </>
                             ) : (
-                              <label style={{
-                                margin: 0, padding: '5px 12px', background: '#eff6ff',
-                                border: '1px solid #bfdbfe', color: '#3b82f6', borderRadius: 6,
-                                cursor: 'pointer', fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4
-                              }}>
-                                <i className="bi bi-upload"></i> Upload PDF
-                                <input
-                                  type="file"
-                                  accept=".pdf"
-                                  style={{ display: 'none' }}
-                                  onChange={e => {
-                                    const file = e.target.files[0]
-                                    if (file) {
-                                      handleUploadLetter(title, file)
-                                    }
-                                  }}
-                                />
-                              </label>
+                              <button
+                                onClick={() => openUploadModal(title)}
+                                className="btn btn-sm btn-primary"
+                                style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 12px', fontSize: 12 }}
+                              >
+                                <i className="bi bi-upload"></i> Upload
+                              </button>
                             )}
                           </div>
                         </td>
@@ -638,6 +725,55 @@ export default function AdminTasks() {
               </table>
             </div>
           )}
+
+          {/* Section: Signed Cover Letters */}
+          <div style={{ marginTop: 32, paddingTop: 24, borderTop: '1px solid #f0f0f0' }}>
+            <h5 style={{ fontWeight: 700, fontSize: 16, color: '#1a1f2e', marginBottom: 6 }}>Surat Pengantar Kesesuaian Data</h5>
+            <p style={{ color: '#6b7280', fontSize: 13, marginBottom: 20 }}>Daftar surat pengantar dari kontributor yang telah ditandatangani secara digital</p>
+
+            {signedLetters.length === 0 ? (
+              <div style={{ background: '#fafafa', border: '1px dashed #e5e7eb', borderRadius: 12, textAlign: 'center', padding: '36px 0', color: '#9ca3af', fontSize: 13 }}>
+                <i className="bi bi-file-earmark-check" style={{ fontSize: 32, display: 'block', marginBottom: 10, opacity: 0.35 }}></i>
+                Belum ada surat pengantar yang ditandatangani oleh kontributor.
+              </div>
+            ) : (
+              <div className="table-responsive">
+                <table className="table align-middle text-start" style={{ fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ background: '#f8f9fa' }}>
+                      <th style={{ padding: '10px 16px' }}>Judul Kegiatan / Tugas</th>
+                      <th style={{ padding: '10px 16px' }}>Dinas / Instansi</th>
+                      <th style={{ padding: '10px 16px' }}>Penandatangan</th>
+                      <th style={{ padding: '10px 16px' }}>Tanggal Kirim</th>
+                      <th style={{ padding: '10px 16px', textAlign: 'center' }}>Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {signedLetters.map(sl => (
+                      <tr key={sl.id}>
+                        <td style={{ fontWeight: 600, color: '#1a1f2e', padding: '12px 16px' }}>{sl.task_title}</td>
+                        <td style={{ padding: '12px 16px' }}>{sl.agency_name}</td>
+                        <td style={{ padding: '12px 16px' }}>
+                          <div><strong>{sl.signer_name}</strong></div>
+                          <div style={{ color: '#6b7280', fontSize: 11 }}>{sl.signer_role}</div>
+                        </td>
+                        <td style={{ padding: '12px 16px' }}>{new Date(sl.signed_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}</td>
+                        <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                          <button
+                            onClick={() => handleOpenPrintModal(sl)}
+                            className="btn btn-sm btn-outline-primary"
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                          >
+                            <i className="bi bi-printer"></i> Cetak Surat
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -691,6 +827,113 @@ export default function AdminTasks() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Upload Letter Modal */}
+      {uploadModalOpen && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1050, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 20px 60px rgba(0,0,0,0.2)', width: '100%', maxWidth: 480, overflow: 'hidden', fontFamily: "'Inter', sans-serif" }}>
+            <div style={{ borderBottom: '1px solid #f0f0f0', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontWeight: 700, fontSize: 15, color: '#1a1f2e' }}>Upload Surat Permintaan & Detail Kegiatan</span>
+              <button onClick={() => setUploadModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: 20 }}><i className="bi bi-x"></i></button>
+            </div>
+            <form onSubmit={e => {
+              e.preventDefault()
+              handleUploadLetter(activeUploadTitle, uploadForm.file, uploadForm.referenceNumber, uploadForm.activityName)
+            }}>
+              <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 5, letterSpacing: 0.5 }}>KEGIATAN / TUGAS</label>
+                  <input type="text" className="form-control" value={activeUploadTitle} disabled style={{ fontSize: 13, background: '#f9fafb' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 5, letterSpacing: 0.5 }}>FILE SURAT PERMINTAAN DATA (PDF) <span style={{ color: '#dc2626' }}>*</span></label>
+                  <input type="file" accept=".pdf" className="form-control" onChange={e => setUploadForm({ ...uploadForm, file: e.target.files[0] })} required style={{ fontSize: 13 }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 5, letterSpacing: 0.5 }}>NOMOR SURAT</label>
+                  <input type="text" className="form-control" value={uploadForm.referenceNumber} onChange={e => setUploadForm({ ...uploadForm, referenceNumber: e.target.value })} placeholder="contoh: 005/BPS/2026" style={{ fontSize: 13 }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 5, letterSpacing: 0.5 }}>NAMA KEGIATAN</label>
+                  <input type="text" className="form-control" value={uploadForm.activityName} onChange={e => setUploadForm({ ...uploadForm, activityName: e.target.value })} placeholder="contoh: Penyusunan Kabupaten Sijunjung Dalam Angka" style={{ fontSize: 13 }} />
+                </div>
+              </div>
+              <div style={{ borderTop: '1px solid #f0f0f0', padding: '14px 20px', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                <button type="button" onClick={() => setUploadModalOpen(false)} style={{ background: '#f3f4f6', border: '1px solid #e5e7eb', color: '#374151', borderRadius: 8, padding: '8px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Inter', sans-serif" }}>Batal</button>
+                <button type="submit" disabled={uploadingLetter} style={{ background: ACCENT, border: 'none', color: '#fff', borderRadius: 8, padding: '8px 20px', fontSize: 13, fontWeight: 600, cursor: uploadingLetter ? 'not-allowed' : 'pointer', fontFamily: "'Inter', sans-serif", opacity: uploadingLetter ? 0.8 : 1 }}>
+                  {uploadingLetter ? <><span className="spinner-border spinner-border-sm" style={{ width: 14, height: 14, borderWidth: 2 }} /> Mengupload...</> : 'Upload'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Print Preview Modal */}
+      {showPrintModal && activeSignedLetter && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1050, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 20px 60px rgba(0,0,0,0.2)', width: '100%', maxWidth: 760, maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', fontFamily: "'Inter', sans-serif" }}>
+            <div style={{ borderBottom: '1px solid #f0f0f0', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+              <span style={{ fontWeight: 700, fontSize: 15, color: '#1a1f2e' }}>Pratinjau Surat Pengantar</span>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={handlePrintCoverLetter} className="btn btn-sm btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600 }}><i className="bi bi-printer"></i> Cetak</button>
+                <button onClick={() => setShowPrintModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: 20 }}><i className="bi bi-x"></i></button>
+              </div>
+            </div>
+            <div style={{ padding: '24px', overflowY: 'auto', flex: 1, background: '#f5f6fa' }}>
+              <div id="cover-letter-print-area" style={{ padding: '40px', background: '#fff', color: '#000', fontSize: 14, boxShadow: '0 4px 12px rgba(0,0,0,0.05)', borderRadius: 8, minHeight: '600px', lineHeight: 1.6 }}>
+                <div style={{ textAlign: 'center', fontWeight: 800, textTransform: 'uppercase', fontSize: 16, textDecoration: 'underline', marginBottom: 28, letterSpacing: 0.5 }}>
+                  SURAT PENGANTAR
+                </div>
+                <div style={{ marginBottom: 20 }}>
+                  Kepada Yth.<br/>
+                  <strong>Kepala BPS Kabupaten Sijunjung</strong><br/>
+                  Di tempat
+                </div>
+                <div style={{ marginBottom: 16, textAlign: 'justify' }}>
+                  Menindaklanjuti surat Kepala BPS Kabupaten Sijunjung No. <strong>{assignmentLetters.find(l => l.task_title === activeSignedLetter.task_title)?.reference_number || '—'}</strong>, berikut dikirimkan data untuk keperluan <strong>{assignmentLetters.find(l => l.task_title === activeSignedLetter.task_title)?.activity_name || '—'}</strong> rincian sebagai berikut:
+                </div>
+                <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 15, marginBottom: 15 }}>
+                  <thead>
+                    <tr>
+                      <th style={{ border: '1px solid #000', padding: '8px 12px', width: '60px', textAlign: 'center', fontWeight: 700 }}>No.</th>
+                      <th style={{ border: '1px solid #000', padding: '8px 12px', fontWeight: 700 }}>Data / Tabel yang Dikirim</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tasks
+                      .filter(t => t.title === activeSignedLetter.task_title && t.assigned_to === activeSignedLetter.contributor_id)
+                      .map((t, idx) => (
+                        <tr key={t.id}>
+                          <td style={{ border: '1px solid #000', padding: '8px 12px', textAlign: 'center' }}>{idx + 1}</td>
+                          <td style={{ border: '1px solid #000', padding: '8px 12px' }}>{t.data_type_name}</td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+                <div style={{ marginBottom: 30, textAlign: 'justify' }}>
+                  Data pada tabel-tabel tersebut sudah benar dan sudah bisa disajikan pada <strong>{assignmentLetters.find(l => l.task_title === activeSignedLetter.task_title)?.activity_name || '—'}</strong>. Demikian surat ini disampaikan, untuk dipergunakan sebagaimana mestinya.
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 40 }}>
+                  <div style={{ textAlign: 'left', width: 280 }}>
+                    <div>Sijunjung, {new Date(activeSignedLetter.signed_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}</div>
+                    <div style={{ textTransform: 'capitalize' }}>{activeSignedLetter.signer_role}</div>
+                    <div style={{ fontWeight: 600 }}>{activeSignedLetter.agency_name}</div>
+                    <div style={{ height: 90, margin: '10px 0', display: 'flex', alignItems: 'center' }}>
+                      {activeSignatureUrl ? (
+                        <img src={activeSignatureUrl} alt="Tanda Tangan" style={{ maxHeight: 80, maxWidth: 200, objectFit: 'contain' }} />
+                      ) : (
+                        <div style={{ color: '#9ca3af', fontStyle: 'italic', fontSize: 12 }}>(Mengunduh tanda tangan...)</div>
+                      )}
+                    </div>
+                    <div style={{ fontWeight: 700, textDecoration: 'underline' }}>{activeSignedLetter.signer_name}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}

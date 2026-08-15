@@ -1230,6 +1230,8 @@ def upload_assignment_letter():
 
     file = request.files['file']
     task_title = request.form.get('task_title')
+    reference_number = request.form.get('reference_number', '').strip() or None
+    activity_name = request.form.get('activity_name', '').strip() or None
 
     if not task_title:
         return jsonify({'error': 'task_title is required'}), 400
@@ -1262,6 +1264,8 @@ def upload_assignment_letter():
         task_title=task_title,
         file_path=storage_path,
         original_filename=filename,
+        reference_number=reference_number,
+        activity_name=activity_name,
         created_by=user.id
     )
     db.session.add(letter)
@@ -1313,5 +1317,39 @@ def download_assignment_letter(letter_id):
         as_attachment=True,
         download_name=letter.original_filename,
         mimetype='application/pdf'
+    )
+
+
+@admin_bp.route('/signed-cover-letters', methods=['GET'])
+@jwt_required()
+def get_signed_cover_letters():
+    user, err, code = require_admin()
+    if err:
+        return err, code
+
+    from models import SignedCoverLetter
+    signed = SignedCoverLetter.query.all()
+    return jsonify([s.to_dict() for s in signed]), 200
+
+
+@admin_bp.route('/signed-cover-letters/<int:signed_id>/signature/download', methods=['GET'])
+@jwt_required()
+def download_signature_image(signed_id):
+    user, err, code = require_admin()
+    if err:
+        return err, code
+
+    from models import SignedCoverLetter
+    from storage import download_file, SIGNATURES_BUCKET
+
+    signed = SignedCoverLetter.query.get_or_404(signed_id)
+    try:
+        file_bytes = download_file(SIGNATURES_BUCKET(), signed.signature_img_path)
+    except Exception:
+        return jsonify({'error': 'Signature image not found in storage'}), 404
+
+    return send_file(
+        io.BytesIO(file_bytes),
+        mimetype='image/png'
     )
 
