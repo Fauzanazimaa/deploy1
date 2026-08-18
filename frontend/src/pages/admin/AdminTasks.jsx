@@ -656,7 +656,12 @@ export default function AdminTasks() {
                           const isRev = t.status === 'revision'
                           return (
                             <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fafafa', borderRadius: 8, padding: '8px 12px', border: '1px solid #f3f4f6' }}>
-                              <span style={{ fontSize: 12, fontWeight: 500, color: '#374151' }}>{t.title}</span>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                <span style={{ fontSize: 12, fontWeight: 600, color: '#1a1f2e' }}>{t.title}</span>
+                                <span style={{ fontSize: 11, color: '#6b7280', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                  <i className="bi bi-tag-fill" style={{ fontSize: 10, color: '#9ca3af' }}></i> {t.data_type_name || '—'}
+                                </span>
+                              </div>
                               <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                                 <span style={{
                                   background: isRev ? '#fef2f2' : '#fff7ed',
