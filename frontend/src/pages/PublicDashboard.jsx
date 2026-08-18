@@ -9,6 +9,9 @@ import { Bar, Line, Pie, Doughnut } from 'react-chartjs-2'
 import { login as loginApi } from '../api'
 import { useAuth } from '../context/AuthContext'
 import SejatiLogo from '../components/SejatiLogo'
+import sijunjungGeoJson from '../components/sijunjung_kecamatan.json'
+import axios from 'axios'
+
 
 ChartJS.register(
   ArcElement, Tooltip, Legend, CategoryScale, LinearScale,
@@ -145,102 +148,530 @@ export default function PublicDashboard() {
    ───────────────────────────────────────────────────────────────────────────── */
 
 // ── Tab 1: Penduduk
+// BPS to shapefile name map
+const BPS_TO_SHAPEFILE_MAP = {
+  1: 'KAMANGBARU',
+  2: 'TANJUNGGADANG',
+  3: 'SIJUNJUNG',
+  4: 'LUBUKTAROK',
+  5: 'AMPEKNAGARI',
+  6: 'KUPITAN',
+  100: 'KOTOTUJUH',
+  110: 'SUMPURKUDUS'
+};
+
 function TabPenduduk() {
-  const dataKecamatan = {
-    labels: ['Kamang Baru', 'Tanjung Gadang', 'Sijunjung', 'Lubuk Tarok', 'IV Nagari', 'Kupitan', 'Koto VII', 'Sumpur Kudus'],
-    datasets: [{
-      label: 'Jumlah Penduduk (Jiwa)',
-      data: [51230, 28140, 48320, 18450, 16120, 15080, 39510, 26830],
-      backgroundColor: '#3b82f6cc',
-      borderRadius: 6
-    }]
+  const [selectedYear, setSelectedYear] = useState(2025);
+  const [availableYears, setAvailableYears] = useState([2020, 2021, 2022, 2023, 2024, 2025]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [bpsData, setBpsData] = useState(null);
+  const [mappedData, setMappedData] = useState(null);
+  const [hoveredKec, setHoveredKec] = useState(null);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const detectYears = async () => {
+      try {
+        const yearsRange = Array.from({ length: 21 }, (_, i) => 2020 + i); // 2020 to 2040
+        const checkPromises = yearsRange.map(async (y) => {
+          const thCode = y - 1900;
+          const url = `https://webapi.bps.go.id/v1/api/list/model/data/lang/ind/domain/1304/var/47/th/${thCode}/key/65b35aa80f299dc0e1e9e98ee5589ba4`;
+          try {
+            const res = await axios.get(url);
+            const isAvail = res.data.status === 'OK' && 
+                            res.data['data-availability'] === 'available' && 
+                            res.data.datacontent && 
+                            !Array.isArray(res.data.datacontent) && 
+                            Object.keys(res.data.datacontent).length > 0;
+            return { year: y, hasData: isAvail };
+          } catch {
+            return { year: y, hasData: false };
+          }
+        });
+        
+        const results = await Promise.all(checkPromises);
+        const validYears = results.filter(r => r.hasData).map(r => r.year);
+        
+        const maxYear = validYears.length > 0 ? Math.max(...validYears) : 2025;
+        
+        const list = [];
+        for (let y = 2020; y <= maxYear; y++) {
+          list.push(y);
+        }
+        setAvailableYears(list);
+        
+        if (selectedYear > maxYear || selectedYear < 2020) {
+          setSelectedYear(maxYear);
+        }
+      } catch (e) {
+        console.error("Error detecting years:", e);
+      }
+    };
+    
+    detectYears();
+  }, []);
+
+  const fetchData = async (year) => {
+    setLoading(true);
+    setError(null);
+    const thCode = year - 1900;
+    const url = `https://webapi.bps.go.id/v1/api/list/model/data/lang/ind/domain/1304/var/47/th/${thCode}/key/65b35aa80f299dc0e1e9e98ee5589ba4`;
+    
+    try {
+      const response = await axios.get(url);
+      const data = response.data;
+      
+      if (data.status !== 'OK') {
+        throw new Error('API status not OK');
+      }
+      
+      setBpsData(data);
+      
+      const availability = data['data-availability'];
+      const datacontent = data.datacontent;
+      
+      if (availability !== 'available' || !datacontent || Array.isArray(datacontent) || Object.keys(datacontent).length === 0) {
+        setMappedData(null);
+      } else {
+        const varVal = data.var?.[0]?.val || 47;
+        const records = {};
+        
+        const kecamatenList = [
+          { code: 1, label: 'Kamang Baru' },
+          { code: 2, label: 'Tanjung Gadang' },
+          { code: 3, label: 'Sijunjung' },
+          { code: 4, label: 'Lubuk Tarok' },
+          { code: 5, label: 'IV Nagari' },
+          { code: 6, label: 'Kupitan' },
+          { code: 100, label: 'Koto Tujuh' },
+          { code: 110, label: 'Sumpur Kudus' }
+        ];
+        
+        let hasValidData = false;
+        kecamatenList.forEach(kec => {
+          const primaryKey = `${kec.code}${varVal}0${thCode}0`;
+          let valStr = datacontent[primaryKey];
+          
+          if (valStr === undefined) {
+            const prefix = `${kec.code}${varVal}`;
+            const suffix = `${thCode}`;
+            const matchedKey = Object.keys(datacontent).find(k => k.startsWith(prefix) && k.includes(suffix));
+            if (matchedKey) {
+              valStr = datacontent[matchedKey];
+            }
+          }
+          
+          if (valStr !== undefined) {
+            const val = parseFloat(valStr);
+            if (!isNaN(val)) {
+              records[kec.code] = {
+                code: kec.code,
+                label: kec.label,
+                value: val,
+                unit: data.var?.[0]?.unit || 'Ribu Jiwa'
+              };
+              hasValidData = true;
+            }
+          }
+        });
+        
+        if (hasValidData) {
+          setMappedData(records);
+        } else {
+          setMappedData(null);
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      setError('Gagal memuat data dari Web API BPS. Silakan periksa koneksi internet Anda atau coba lagi nanti.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData(selectedYear);
+  }, [selectedYear]);
+
+  const handleMouseMove = (e) => {
+    setMousePos({ x: e.clientX, y: e.clientY });
+  };
+
+  const getSvgPaths = () => {
+    if (!sijunjungGeoJson || !sijunjungGeoJson.features) return { paths: [], minVal: 0, maxVal: 0 };
+    
+    let minLng = Infinity, maxLng = -Infinity, minLat = Infinity, maxLat = -Infinity;
+    
+    sijunjungGeoJson.features.forEach(feature => {
+      const coords = feature.geometry.coordinates;
+      coords.forEach(ring => {
+        ring.forEach(([lng, lat]) => {
+          if (lng < minLng) minLng = lng;
+          if (lng > maxLng) maxLng = lng;
+          if (lat < minLat) minLat = lat;
+          if (lat > maxLat) maxLat = lat;
+        });
+      });
+    });
+    
+    const width = 800;
+    const height = 500;
+    const padding = 30;
+    
+    const boundsWidth = maxLng - minLng;
+    const boundsHeight = maxLat - minLat;
+    
+    const scaleX = (width - 2 * padding) / boundsWidth;
+    const scaleY = (height - 2 * padding) / boundsHeight;
+    const scale = Math.min(scaleX, scaleY);
+    
+    const xOffset = padding + ((width - 2 * padding) - boundsWidth * scale) / 2;
+    const yOffset = padding + ((height - 2 * padding) - boundsHeight * scale) / 2;
+    
+    const project = ([lng, lat]) => {
+      const x = (lng - minLng) * scale + xOffset;
+      const y = height - ((lat - minLat) * scale + yOffset);
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    };
+    
+    let minVal = Infinity;
+    let maxVal = -Infinity;
+    
+    if (mappedData) {
+      Object.values(mappedData).forEach(r => {
+        if (r.value < minVal) minVal = r.value;
+        if (r.value > maxVal) maxVal = r.value;
+      });
+    }
+    
+    if (minVal === Infinity) minVal = 10;
+    if (maxVal === -Infinity) maxVal = 60;
+    if (minVal === maxVal) minVal = maxVal - 10;
+    
+    const getFillColor = (kecCode) => {
+      if (!mappedData || !mappedData[kecCode]) {
+        return '#f1f5f9';
+      }
+      const val = mappedData[kecCode].value;
+      const ratio = (val - minVal) / (maxVal - minVal);
+      // Beautiful HSL scale from light teal/blue to rich indigo blue
+      const hue = 210 + ratio * 20; // 210 (blue) to 230 (indigo)
+      const sat = 70 + ratio * 15;  // 70% to 85%
+      const light = 90 - ratio * 45; // 90% (very light) to 45% (vibrant)
+      return `hsl(${hue.toFixed(0)}, ${sat.toFixed(0)}%, ${light.toFixed(0)}%)`;
+    };
+    
+    const paths = sijunjungGeoJson.features.map((feature, idx) => {
+      const name = feature.properties.NAMOBJ;
+      const bpsCode = Object.keys(BPS_TO_SHAPEFILE_MAP).find(
+        key => BPS_TO_SHAPEFILE_MAP[key] === name
+      );
+      
+      const bpsKec = bpsCode ? mappedData?.[bpsCode] : null;
+      const popValue = bpsKec ? bpsKec.value : null;
+      const rings = feature.geometry.coordinates;
+      const d = rings.map(ring => `M ${ring.map(project).join(' L ')} Z`).join(' ');
+      
+      return {
+        id: idx,
+        name: name,
+        bpsCode: bpsCode,
+        label: bpsKec ? bpsKec.label : (feature.properties.WADMKC || name),
+        value: popValue,
+        d: d,
+        fill: getFillColor(bpsCode),
+      };
+    });
+    
+    return { paths, minVal, maxVal };
+  };
+
+  const { paths, minVal, maxVal } = getSvgPaths();
+
+  // Summary stats
+  const totalPopulation = mappedData
+    ? Object.values(mappedData).reduce((sum, r) => sum + r.value, 0).toFixed(2)
+    : null;
+    
+  let maxKec = null;
+  let minKec = null;
+  
+  if (mappedData) {
+    Object.values(mappedData).forEach(r => {
+      if (!maxKec || r.value > maxKec.value) maxKec = r;
+      if (!minKec || r.value < minKec.value) minKec = r;
+    });
   }
 
-  const dataSexRatio = {
-    labels: ['Laki-laki', 'Perempuan'],
-    datasets: [{
-      data: [123120, 120560],
-      backgroundColor: ['#3b82f6', '#ec4899']
-    }]
+  // Create discrete steps for the legend
+  const legendSteps = 5;
+  const legendItems = [];
+  const stepVal = (maxVal - minVal) / legendSteps;
+  for (let i = 0; i < legendSteps; i++) {
+    const start = minVal + i * stepVal;
+    const end = minVal + (i + 1) * stepVal;
+    const mid = start + stepVal / 2;
+    const ratio = (mid - minVal) / (maxVal - minVal);
+    const hue = 210 + ratio * 20;
+    const sat = 70 + ratio * 15;
+    const light = 90 - ratio * 45;
+    const color = `hsl(${hue.toFixed(0)}, ${sat.toFixed(0)}%, ${light.toFixed(0)}%)`;
+    legendItems.push({
+      label: `${start.toFixed(1)} - ${end.toFixed(1)}`,
+      color
+    });
   }
 
   return (
     <div>
-      {/* Cards */}
-      <div className="row g-3 mb-4">
-        {[
-          { title: 'Total Penduduk', value: '243.680', unit: 'Jiwa', icon: 'bi-people-fill', color: '#3b82f6' },
-          { title: 'Laki-laki', value: '123.120', unit: 'Jiwa', icon: 'bi-gender-male', color: '#2563eb' },
-          { title: 'Perempuan', value: '120.560', unit: 'Jiwa', icon: 'bi-gender-female', color: '#db2777' },
-          { title: 'Kepadatan Penduduk', value: '78', unit: 'Jiwa/km²', icon: 'bi-geo-alt-fill', color: '#10b981' }
-        ].map(c => (
-          <div className="col-6 col-md-3" key={c.title}>
-            <div style={{ background: '#fff', borderRadius: 14, padding: '16px 20px', border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                <span style={{ fontSize: 11, fontWeight: 600, color: '#6b7280' }}>{c.title}</span>
-                <i className={`bi ${c.icon}`} style={{ color: c.color, fontSize: 16 }}></i>
-              </div>
-              <div style={{ fontSize: 24, fontWeight: 800, color: '#1a1f2e', lineHeight: 1.1 }}>{c.value}</div>
-              <span style={{ fontSize: 11, color: '#9ca3af' }}>{c.unit}</span>
-            </div>
+      {/* Title & Control Panel */}
+      <div style={{ background: '#fff', borderRadius: 14, padding: '20px 24px', border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', marginBottom: 20 }}>
+        <div className="d-flex flex-wrap justify-content-between align-items-center gap-3">
+          <div>
+            <h5 style={{ fontWeight: 800, color: '#1a1f2e', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#f5a623', display: 'inline-block' }}></span>
+              Jumlah Penduduk Kabupaten Sijunjung Menurut Kecamatan
+            </h5>
+            <p style={{ color: '#6b7280', fontSize: 13, margin: '4px 0 0' }}>
+              Visualisasi geospasial interaktif bersumber langsung dari Web API BPS Kabupaten Sijunjung
+            </p>
           </div>
-        ))}
-      </div>
-
-      {/* Charts Row */}
-      <div className="row g-4 mb-4">
-        <div className="col-md-8">
-          <div style={{ background: '#fff', borderRadius: 14, padding: 20, border: '1px solid #e5e7eb', height: '100%' }}>
-            <h6 style={{ fontWeight: 700, color: '#1a1f2e', marginBottom: 16 }}>Jumlah Penduduk menurut Kecamatan (2025)</h6>
-            <div style={{ height: 260 }}><Bar data={dataKecamatan} options={{ responsive: true, maintainAspectRatio: false }} /></div>
+          <div className="d-flex align-items-center gap-2">
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#4b5563' }}>Pilih Tahun:</span>
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+              style={{
+                padding: '8px 16px',
+                borderRadius: 10,
+                border: '1px solid #d1d5db',
+                background: '#fff',
+                fontSize: 13,
+                fontWeight: 600,
+                color: '#1f2937',
+                cursor: 'pointer',
+                outline: 'none',
+                boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
+                transition: 'border-color 0.15s ease'
+              }}
+            >
+              {availableYears.map(y => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
           </div>
         </div>
-        <div className="col-md-4">
-          <div style={{ background: '#fff', borderRadius: 14, padding: 20, border: '1px solid #e5e7eb', height: '100%' }}>
-            <h6 style={{ fontWeight: 700, color: '#1a1f2e', marginBottom: 16 }}>Komposisi Jenis Kelamin</h6>
-            <div style={{ height: 220, display: 'flex', justifyContent: 'center' }}>
-              <Doughnut data={dataSexRatio} options={{ responsive: true, maintainAspectRatio: false }} />
-            </div>
-          </div>
-        </div>
       </div>
 
-      {/* Data Table */}
-      <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e5e7eb', padding: '20px', overflowX: 'auto' }}>
-        <h6 style={{ fontWeight: 700, color: '#1a1f2e', marginBottom: 16 }}>Tabel Rincian Penduduk Kecamatan</h6>
-        <table className="table align-middle text-start" style={{ fontSize: 13 }}>
-          <thead>
-            <tr style={{ background: '#f8f9fa' }}>
-              <th>Kecamatan</th>
-              <th style={{ textAlign: 'right' }}>Laki-laki (Jiwa)</th>
-              <th style={{ textAlign: 'right' }}>Perempuan (Jiwa)</th>
-              <th style={{ textAlign: 'right' }}>Total (Jiwa)</th>
-            </tr>
-          </thead>
-          <tbody>
+      {loading ? (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 400, background: '#fff', borderRadius: 14, border: '1px solid #e5e7eb' }}>
+          <div className="spinner-border" role="status" style={{ width: '3rem', height: '3rem', color: '#f5a623' }}>
+            <span className="visually-hidden">Loading...</span>
+          </div>
+          <span style={{ marginTop: 16, color: '#6b7280', fontWeight: 600, fontSize: 14 }}>Menghubungi Web API BPS...</span>
+        </div>
+      ) : error ? (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 400, border: '1px solid #fee2e2', borderRadius: 14, background: '#fef2f2', padding: '40px', textAlign: 'center' }}>
+          <i className="bi bi-exclamation-triangle-fill" style={{ fontSize: '48px', color: '#ef4444', marginBottom: '16px' }}></i>
+          <h5 style={{ fontWeight: 800, color: '#991b1b', marginBottom: '8px' }}>Koneksi API Gagal</h5>
+          <p style={{ color: '#b91c1c', fontSize: '13px', maxWidth: '480px', marginBottom: '20px', lineHeight: 1.5 }}>
+            {error}
+          </p>
+          <button onClick={() => fetchData(selectedYear)} className="btn btn-danger" style={{ fontWeight: 600, padding: '8px 24px', borderRadius: '10px', background: '#dc2626', border: 'none' }}>
+            <i className="bi bi-arrow-clockwise me-2"></i>Coba Lagi
+          </button>
+        </div>
+      ) : !mappedData ? (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 400, border: '1px dashed #cbd5e1', borderRadius: 14, background: '#fff', padding: '40px', textAlign: 'center' }}>
+          <i className="bi bi-cloud-slash" style={{ fontSize: '48px', color: '#94a3b8', marginBottom: '16px' }}></i>
+          <h5 style={{ fontWeight: 800, color: '#334155', marginBottom: '8px' }}>Data Belum Tersedia</h5>
+          <p style={{ color: '#64748b', fontSize: '13px', maxWidth: '420px', lineHeight: 1.5 }}>
+            Data Jumlah Penduduk Menurut Kecamatan untuk tahun <strong>{selectedYear}</strong> belum dipublikasikan atau tidak ditemukan di Web API BPS Kabupaten Sijunjung.
+          </p>
+        </div>
+      ) : (
+        <div>
+          {/* Summary Cards */}
+          <div className="row g-3 mb-4">
             {[
-              { name: 'Kamang Baru', m: 25890, f: 25340 },
-              { name: 'Tanjung Gadang', m: 14200, f: 13940 },
-              { name: 'Sijunjung', m: 24410, f: 23910 },
-              { name: 'Lubuk Tarok', m: 9320, f: 9130 },
-              { name: 'IV Nagari', m: 8140, f: 7980 },
-              { name: 'Kupitan', m: 7610, f: 7470 },
-              { name: 'Koto VII', m: 19970, f: 19540 },
-              { name: 'Sumpur Kudus', m: 13580, f: 13250 }
-            ].map(r => (
-              <tr key={r.name}>
-                <td style={{ fontWeight: 600 }}>{r.name}</td>
-                <td style={{ textAlign: 'right' }}>{r.m.toLocaleString('id-ID')}</td>
-                <td style={{ textAlign: 'right' }}>{r.f.toLocaleString('id-ID')}</td>
-                <td style={{ textAlign: 'right', fontWeight: 600 }}>{(r.m + r.f).toLocaleString('id-ID')}</td>
-              </tr>
+              { title: 'Total Penduduk Kecamatan', value: parseFloat(totalPopulation).toLocaleString('id-ID'), unit: 'Ribu Jiwa', icon: 'bi-people-fill', color: '#3b82f6', bg: '#eff6ff' },
+              { title: 'Kecamatan Terpadat', value: maxKec ? maxKec.value.toLocaleString('id-ID') : '-', unit: maxKec ? `${maxKec.label} (Ribu Jiwa)` : '', icon: 'bi-graph-up-arrow', color: '#10b981', bg: '#ecfdf5' },
+              { title: 'Kecamatan Terjarang', value: minKec ? minKec.value.toLocaleString('id-ID') : '-', unit: minKec ? `${minKec.label} (Ribu Jiwa)` : '', icon: 'bi-graph-down-arrow', color: '#ef4444', bg: '#fef2f2' },
+              { title: 'Rata-rata Penduduk', value: (totalPopulation / 8).toFixed(2).toLocaleString('id-ID'), unit: 'Ribu Jiwa per Kecamatan', icon: 'bi-calculator', color: '#8b5cf6', bg: '#f5f3ff' }
+            ].map(c => (
+              <div className="col-12 col-sm-6 col-md-3" key={c.title}>
+                <div style={{ background: '#fff', borderRadius: 14, padding: '16px 20px', border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', display: 'flex', alignItems: 'center', gap: 16 }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 10, background: c.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <i className={`bi ${c.icon}`} style={{ color: c.color, fontSize: 18 }}></i>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 2 }}>{c.title}</span>
+                    <span style={{ fontSize: 20, fontWeight: 800, color: '#1a1f2e', lineHeight: 1.1, display: 'inline-block', marginRight: 4 }}>{c.value}</span>
+                    <span style={{ fontSize: 11, color: '#9ca3af', display: 'block', marginTop: 2 }}>{c.unit}</span>
+                  </div>
+                </div>
+              </div>
             ))}
-          </tbody>
-        </table>
-      </div>
+          </div>
+
+          {/* Map and Table Split Screen */}
+          <div className="row g-4">
+            {/* Map Column */}
+            <div className="col-lg-7">
+              <div style={{ background: '#fff', borderRadius: 14, padding: 24, border: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column', height: '100%' }}>
+                <h6 style={{ fontWeight: 800, color: '#1a1f2e', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <i className="bi bi-map" style={{ color: '#f5a623' }}></i>
+                  Peta Distribusi Penduduk
+                </h6>
+                <div 
+                  style={{ position: 'relative', flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc', borderRadius: 10, padding: 12, minHeight: 380 }}
+                  onMouseMove={handleMouseMove}
+                >
+                  <svg
+                    viewBox="0 0 800 500"
+                    width="100%"
+                    height="100%"
+                    style={{ maxHeight: 420 }}
+                  >
+                    {paths.map(path => (
+                      <path
+                        key={path.id}
+                        d={path.d}
+                        fill={path.fill}
+                        stroke={hoveredKec?.bpsCode === path.bpsCode ? '#1a1f2e' : '#ffffff'}
+                        strokeWidth={hoveredKec?.bpsCode === path.bpsCode ? 2.5 : 1}
+                        style={{
+                          transition: 'all 0.15s ease',
+                          cursor: 'pointer',
+                          filter: hoveredKec?.bpsCode === path.bpsCode ? 'drop-shadow(0px 4px 10px rgba(0,0,0,0.15))' : 'none'
+                        }}
+                        onMouseEnter={() => setHoveredKec(path)}
+                        onMouseLeave={() => setHoveredKec(null)}
+                      />
+                    ))}
+                  </svg>
+                  
+                  {/* Floating Tooltip */}
+                  {hoveredKec && (
+                    <div style={{
+                      position: 'fixed',
+                      left: mousePos.x + 15,
+                      top: mousePos.y + 15,
+                      background: 'rgba(15, 23, 42, 0.95)',
+                      backdropFilter: 'blur(4px)',
+                      color: '#fff',
+                      padding: '12px 16px',
+                      borderRadius: 10,
+                      boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3)',
+                      pointerEvents: 'none',
+                      zIndex: 9999,
+                      border: '1px solid rgba(255, 255, 255, 0.15)',
+                      fontFamily: "'Inter', sans-serif"
+                    }}>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: '#f5a623', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>
+                        Kecamatan
+                      </div>
+                      <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 6, borderBottom: '1px solid rgba(255,255,255,0.15)', paddingBottom: 4 }}>
+                        {hoveredKec.label}
+                      </div>
+                      <div style={{ fontSize: 12 }}>
+                        Penduduk: <strong style={{ color: '#38bdf8', fontSize: 13 }}>{hoveredKec.value !== null ? hoveredKec.value.toLocaleString('id-ID') : '-'}</strong> ribu jiwa
+                      </div>
+                      <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>
+                        Tahun BPS: {selectedYear}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Legend bar */}
+                <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid #f1f5f9' }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
+                    Rentang Jumlah Penduduk (Ribu Jiwa)
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+                    {legendItems.map((item, idx) => (
+                      <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ width: 14, height: 14, borderRadius: 3, background: item.color, display: 'inline-block' }}></span>
+                        <span style={{ fontSize: 11, fontWeight: 600, color: '#4b5563' }}>{item.label}</span>
+                      </div>
+                    ))}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ width: 14, height: 14, borderRadius: 3, background: '#f1f5f9', border: '1px solid #cbd5e1', display: 'inline-block' }}></span>
+                      <span style={{ fontSize: 11, fontWeight: 600, color: '#4b5563' }}>Tidak ada data</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Table Column */}
+            <div className="col-lg-5">
+              <div style={{ background: '#fff', borderRadius: 14, padding: 24, border: '1px solid #e5e7eb', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                <h6 style={{ fontWeight: 800, color: '#1a1f2e', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <i className="bi bi-table" style={{ color: '#3b82f6' }}></i>
+                  Tabel Rincian Kecamatan ({selectedYear})
+                </h6>
+                <div className="table-responsive" style={{ flexGrow: 1 }}>
+                  <table className="table table-hover align-middle text-start" style={{ fontSize: 12, margin: 0 }}>
+                    <thead>
+                      <tr style={{ background: '#f8fafc', color: '#475569' }}>
+                        <th style={{ padding: '12px 8px', borderBottom: '2px solid #e2e8f0' }}>Kecamatan</th>
+                        <th style={{ padding: '12px 8px', borderBottom: '2px solid #e2e8f0', textAlign: 'right' }}>Jumlah</th>
+                        <th style={{ padding: '12px 8px', borderBottom: '2px solid #e2e8f0', textAlign: 'right' }}>Persentase</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paths.map(path => {
+                        const pct = totalPopulation && path.value 
+                          ? ((path.value / totalPopulation) * 100).toFixed(2) 
+                          : '-';
+                        return (
+                          <tr 
+                            key={path.id} 
+                            style={{ 
+                              background: hoveredKec?.bpsCode === path.bpsCode ? '#f8fafc' : 'transparent',
+                              transition: 'background 0.15s'
+                            }}
+                            onMouseEnter={() => setHoveredKec(path)}
+                            onMouseLeave={() => setHoveredKec(null)}
+                          >
+                            <td style={{ padding: '10px 8px', fontWeight: 600, color: '#1e293b' }}>{path.label}</td>
+                            <td style={{ padding: '10px 8px', textAlign: 'right', fontWeight: 700, color: '#3b82f6' }}>
+                              {path.value !== null ? `${path.value.toLocaleString('id-ID')} ribu` : '-'}
+                            </td>
+                            <td style={{ padding: '10px 8px', textAlign: 'right', color: '#64748b' }}>
+                              {pct !== '-' ? `${pct}%` : '-'}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                    <tfoot>
+                      <tr style={{ background: '#f8fafc', fontWeight: 800 }}>
+                        <td style={{ padding: '12px 8px' }}>Kabupaten Sijunjung (Total)</td>
+                        <td style={{ padding: '12px 8px', textAlign: 'right', color: '#1e293b' }}>
+                          {parseFloat(totalPopulation).toLocaleString('id-ID')} ribu
+                        </td>
+                        <td style={{ padding: '12px 8px', textAlign: 'right', color: '#1e293b' }}>100.00%</td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+                <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 16, display: 'flex', justifyBetween: 'center', alignItems: 'center', gap: 4 }}>
+                  <i className="bi bi-info-circle"></i>
+                  <span>Arahkan kursor pada peta atau tabel untuk berinteraksi.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
-  )
+  );
 }
+
 
 // ── Tab 2: Tenaga Kerja
 function TabTenagaKerja() {
