@@ -1256,6 +1256,8 @@ function TabTenagaKerja() {
     tptYear: '-'
   });
   const [exportingPdf, setExportingPdf] = useState(false);
+  const [popOver15, setPopOver15] = useState(175.45);
+  const [popUnder15, setPopUnder15] = useState(62.31);
 
   const fetchData = async () => {
     setLoading(true);
@@ -1330,6 +1332,62 @@ function TabTenagaKerja() {
           tpakYear: latestTpakYear ? latestTpakYear.toString() : '-',
           tptYear: latestTptYear ? latestTptYear.toString() : '-'
         });
+      }
+
+      // Fetch Var 26 (Perempuan) & Var 27 (Laki-Laki) for 2025 to compute dynamic population sums
+      try {
+        const thCode2025 = 2025 - 1900; // 125
+        const urlAgeFemale = `https://webapi.bps.go.id/v1/api/list/model/data/lang/ind/domain/1304/var/26/th/${thCode2025}/key/65b35aa80f299dc0e1e9e98ee5589ba4`;
+        const urlAgeMale = `https://webapi.bps.go.id/v1/api/list/model/data/lang/ind/domain/1304/var/27/th/${thCode2025}/key/65b35aa80f299dc0e1e9e98ee5589ba4`;
+
+        const [resFemale, resMale] = await Promise.allSettled([
+          axios.get(urlAgeFemale),
+          axios.get(urlAgeMale)
+        ]);
+
+        const normalizeBpsValue = (val) => {
+          if (val === undefined || val === null || isNaN(val)) return 0;
+          if (val > 500) return parseFloat((val / 1000).toFixed(2));
+          return val;
+        };
+
+        let sumUnder15 = 0;
+        let sumOver15 = 0;
+
+        const dataFemale = resFemale.status === 'fulfilled' && resFemale.value.data.status === 'OK' ? resFemale.value.data.datacontent : null;
+        const dataMale = resMale.status === 'fulfilled' && resMale.value.data.status === 'OK' ? resMale.value.data.datacontent : null;
+
+        const codesUnder15 = [1, 2, 3]; // 0-4, 5-9, 10-14
+        const codesOver15 = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]; // 15-19 up to 75+
+
+        // Sum Female
+        if (dataFemale && !Array.isArray(dataFemale)) {
+          codesUnder15.forEach(c => {
+            const val = parseFloat(dataFemale[`${c}2601250`]);
+            if (!isNaN(val)) sumUnder15 += normalizeBpsValue(val);
+          });
+          codesOver15.forEach(c => {
+            const val = parseFloat(dataFemale[`${c}2601250`]);
+            if (!isNaN(val)) sumOver15 += normalizeBpsValue(val);
+          });
+        }
+
+        // Sum Male
+        if (dataMale && !Array.isArray(dataMale)) {
+          codesUnder15.forEach(c => {
+            const val = parseFloat(dataMale[`${c}2701250`]);
+            if (!isNaN(val)) sumUnder15 += normalizeBpsValue(val);
+          });
+          codesOver15.forEach(c => {
+            const val = parseFloat(dataMale[`${c}2701250`]);
+            if (!isNaN(val)) sumOver15 += normalizeBpsValue(val);
+          });
+        }
+
+        if (sumOver15 > 0) setPopOver15(sumOver15);
+        if (sumUnder15 > 0) setPopUnder15(sumUnder15);
+      } catch (errPop) {
+        console.error("Gagal memuat detail umur populasi:", errPop);
       }
     } catch (err) {
       console.error(err);
@@ -1587,8 +1645,8 @@ function TabTenagaKerja() {
                 {[
                   { title: 'TPAK Sijunjung', value: summary.latestTpak, unit: `Tahun ${summary.tpakYear}`, icon: 'bi-graph-up', color: '#2d6a4f', bg: '#e8f5e9' },
                   { title: 'Pengangguran Terbuka (TPT)', value: summary.latestTpt, unit: `Tahun ${summary.tptYear}`, icon: 'bi-person-x-fill', color: '#c05621', bg: '#fdf2e9' },
-                  { title: 'Angkatan Kerja Aktif', value: '122.450', unit: 'Jiwa (Estimasi Bekerja / Mencari)', icon: 'bi-person-check-fill', color: '#4a5d24', bg: '#f4f6f0' },
-                  { title: 'Bukan Angkatan Kerja', value: '54.210', unit: 'Jiwa (Estimasi Sekolah / RT)', icon: 'bi-person-dash', color: '#4a5568', bg: '#f7fafc' }
+                  { title: 'Penduduk Usia Kerja (15+)', value: Math.round(popOver15 * 1000).toLocaleString('id-ID'), unit: 'Jiwa (Penduduk Berumur ≥ 15 Tahun)', icon: 'bi-person-check-fill', color: '#4a5d24', bg: '#f4f6f0' },
+                  { title: 'Penduduk di Bawah 15 Tahun', value: Math.round(popUnder15 * 1000).toLocaleString('id-ID'), unit: 'Jiwa (Penduduk Berumur < 15 Tahun)', icon: 'bi-person-dash', color: '#4a5568', bg: '#f7fafc' }
                 ].map(c => (
                   <div className="col-6 col-md-3" key={c.title}>
                     <div style={{ background: '#fff', borderRadius: 14, padding: '16px 20px', border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
