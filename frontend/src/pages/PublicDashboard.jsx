@@ -76,7 +76,7 @@ export default function PublicDashboard() {
 
       {/* ── Sub Navigation Tabs (BPS API Categories) ── */}
       <div style={{ background: '#fff', borderBottom: '1px solid #e5e7eb', position: 'sticky', top: 64, zIndex: 90, boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', gap: 8, overflowX: 'auto', padding: '0 20px' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', justifyContent: 'center', gap: 8, overflowX: 'auto', padding: '0 20px' }}>
           {[
             { id: 'penduduk', label: 'Penduduk', icon: 'bi-people' },
             { id: 'tenaga_kerja', label: 'Tenaga Kerja', icon: 'bi-briefcase' },
