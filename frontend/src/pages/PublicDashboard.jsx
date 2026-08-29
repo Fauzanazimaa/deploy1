@@ -1471,6 +1471,39 @@ function TabTenagaKerja() {
               </div>
             </div>
           </div>
+
+          {/* Box Penjelasan Konsep & Indikator Ketenagakerjaan */}
+          <div style={{ background: '#fff', borderRadius: 14, padding: 24, border: '1px solid #e5e7eb', marginTop: 24 }}>
+            <h6 style={{ fontWeight: 800, color: '#1a1f2e', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <i className="bi bi-info-circle-fill" style={{ color: '#306090' }}></i>
+              Penjelasan Konsep & Indikator Ketenagakerjaan
+            </h6>
+            <div className="row g-4">
+              <div className="col-12 col-md-6">
+                <div style={{ background: '#f8fafc', borderRadius: 10, padding: 18, border: '1px solid #f1f5f9', height: '100%' }}>
+                  <h6 style={{ fontWeight: 700, color: '#306090', fontSize: 14, display: 'block', marginBottom: 8 }}>Penduduk Usia Kerja & TPAK</h6>
+                  <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.6, margin: '0 0 12px' }}>
+                    <strong>Penduduk usia kerja</strong> adalah penduduk berumur 15 tahun dan lebih. Semakin banyak penduduk usia kerja berarti jumlah penduduk yang berpotensi masuk ke dalam pasar tenaga kerja semakin besar.
+                  </p>
+                  <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.6, margin: 0 }}>
+                    <strong>Tingkat Partisipasi Angkatan Kerja (TPAK)</strong> adalah persentase banyaknya angkatan kerja terhadap banyaknya penduduk yang berumur sepuluh tahun ke atas. Semakin tinggi nilai TPAK menunjukkan semakin besar proporsi penduduk usia kerja yang terlibat dalam kegiatan ekonomi, sedangkan TPAK yang rendah mencerminkan masih banyak penduduk usia kerja yang tidak berpartisipasi dalam pasar tenaga kerja, misalnya karena masih bersekolah, mengurus rumah tangga, atau alasan lainnya.
+                  </p>
+                </div>
+              </div>
+              <div className="col-12 col-md-6">
+                <div style={{ background: '#f8fafc', borderRadius: 10, padding: 18, border: '1px solid #f1f5f9', height: '100%' }}>
+                  <h6 style={{ fontWeight: 700, color: '#b04058', fontSize: 14, display: 'block', marginBottom: 8 }}>Pengangguran & TPT</h6>
+                  <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.6, margin: '0 0 12px' }}>
+                    <strong>Pengangguran</strong> meliputi penduduk yang tidak bekerja tetapi sedang mencari pekerjaan, atau mempersiapkan suatu usaha, atau merasa tidak mungkin mendapat pekerjaan (putus asa), atau sudah diterima bekerja tetapi belum mulai bekerja.
+                    Semakin banyaknya pengangguran menunjukkan semakin besar jumlah penduduk usia kerja yang belum memperoleh pekerjaan. Hal ini mencerminkan adanya keterbatasan dalam penyerapan tenaga kerja oleh pasar kerja, sehingga pertumbuhan angkatan kerja tidak diimbangi dengan ketersediaan lapangan pekerjaan yang memadai.
+                  </p>
+                  <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.6, margin: 0 }}>
+                    <strong>Tingkat Pengangguran Terbuka (TPT)</strong> adalah persentase jumlah penduduk yang sedang mencari kerja (pengangguran) terhadap total angkatan kerja (penduduk usia kerja yang bekerja, mencari kerja, atau memiliki pekerjaan tetapi sementara tidak bekerja). TPT digunakan untuk mengukur seberapa banyak tenaga kerja yang tidak terserap oleh pasar kerja.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
