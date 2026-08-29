@@ -174,29 +174,13 @@ function TabPenduduk() {
       const html2canvas = (await import('html2canvas')).default;
       const { jsPDF } = await import('jspdf');
 
-      const element = document.getElementById('penduduk-report-content');
-      if (!element) return;
+      const pages = [
+        { id: 'report-page-1', title: 'Ringkasan & Distribusi Geospasial' },
+        { id: 'report-page-2', title: 'Rincian Jenis Kelamin per Kecamatan' },
+        { id: 'report-page-3', title: 'Proyeksi Kelompok Umur & Jenis Kelamin' },
+        { id: 'report-page-4', title: 'Total Proyeksi Kelompok Umur' }
+      ];
 
-      const originalBoxShadows = [];
-      const cards = element.querySelectorAll('[style*="box-shadow"], [style*="boxShadow"]');
-      cards.forEach((card) => {
-        originalBoxShadows.push({ el: card, val: card.style.boxShadow });
-        card.style.boxShadow = 'none';
-      });
-
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#f8fafc'
-      });
-
-      originalBoxShadows.forEach(item => {
-        item.el.style.boxShadow = item.val;
-      });
-
-      const imgData = canvas.toDataURL('image/jpeg', 0.95);
-      
       const pdf = new jsPDF({
         orientation: 'p',
         unit: 'mm',
@@ -205,24 +189,82 @@ function TabPenduduk() {
 
       const pdfWidth = 210;
       const pdfHeight = 297;
-      const margin = 10;
+      const margin = 12;
       const contentWidth = pdfWidth - (margin * 2);
-      
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
-      const contentHeight = (imgHeight * contentWidth) / imgWidth;
 
-      let heightLeft = contentHeight;
-      let position = margin;
+      let pageAdded = false;
 
-      pdf.addImage(imgData, 'JPEG', margin, position, contentWidth, contentHeight);
-      heightLeft -= (pdfHeight - margin * 2);
+      for (const pageInfo of pages) {
+        const el = document.getElementById(pageInfo.id);
+        if (!el) continue;
 
-      while (heightLeft > 0) {
-        position = heightLeft - contentHeight + margin - 2;
-        pdf.addPage();
-        pdf.addImage(imgData, 'JPEG', margin, position, contentWidth, contentHeight);
-        heightLeft -= (pdfHeight - margin * 2);
+        const originalBoxShadows = [];
+        const cards = el.querySelectorAll('[style*="box-shadow"], [style*="boxShadow"]');
+        cards.forEach((card) => {
+          originalBoxShadows.push({ el: card, val: card.style.boxShadow });
+          card.style.boxShadow = 'none';
+        });
+
+        const canvas = await html2canvas(el, {
+          scale: 2.2,
+          useCORS: true,
+          logging: false,
+          backgroundColor: '#f8fafc'
+        });
+
+        originalBoxShadows.forEach(item => {
+          item.el.style.boxShadow = item.val;
+        });
+
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        
+        const imgWidth = canvas.width;
+        const imgHeight = canvas.height;
+        const contentHeight = (imgHeight * contentWidth) / imgWidth;
+
+        if (pageAdded) {
+          pdf.addPage();
+        } else {
+          pageAdded = true;
+        }
+
+        // Header
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(14);
+        pdf.setTextColor(26, 31, 46);
+        pdf.text("SEJATI", margin, margin + 4);
+        
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(9);
+        pdf.setTextColor(107, 114, 128);
+        pdf.text("Sistem Jejaring Pengumpulan Data Statistik Terintegrasi", margin, margin + 9);
+        
+        pdf.setFont("helvetica", "bold");
+        pdf.text(`TAHUN: ${selectedYear}`, pdfWidth - margin - 22, margin + 4);
+        
+        pdf.setDrawColor(229, 231, 235);
+        pdf.setLineWidth(0.3);
+        pdf.line(margin, margin + 12, pdfWidth - margin, margin + 12);
+
+        const imageY = margin + 16;
+        const maxImageHeight = pdfHeight - imageY - margin - 10;
+        let renderedHeight = contentHeight;
+        let renderedWidth = contentWidth;
+        
+        if (contentHeight > maxImageHeight) {
+          renderedHeight = maxImageHeight;
+          renderedWidth = (imgWidth * renderedHeight) / imgHeight;
+        }
+
+        const imageX = margin + (contentWidth - renderedWidth) / 2;
+
+        pdf.addImage(imgData, 'JPEG', imageX, imageY, renderedWidth, renderedHeight);
+
+        // Footer
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(8);
+        pdf.setTextColor(156, 163, 175);
+        pdf.text(`Halaman ${pdf.internal.getNumberOfPages()} | Bersumber dari Web API BPS Kabupaten Sijunjung`, margin, pdfHeight - margin);
       }
 
       pdf.save(`Laporan_Kependudukan_Sijunjung_${selectedYear}.pdf`);
