@@ -908,6 +908,7 @@ function TabPenduduk() {
         </div>
       ) : (
         <div id="penduduk-report-content" style={{ padding: 16, background: '#f8fafc', borderRadius: 14 }}>
+          <div id="report-page-1" style={{ background: '#f8fafc', borderRadius: 14 }}>
           {/* Summary Cards */}
           <div className="row g-3 mb-4">
             {[
@@ -1108,8 +1109,10 @@ function TabPenduduk() {
               <p style={{ color: '#64748b', fontSize: 12, margin: 0 }}>Data geografis peta kecamatan untuk tahun <strong>{selectedYear}</strong> belum dipublikasikan oleh BPS Kabupaten Sijunjung.</p>
             </div>
           )}
+          </div>
 
           {/* Bar Chart Section */}
+          <div id="report-page-2">
           {genderData ? (
             <div style={{ marginTop: 24, background: '#fff', borderRadius: 14, padding: 24, border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
               <h6 style={{ fontWeight: 800, color: '#1a1f2e', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -1131,12 +1134,13 @@ function TabPenduduk() {
               <p style={{ color: '#64748b', fontSize: 12, margin: 0 }}>Data rincian jenis kelamin per kecamatan untuk tahun <strong>{selectedYear}</strong> belum dipublikasikan oleh BPS Kabupaten Sijunjung.</p>
             </div>
           )}
+          </div>
 
           {/* Age Projection Chart Section */}
           {ageProjectionData ? (
             <div style={{ marginTop: 24, display: 'flex', flexDirection: 'column', gap: 24 }}>
               {/* Split Gender Chart */}
-              <div style={{ background: '#fff', borderRadius: 14, padding: 24, border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+              <div id="report-page-3" style={{ background: '#fff', borderRadius: 14, padding: 24, border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
                 <h6 style={{ fontWeight: 800, color: '#1a1f2e', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
                   <i className="bi bi-bar-chart-steps" style={{ color: '#3b82f6' }}></i>
                   Proyeksi Penduduk Sijunjung Menurut Kelompok Umur dan Jenis Kelamin ({selectedYear})
@@ -1151,7 +1155,7 @@ function TabPenduduk() {
               </div>
 
               {/* Total Population Chart */}
-              <div style={{ background: '#fff', borderRadius: 14, padding: 24, border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+              <div id="report-page-4" style={{ background: '#fff', borderRadius: 14, padding: 24, border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
                 <h6 style={{ fontWeight: 800, color: '#1a1f2e', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
                   <i className="bi bi-bar-chart-steps" style={{ color: '#5cbca9' }}></i>
                   Total Proyeksi Penduduk Sijunjung Menurut Kelompok Umur ({selectedYear})
@@ -1166,7 +1170,7 @@ function TabPenduduk() {
               </div>
             </div>
           ) : (
-            <div style={{ marginTop: 24, background: '#fff', borderRadius: 14, padding: '40px', border: '1px dashed #cbd5e1', textAlign: 'center' }}>
+            <div id="report-page-3" style={{ marginTop: 24, background: '#fff', borderRadius: 14, padding: '40px', border: '1px dashed #cbd5e1', textAlign: 'center' }}>
               <i className="bi bi-bar-chart-steps" style={{ fontSize: '36px', color: '#94a3b8', display: 'block', marginBottom: 12 }}></i>
               <h6 style={{ fontWeight: 700, color: '#475569', marginBottom: 4 }}>Proyeksi Kelompok Umur Belum Tersedia</h6>
               <p style={{ color: '#64748b', fontSize: 12, margin: 0 }}>Data proyeksi kelompok umur untuk tahun <strong>{selectedYear}</strong> belum dipublikasikan oleh BPS Kabupaten Sijunjung.</p>
