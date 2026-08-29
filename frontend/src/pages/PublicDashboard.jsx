@@ -1515,7 +1515,7 @@ function TabTenagaKerja() {
         borderColor: '#2d6a4f',
         backgroundColor: 'rgba(45, 106, 79, 0.05)',
         fill: true,
-        tension: 0.3,
+        tension: 0,
         borderWidth: 3,
         pointBackgroundColor: '#2d6a4f',
         pointHoverRadius: 6
@@ -1532,7 +1532,7 @@ function TabTenagaKerja() {
         borderColor: '#c05621',
         backgroundColor: 'rgba(192, 86, 33, 0.05)',
         fill: true,
-        tension: 0.3,
+        tension: 0,
         borderWidth: 3,
         pointBackgroundColor: '#c05621',
         pointHoverRadius: 6
@@ -1731,7 +1731,7 @@ function TabEkonomi() {
       borderColor: '#f5a623',
       backgroundColor: '#f5a62315',
       fill: true,
-      tension: 0.3
+      tension: 0
     }]
   }
 
@@ -1774,7 +1774,7 @@ function TabKemiskinan() {
       data: [7.1, 6.9, 6.8, 6.5, 6.1, 5.95, 5.88, 5.82],
       borderColor: '#ef4444',
       borderWidth: 3,
-      tension: 0.3
+      tension: 0
     }]
   }
 
