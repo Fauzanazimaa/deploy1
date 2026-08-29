@@ -49,14 +49,13 @@ export default function PublicDashboard() {
       {/* ── Hero Banner ── */}
       <div style={{ background: `linear-gradient(135deg, ${SIDEBAR_BG} 0%, #2d3748 100%)`, padding: '40px 28px 36px', textAlign: 'center' }}>
         <div style={{ maxWidth: 760, margin: '0 auto' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(245,166,35,0.15)', border: `1px solid ${ACCENT}44`, borderRadius: 20, padding: '5px 14px', fontSize: 12, color: ACCENT, fontWeight: 600, marginBottom: 12 }}>
-            <i className="bi bi-broadcast" style={{ fontSize: 12 }}></i>
-            INTEGRASI DATA API BPS SIJUNJUNG
-          </div>
-          <h1 style={{ color: '#fff', fontWeight: 800, fontSize: 'clamp(20px, 3.5vw, 32px)', margin: '0 0 10px', lineHeight: 1.2 }}>
-            Portal Data Statistik Publik
+          <h1 style={{ color: '#fff', fontWeight: 800, fontSize: 'clamp(28px, 4.5vw, 42px)', margin: '0 0 4px', lineHeight: 1.1, letterSpacing: '0.02em' }}>
+            SEJATI
           </h1>
-          <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: 13, margin: '0 0 20px', lineHeight: 1.6 }}>
+          <p style={{ color: ACCENT, fontWeight: 700, fontSize: 'clamp(14px, 2.2vw, 18px)', margin: '0 0 16px', letterSpacing: '0.03em', textTransform: 'uppercase' }}>
+            Sistem Jejaring Pengumpulan Data Statistik Terintegrasi
+          </p>
+          <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: 13, margin: '0 auto 20px', lineHeight: 1.6 }}>
             Akses indikator makro sektoral Kabupaten Sijunjung secara real-time yang bersumber langsung dari API Badan Pusat Statistik (BPS) & dinas terkait.
           </p>
         </div>
