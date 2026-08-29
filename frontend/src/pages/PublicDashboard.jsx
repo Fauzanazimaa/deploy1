@@ -1255,14 +1255,7 @@ function TabTenagaKerja() {
     tpakYear: '-',
     tptYear: '-'
   });
-
-  const dataSektor = {
-    labels: ['Pertanian', 'Perdagangan', 'Jasa', 'Industri', 'Konstruksi'],
-    datasets: [{
-      data: [42, 18, 22, 8, 10],
-      backgroundColor: ['#4e80b8', '#439a8c', '#d56c82', '#f5a623', '#707a8a']
-    }]
-  };
+  const [exportingPdf, setExportingPdf] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
@@ -1350,35 +1343,146 @@ function TabTenagaKerja() {
     fetchData();
   }, []);
 
-  const chartData = {
+  const downloadPDFReportTenagaKerja = async () => {
+    setExportingPdf(true);
+    try {
+      const html2canvas = (await import('html2canvas')).default;
+      const { jsPDF } = await import('jspdf');
+
+      const pages = [
+        { id: 'tenaga-kerja-page-1', title: 'Ringkasan & Tren Ketenagakerjaan' },
+        { id: 'tenaga-kerja-page-2', title: 'Penjelasan Konsep & Indikator' }
+      ];
+
+      const pdf = new jsPDF({
+        orientation: 'p',
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      const pdfWidth = 210;
+      const pdfHeight = 297;
+      const margin = 12;
+      const contentWidth = pdfWidth - (margin * 2);
+
+      let pageAdded = false;
+
+      for (const pageInfo of pages) {
+        const el = document.getElementById(pageInfo.id);
+        if (!el) continue;
+
+        const originalBoxShadows = [];
+        const cards = el.querySelectorAll('[style*="box-shadow"], [style*="boxShadow"]');
+        cards.forEach((card) => {
+          originalBoxShadows.push({ el: card, val: card.style.boxShadow });
+          card.style.boxShadow = 'none';
+        });
+
+        const canvas = await html2canvas(el, {
+          scale: 2.2,
+          useCORS: true,
+          logging: false,
+          backgroundColor: '#f8fafc'
+        });
+
+        originalBoxShadows.forEach(item => {
+          item.el.style.boxShadow = item.val;
+        });
+
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        
+        const imgWidth = canvas.width;
+        const imgHeight = canvas.height;
+        const contentHeight = (imgHeight * contentWidth) / imgWidth;
+
+        if (pageAdded) {
+          pdf.addPage();
+        } else {
+          pageAdded = true;
+        }
+
+        // Header
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(14);
+        pdf.setTextColor(26, 31, 46);
+        pdf.text("SEJATI", margin, margin + 4);
+        
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(9);
+        pdf.setTextColor(107, 114, 128);
+        pdf.text("Sistem Jejaring Pengumpulan Data Statistik Terintegrasi", margin, margin + 9);
+        
+        pdf.setFont("helvetica", "bold");
+        pdf.text(`INDIS: TENAGA KERJA`, pdfWidth - margin - 42, margin + 4);
+        
+        pdf.setDrawColor(229, 231, 235);
+        pdf.setLineWidth(0.3);
+        pdf.line(margin, margin + 12, pdfWidth - margin, margin + 12);
+
+        const imageY = margin + 16;
+        const maxImageHeight = pdfHeight - imageY - margin - 10;
+        let renderedHeight = contentHeight;
+        let renderedWidth = contentWidth;
+        
+        if (contentHeight > maxImageHeight) {
+          renderedHeight = maxImageHeight;
+          renderedWidth = (imgWidth * renderedHeight) / imgHeight;
+        }
+
+        const imageX = margin + (contentWidth - renderedWidth) / 2;
+
+        pdf.addImage(imgData, 'JPEG', imageX, imageY, renderedWidth, renderedHeight);
+
+        // Footer
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(8);
+        pdf.setTextColor(156, 163, 175);
+        pdf.text(`Halaman ${pdf.internal.getNumberOfPages()} | Bersumber dari Web API BPS Kabupaten Sijunjung`, margin, pdfHeight - margin);
+      }
+
+      pdf.save(`Laporan_Ketenagakerjaan_Sijunjung.pdf`);
+    } catch (err) {
+      console.error('Error generating PDF:', err);
+    } finally {
+      setExportingPdf(false);
+    }
+  };
+
+  const chartDataTPAK = {
     labels: years.map(y => y.toString()),
     datasets: [
       {
         label: 'Tingkat Partisipasi Angkatan Kerja (TPAK)',
         data: tpakData,
-        borderColor: '#4e80b8',
-        backgroundColor: 'rgba(78, 128, 184, 0.05)',
+        borderColor: '#2d6a4f',
+        backgroundColor: 'rgba(45, 106, 79, 0.05)',
         fill: true,
         tension: 0.3,
         borderWidth: 3,
-        pointBackgroundColor: '#4e80b8',
-        pointHoverRadius: 6
-      },
-      {
-        label: 'Tingkat Pengangguran Terbuka (TPT)',
-        data: tptData,
-        borderColor: '#d56c82',
-        backgroundColor: 'rgba(213, 108, 130, 0.05)',
-        fill: true,
-        tension: 0.3,
-        borderWidth: 3,
-        pointBackgroundColor: '#d56c82',
+        pointBackgroundColor: '#2d6a4f',
         pointHoverRadius: 6
       }
     ]
   };
 
-  const chartOptions = {
+  const chartDataTPT = {
+    labels: years.map(y => y.toString()),
+    datasets: [
+      {
+        label: 'Tingkat Pengangguran Terbuka (TPT)',
+        data: tptData,
+        borderColor: '#c05621',
+        backgroundColor: 'rgba(192, 86, 33, 0.05)',
+        fill: true,
+        tension: 0.3,
+        borderWidth: 3,
+        pointBackgroundColor: '#c05621',
+        pointHoverRadius: 6
+      }
+    ]
+  };
+
+  const chartOptions = (labelUnit) => ({
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -1396,7 +1500,7 @@ function TabTenagaKerja() {
         padding: 10,
         cornerRadius: 8,
         callbacks: {
-          label: (context) => ` ${context.dataset.label}: ${context.raw}%`
+          label: (context) => ` ${context.dataset.label}: ${context.raw}${labelUnit}`
         }
       }
     },
@@ -1410,7 +1514,7 @@ function TabTenagaKerja() {
         ticks: { color: '#64748b', font: { family: "'Inter', sans-serif", size: 10 } }
       }
     }
-  };
+  });
 
   return (
     <div>
@@ -1432,74 +1536,123 @@ function TabTenagaKerja() {
         </div>
       ) : (
         <div>
-          {/* Summary Cards */}
-          <div className="row g-3 mb-4">
-            {[
-              { title: 'TPAK Sijunjung', value: summary.latestTpak, unit: `Tahun ${summary.tpakYear}`, icon: 'bi-graph-up', color: '#306090', bg: '#e8eff7' },
-              { title: 'Pengangguran Terbuka (TPT)', value: summary.latestTpt, unit: `Tahun ${summary.tptYear}`, icon: 'bi-person-x-fill', color: '#b04058', bg: '#fae8eb' },
-              { title: 'Angkatan Kerja Aktif', value: '122.450', unit: 'Jiwa (Estimasi Bekerja / Mencari)', icon: 'bi-person-check-fill', color: '#288070', bg: '#e8f5f2' },
-              { title: 'Bukan Angkatan Kerja', value: '54.210', unit: 'Jiwa (Estimasi Sekolah / RT)', icon: 'bi-person-dash', color: '#586880', bg: '#eef1f6' }
-            ].map(c => (
-              <div className="col-6 col-md-3" key={c.title}>
-                <div style={{ background: '#fff', borderRadius: 14, padding: '16px 20px', border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: '#6b7280' }}>{c.title}</span>
-                    <i className={`bi ${c.icon}`} style={{ color: c.color, fontSize: 16 }}></i>
+          {/* Header Panel */}
+          <div style={{ background: '#fff', borderRadius: 14, padding: '20px 24px', border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', marginBottom: 20 }}>
+            <div className="d-flex flex-wrap justify-content-between align-items-center gap-3">
+              <div>
+                <p style={{ color: '#1a1f2e', fontSize: 14, fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#2d6a4f', display: 'inline-block' }}></span>
+                  Akses Indikator Tenaga Kerja Sijunjung Real-Time dari Web API BPS
+                </p>
+              </div>
+              <div>
+                <button
+                  onClick={downloadPDFReportTenagaKerja}
+                  disabled={exportingPdf}
+                  className="btn btn-outline-success d-flex align-items-center gap-2"
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: 10,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    borderColor: '#2d6a4f',
+                    color: '#2d6a4f',
+                    background: '#fff',
+                    transition: 'all 0.15s ease',
+                    boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)'
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = '#f4fbf7'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = '#fff'; }}
+                >
+                  {exportingPdf ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true" style={{ width: 14, height: 14, color: '#2d6a4f' }}></span>
+                      <span>Mengekspor...</span>
+                    </>
+                  ) : (
+                    <>
+                      <i className="bi bi-file-earmark-pdf-fill" style={{ color: '#ef4444' }}></i>
+                      <span>Ekspor Laporan PDF</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div id="tenaga-kerja-report-content" style={{ padding: 16, background: '#f8fafc', borderRadius: 14 }}>
+            <div id="tenaga-kerja-page-1" style={{ background: '#f8fafc', borderRadius: 14 }}>
+              {/* Summary Cards */}
+              <div className="row g-3 mb-4">
+                {[
+                  { title: 'TPAK Sijunjung', value: summary.latestTpak, unit: `Tahun ${summary.tpakYear}`, icon: 'bi-graph-up', color: '#2d6a4f', bg: '#e8f5e9' },
+                  { title: 'Pengangguran Terbuka (TPT)', value: summary.latestTpt, unit: `Tahun ${summary.tptYear}`, icon: 'bi-person-x-fill', color: '#c05621', bg: '#fdf2e9' },
+                  { title: 'Angkatan Kerja Aktif', value: '122.450', unit: 'Jiwa (Estimasi Bekerja / Mencari)', icon: 'bi-person-check-fill', color: '#4a5d24', bg: '#f4f6f0' },
+                  { title: 'Bukan Angkatan Kerja', value: '54.210', unit: 'Jiwa (Estimasi Sekolah / RT)', icon: 'bi-person-dash', color: '#4a5568', bg: '#f7fafc' }
+                ].map(c => (
+                  <div className="col-6 col-md-3" key={c.title}>
+                    <div style={{ background: '#fff', borderRadius: 14, padding: '16px 20px', border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                        <span style={{ fontSize: 11, fontWeight: 600, color: '#6b7280' }}>{c.title}</span>
+                        <i className={`bi ${c.icon}`} style={{ color: c.color, fontSize: 16 }}></i>
+                      </div>
+                      <div style={{ fontSize: 24, fontWeight: 800, color: '#1a1f2e', lineHeight: 1.1 }}>{c.value}</div>
+                      <span style={{ fontSize: 11, color: '#9ca3af' }}>{c.unit}</span>
+                    </div>
                   </div>
-                  <div style={{ fontSize: 24, fontWeight: 800, color: '#1a1f2e', lineHeight: 1.1 }}>{c.value}</div>
-                  <span style={{ fontSize: 11, color: '#9ca3af' }}>{c.unit}</span>
-                </div>
+                ))}
               </div>
-            ))}
-          </div>
 
-          <div className="row g-4 mb-4">
-            <div className="col-12 col-lg-8">
-              <div style={{ background: '#fff', borderRadius: 14, padding: 20, border: '1px solid #e5e7eb', height: '100%' }}>
-                <h6 style={{ fontWeight: 800, color: '#1a1f2e', marginBottom: 6 }}>Tren Indikator Ketenagakerjaan Kabupaten Sijunjung (%)</h6>
-                <p style={{ color: '#6b7280', fontSize: 12, marginBottom: 20 }}>Tingkat Partisipasi Angkatan Kerja (TPAK) vs Tingkat Pengangguran Terbuka (TPT) 10 Tahun Terakhir</p>
-                <div style={{ height: 320 }}><Line data={chartData} options={chartOptions} /></div>
-              </div>
-            </div>
-            <div className="col-12 col-lg-4">
-              <div style={{ background: '#fff', borderRadius: 14, padding: 20, border: '1px solid #e5e7eb', height: '100%' }}>
-                <h6 style={{ fontWeight: 800, color: '#1a1f2e', marginBottom: 6 }}>Distribusi Penyerapan Tenaga Kerja</h6>
-                <p style={{ color: '#6b7280', fontSize: 12, marginBottom: 20 }}>Berdasarkan Sektor Pekerjaan Utama (%)</p>
-                <div style={{ height: 240, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                  <Pie data={dataSektor} options={{ responsive: true, maintainAspectRatio: false }} />
+              <div className="row g-4 mb-4">
+                <div className="col-12 col-lg-6">
+                  <div style={{ background: '#fff', borderRadius: 14, padding: 20, border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                    <h6 style={{ fontWeight: 800, color: '#1a1f2e', marginBottom: 6 }}>Tren Partisipasi Angkatan Kerja (TPAK)</h6>
+                    <p style={{ color: '#6b7280', fontSize: 12, marginBottom: 20 }}>Tingkat Partisipasi Angkatan Kerja Kabupaten Sijunjung (%) 10 Tahun Terakhir</p>
+                    <div style={{ height: 280 }}><Line data={chartDataTPAK} options={chartOptions('%')} /></div>
+                  </div>
+                </div>
+                <div className="col-12 col-lg-6">
+                  <div style={{ background: '#fff', borderRadius: 14, padding: 20, border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                    <h6 style={{ fontWeight: 800, color: '#1a1f2e', marginBottom: 6 }}>Tren Pengangguran Terbuka (TPT)</h6>
+                    <p style={{ color: '#6b7280', fontSize: 12, marginBottom: 20 }}>Tingkat Pengangguran Terbuka Kabupaten Sijunjung (%) 10 Tahun Terakhir</p>
+                    <div style={{ height: 280 }}><Line data={chartDataTPT} options={chartOptions('%')} /></div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Box Penjelasan Konsep & Indikator Ketenagakerjaan */}
-          <div style={{ background: '#fff', borderRadius: 14, padding: 24, border: '1px solid #e5e7eb', marginTop: 24 }}>
-            <h6 style={{ fontWeight: 800, color: '#1a1f2e', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <i className="bi bi-info-circle-fill" style={{ color: '#306090' }}></i>
-              Penjelasan Konsep & Indikator Ketenagakerjaan
-            </h6>
-            <div className="row g-4">
-              <div className="col-12 col-md-6">
-                <div style={{ background: '#f8fafc', borderRadius: 10, padding: 18, border: '1px solid #f1f5f9', height: '100%' }}>
-                  <h6 style={{ fontWeight: 700, color: '#306090', fontSize: 14, display: 'block', marginBottom: 8 }}>Penduduk Usia Kerja & TPAK</h6>
-                  <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.6, margin: '0 0 12px' }}>
-                    <strong>Penduduk usia kerja</strong> adalah penduduk berumur 15 tahun dan lebih. Semakin banyak penduduk usia kerja berarti jumlah penduduk yang berpotensi masuk ke dalam pasar tenaga kerja semakin besar.
-                  </p>
-                  <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.6, margin: 0 }}>
-                    <strong>Tingkat Partisipasi Angkatan Kerja (TPAK)</strong> adalah persentase banyaknya angkatan kerja terhadap banyaknya penduduk yang berumur sepuluh tahun ke atas. Semakin tinggi nilai TPAK menunjukkan semakin besar proporsi penduduk usia kerja yang terlibat dalam kegiatan ekonomi, sedangkan TPAK yang rendah mencerminkan masih banyak penduduk usia kerja yang tidak berpartisipasi dalam pasar tenaga kerja, misalnya karena masih bersekolah, mengurus rumah tangga, atau alasan lainnya.
-                  </p>
-                </div>
-              </div>
-              <div className="col-12 col-md-6">
-                <div style={{ background: '#f8fafc', borderRadius: 10, padding: 18, border: '1px solid #f1f5f9', height: '100%' }}>
-                  <h6 style={{ fontWeight: 700, color: '#b04058', fontSize: 14, display: 'block', marginBottom: 8 }}>Pengangguran & TPT</h6>
-                  <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.6, margin: '0 0 12px' }}>
-                    <strong>Pengangguran</strong> meliputi penduduk yang tidak bekerja tetapi sedang mencari pekerjaan, atau mempersiapkan suatu usaha, atau merasa tidak mungkin mendapat pekerjaan (putus asa), atau sudah diterima bekerja tetapi belum mulai bekerja.
-                    Semakin banyaknya pengangguran menunjukkan semakin besar jumlah penduduk usia kerja yang belum memperoleh pekerjaan. Hal ini mencerminkan adanya keterbatasan dalam penyerapan tenaga kerja oleh pasar kerja, sehingga pertumbuhan angkatan kerja tidak diimbangi dengan ketersediaan lapangan pekerjaan yang memadai.
-                  </p>
-                  <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.6, margin: 0 }}>
-                    <strong>Tingkat Pengangguran Terbuka (TPT)</strong> adalah persentase jumlah penduduk yang sedang mencari kerja (pengangguran) terhadap total angkatan kerja (penduduk usia kerja yang bekerja, mencari kerja, atau memiliki pekerjaan tetapi sementara tidak bekerja). TPT digunakan untuk mengukur seberapa banyak tenaga kerja yang tidak terserap oleh pasar kerja.
-                  </p>
+            {/* Page 2 for Report PDF */}
+            <div id="tenaga-kerja-page-2" style={{ background: '#f8fafc', borderRadius: 14 }}>
+              {/* Box Penjelasan Konsep & Indikator Ketenagakerjaan */}
+              <div style={{ background: '#fff', borderRadius: 14, padding: 24, border: '1px solid #e5e7eb', marginTop: 24 }}>
+                <h6 style={{ fontWeight: 800, color: '#1a1f2e', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <i className="bi bi-info-circle-fill" style={{ color: '#2d6a4f' }}></i>
+                  Penjelasan Konsep & Indikator Ketenagakerjaan
+                </h6>
+                <div className="row g-4">
+                  <div className="col-12 col-md-6">
+                    <div style={{ background: '#f8fafc', borderRadius: 10, padding: 18, border: '1px solid #f1f5f9', height: '100%' }}>
+                      <h6 style={{ fontWeight: 700, color: '#2d6a4f', fontSize: 14, display: 'block', marginBottom: 8 }}>Penduduk Usia Kerja & TPAK</h6>
+                      <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.6, margin: '0 0 12px' }}>
+                        <strong>Penduduk usia kerja</strong> adalah penduduk berumur 15 tahun dan lebih. Semakin banyak penduduk usia kerja berarti jumlah penduduk yang berpotensi masuk ke dalam pasar tenaga kerja semakin besar.
+                      </p>
+                      <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.6, margin: 0 }}>
+                        <strong>Tingkat Partisipasi Angkatan Kerja (TPAK)</strong> adalah persentase banyaknya angkatan kerja terhadap banyaknya penduduk yang berumur sepuluh tahun ke atas. Semakin tinggi nilai TPAK menunjukkan semakin besar proporsi penduduk usia kerja yang terlibat dalam kegiatan ekonomi, sedangkan TPAK yang rendah mencerminkan masih banyak penduduk usia kerja yang tidak berpartisipasi dalam pasar tenaga kerja, misalnya karena masih bersekolah, mengurus rumah tangga, atau alasan lainnya.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="col-12 col-md-6">
+                    <div style={{ background: '#f8fafc', borderRadius: 10, padding: 18, border: '1px solid #f1f5f9', height: '100%' }}>
+                      <h6 style={{ fontWeight: 700, color: '#c05621', fontSize: 14, display: 'block', marginBottom: 8 }}>Pengangguran & TPT</h6>
+                      <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.6, margin: '0 0 12px' }}>
+                        <strong>Pengangguran</strong> meliputi penduduk yang tidak bekerja tetapi sedang mencari pekerjaan, atau mempersiapkan suatu usaha, atau merasa tidak mungkin mendapat pekerjaan (putus asa), atau sudah diterima bekerja tetapi belum mulai bekerja.
+                        Semakin banyaknya pengangguran menunjukkan semakin besar jumlah penduduk usia kerja yang belum memperoleh pekerjaan. Hal ini mencerminkan adanya keterbatasan dalam penyerapan tenaga kerja oleh pasar kerja, sehingga pertumbuhan angkatan kerja tidak diimbangi dengan ketersediaan lapangan pekerjaan yang memadai.
+                      </p>
+                      <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.6, margin: 0 }}>
+                        <strong>Tingkat Pengangguran Terbuka (TPT)</strong> adalah persentase jumlah penduduk yang sedang mencari kerja (pengangguran) terhadap total angkatan kerja (penduduk usia kerja yang bekerja, mencari kerja, atau memiliki pekerjaan tetapi sementara tidak bekerja). TPT digunakan untuk mengukur seberapa banyak tenaga kerja yang tidak terserap oleh pasar kerja.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
