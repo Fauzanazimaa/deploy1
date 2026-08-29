@@ -690,17 +690,29 @@ function TabPenduduk() {
                         key={path.id}
                         d={path.d}
                         fill={path.fill}
-                        stroke={hoveredKec?.bpsCode === path.bpsCode ? '#1a1f2e' : '#ffffff'}
-                        strokeWidth={hoveredKec?.bpsCode === path.bpsCode ? 2.5 : 1}
+                        stroke="#ffffff"
+                        strokeWidth={1.2}
                         style={{
                           transition: 'all 0.15s ease',
                           cursor: 'pointer',
-                          filter: hoveredKec?.bpsCode === path.bpsCode ? 'drop-shadow(0px 4px 10px rgba(0,0,0,0.15))' : 'none'
                         }}
                         onMouseEnter={() => setHoveredKec(path)}
                         onMouseLeave={() => setHoveredKec(null)}
                       />
                     ))}
+                    {/* Active/Hovered path overlay drawn on top for a sharp thick border */}
+                    {hoveredKec && (
+                      <path
+                        d={hoveredKec.d}
+                        fill="none"
+                        stroke="#1a1f2e"
+                        strokeWidth={3}
+                        style={{
+                          pointerEvents: 'none',
+                          filter: 'drop-shadow(0px 4px 12px rgba(0,0,0,0.25))'
+                        }}
+                      />
+                    )}
                   </svg>
                   
                   {/* Floating Tooltip */}
@@ -727,10 +739,16 @@ function TabPenduduk() {
                         {hoveredKec.label}
                       </div>
                       <div style={{ fontSize: 12 }}>
-                        Penduduk: <strong style={{ color: '#38bdf8', fontSize: 13 }}>{hoveredKec.value !== null ? hoveredKec.value.toLocaleString('id-ID') : '-'}</strong> ribu jiwa
+                        Total Penduduk: <strong style={{ color: '#38bdf8', fontSize: 13 }}>{hoveredKec.value !== null ? hoveredKec.value.toLocaleString('id-ID') : '-'}</strong> ribu jiwa
                       </div>
-                      <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>
-                        Tahun BPS: {selectedYear}
+                      {genderData?.[hoveredKec.bpsCode] && (
+                        <div style={{ marginTop: 8, paddingTop: 6, borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', gap: 12, fontSize: 11, color: '#e2e8f0' }}>
+                          <div>L: <span style={{ color: '#38bdf8', fontWeight: 700 }}>{genderData[hoveredKec.bpsCode].male.toLocaleString('id-ID')}k</span></div>
+                          <div>P: <span style={{ color: '#ec4899', fontWeight: 700 }}>{genderData[hoveredKec.bpsCode].female.toLocaleString('id-ID')}k</span></div>
+                        </div>
+                      )}
+                      <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 6 }}>
+                        Sumber Data: BPS ({selectedYear})
                       </div>
                     </div>
                   )}
