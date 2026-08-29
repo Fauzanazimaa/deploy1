@@ -431,6 +431,7 @@ function TabPenduduk() {
         if (hasData26 || hasData27) {
           if (ageRecords.male.length === 0) ageRecords.male = ageGroups.map(() => 0);
           if (ageRecords.female.length === 0) ageRecords.female = ageGroups.map(() => 0);
+          ageRecords.total = ageGroups.map((_, i) => parseFloat((ageRecords.male[i] + ageRecords.female[i]).toFixed(2)));
           setAgeProjectionData(ageRecords);
         } else {
           setAgeProjectionData(null);
@@ -677,6 +678,24 @@ function TabPenduduk() {
   };
 
   const ageProjectionChartData = getAgeProjectionChartData();
+
+  // Prepare age projection total bar chart
+  const getAgeProjectionTotalChartData = () => {
+    if (!ageProjectionData) return null;
+    return {
+      labels: ageProjectionData.labels,
+      datasets: [
+        {
+          label: 'Total Penduduk',
+          data: ageProjectionData.total || ageProjectionData.labels.map(() => 0),
+          backgroundColor: '#5cbca9', // soft premium muted teal
+          borderRadius: 4
+        }
+      ]
+    };
+  };
+
+  const ageProjectionTotalChartData = getAgeProjectionTotalChartData();
 
   const ageProjectionChartOptions = {
     indexAxis: 'y', // Makes the chart horizontal
@@ -1008,17 +1027,35 @@ function TabPenduduk() {
 
           {/* Age Projection Chart Section */}
           {ageProjectionData ? (
-            <div style={{ marginTop: 24, background: '#fff', borderRadius: 14, padding: 24, border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-              <h6 style={{ fontWeight: 800, color: '#1a1f2e', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
-                <i className="bi bi-bar-chart-steps" style={{ color: '#3b82f6' }}></i>
-                Proyeksi Penduduk Kabupaten Sijunjung Menurut Kelompok Umur ({selectedYear})
-              </h6>
-              <div style={{ height: 450 }}>
-                <Bar data={ageProjectionChartData} options={ageProjectionChartOptions} />
+            <div style={{ marginTop: 24, display: 'flex', flexDirection: 'column', gap: 24 }}>
+              {/* Split Gender Chart */}
+              <div style={{ background: '#fff', borderRadius: 14, padding: 24, border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                <h6 style={{ fontWeight: 800, color: '#1a1f2e', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <i className="bi bi-bar-chart-steps" style={{ color: '#3b82f6' }}></i>
+                  Proyeksi Penduduk Sijunjung Menurut Kelompok Umur dan Jenis Kelamin ({selectedYear})
+                </h6>
+                <div style={{ height: 550 }}>
+                  <Bar data={ageProjectionChartData} options={ageProjectionChartOptions} />
+                </div>
+                <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <i className="bi bi-info-circle"></i>
+                  <span>Sumber: Web API BPS Kabupaten Sijunjung (Variabel: Proyeksi Penduduk Menurut Kelompok Umur - Laki-Laki & Perempuan)</span>
+                </div>
               </div>
-              <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
-                <i className="bi bi-info-circle"></i>
-                <span>Sumber: Web API BPS Kabupaten Sijunjung (Variabel: Proyeksi Penduduk Kabupaten Sijunjung Menurut Kelompok Umur)</span>
+
+              {/* Total Population Chart */}
+              <div style={{ background: '#fff', borderRadius: 14, padding: 24, border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                <h6 style={{ fontWeight: 800, color: '#1a1f2e', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <i className="bi bi-bar-chart-steps" style={{ color: '#5cbca9' }}></i>
+                  Total Proyeksi Penduduk Sijunjung Menurut Kelompok Umur ({selectedYear})
+                </h6>
+                <div style={{ height: 550 }}>
+                  <Bar data={ageProjectionTotalChartData} options={ageProjectionChartOptions} />
+                </div>
+                <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <i className="bi bi-info-circle"></i>
+                  <span>Sumber: Web API BPS Kabupaten Sijunjung (Variabel: Total Proyeksi Penduduk Menurut Kelompok Umur)</span>
+                </div>
               </div>
             </div>
           ) : (
