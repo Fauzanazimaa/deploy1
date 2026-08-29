@@ -69,7 +69,7 @@ export default function PublicDashboard() {
             Sistem Jejaring Pengumpulan Data Statistik Terintegrasi
           </p>
           <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: 13, margin: '0 auto 20px', lineHeight: 1.6 }}>
-            Akses indikator makro sektoral Kabupaten Sijunjung secara real-time yang bersumber langsung dari API Badan Pusat Statistik (BPS) & dinas terkait.
+            Pusat pengumpulan data statistik terpadu dan akses indikator makro sektoral Kabupaten Sijunjung secara real-time yang bersumber langsung dari API Badan Pusat Statistik (BPS) & dinas terkait.
           </p>
         </div>
       </div>
