@@ -329,7 +329,14 @@ function TabPenduduk() {
         });
         
         const results = await Promise.all(checkPromises);
-        const validYears = results.filter(r => r.hasData).map(r => r.year);
+        
+        const currentYear = new Date().getFullYear();
+        const maxYearCeiling = currentYear - 1;
+        
+        const validYears = results
+          .filter(r => r.hasData)
+          .map(r => r.year)
+          .filter(y => y <= maxYearCeiling);
         
         const maxYear = validYears.length > 0 ? Math.max(...validYears) : 2025;
         
