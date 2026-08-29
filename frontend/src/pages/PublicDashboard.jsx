@@ -248,6 +248,14 @@ function TabPenduduk() {
         { code: 110, label: 'Sumpur Kudus' }
       ];
 
+      const normalizeBpsValue = (val) => {
+        if (val === undefined || val === null || isNaN(val)) return 0;
+        if (val > 500) {
+          return parseFloat((val / 1000).toFixed(2));
+        }
+        return val;
+      };
+
       // Parse Var 47 (Map)
       if (res47.status === 'fulfilled' && res47.value.data.status === 'OK') {
         const data47 = res47.value.data;
@@ -280,8 +288,8 @@ function TabPenduduk() {
                 records[kec.code] = {
                   code: kec.code,
                   label: kec.label,
-                  value: val,
-                  unit: data47.var?.[0]?.unit || 'Ribu Jiwa'
+                  value: normalizeBpsValue(val),
+                  unit: 'Ribu Jiwa'
                 };
                 hasValidData = true;
               }
@@ -324,10 +332,16 @@ function TabPenduduk() {
             const valTotal = parseFloat(datacontent51[keyTotal]);
 
             if (!isNaN(valMale) && !isNaN(valFemale)) {
+              const normalizedMale = normalizeBpsValue(valMale);
+              const normalizedFemale = normalizeBpsValue(valFemale);
+              const normalizedTotal = !isNaN(valTotal) 
+                ? normalizeBpsValue(valTotal) 
+                : parseFloat((normalizedMale + normalizedFemale).toFixed(2));
+
               genderRecords[kec.code] = {
-                male: valMale,
-                female: valFemale,
-                total: !isNaN(valTotal) ? valTotal : (valMale + valFemale),
+                male: normalizedMale,
+                female: normalizedFemale,
+                total: normalizedTotal,
                 label: kec.label
               };
               hasValidGenderData = true;
