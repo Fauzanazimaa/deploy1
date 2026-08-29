@@ -605,13 +605,13 @@ function TabPenduduk() {
         {
           label: 'Laki-Laki',
           data: maleValues,
-          backgroundColor: '#3b82f6', // soft premium blue
+          backgroundColor: '#5c8cbc', // soft premium muted blue
           borderRadius: 4,
         },
         {
           label: 'Perempuan',
           data: femaleValues,
-          backgroundColor: '#ec4899', // soft premium pink
+          backgroundColor: '#e88d9e', // soft premium muted rose pink
           borderRadius: 4,
         }
       ]
@@ -663,13 +663,13 @@ function TabPenduduk() {
         {
           label: 'Laki-Laki',
           data: ageProjectionData.male,
-          backgroundColor: '#3b82f6',
+          backgroundColor: '#5c8cbc', // soft premium muted blue
           borderRadius: 4
         },
         {
           label: 'Perempuan',
           data: ageProjectionData.female,
-          backgroundColor: '#ec4899',
+          backgroundColor: '#e88d9e', // soft premium muted rose pink
           borderRadius: 4
         }
       ]
@@ -883,8 +883,8 @@ function TabPenduduk() {
                       </div>
                       {genderData?.[hoveredKec.bpsCode] && (
                         <div style={{ marginTop: 8, paddingTop: 6, borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', gap: 12, fontSize: 11, color: '#e2e8f0' }}>
-                          <div>L: <span style={{ color: '#38bdf8', fontWeight: 700 }}>{genderData[hoveredKec.bpsCode].male.toLocaleString('id-ID')}k</span></div>
-                          <div>P: <span style={{ color: '#ec4899', fontWeight: 700 }}>{genderData[hoveredKec.bpsCode].female.toLocaleString('id-ID')}k</span></div>
+                          <div>L: <span style={{ color: '#60a5fa', fontWeight: 700 }}>{genderData[hoveredKec.bpsCode].male.toLocaleString('id-ID')}k</span></div>
+                          <div>P: <span style={{ color: '#f472b6', fontWeight: 700 }}>{genderData[hoveredKec.bpsCode].female.toLocaleString('id-ID')}k</span></div>
                         </div>
                       )}
                       <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 6 }}>
