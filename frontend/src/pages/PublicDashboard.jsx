@@ -848,11 +848,8 @@ function TabPenduduk() {
       <div style={{ background: '#fff', borderRadius: 14, padding: '20px 24px', border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', marginBottom: 20 }}>
         <div className="d-flex flex-wrap justify-content-between align-items-center gap-3">
           <div>
-            <h5 style={{ fontWeight: 800, color: '#1a1f2e', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#f5a623', display: 'inline-block' }}></span>
-              Jumlah Penduduk Kabupaten Sijunjung Menurut Kecamatan
-            </h5>
-            <p style={{ color: '#6b7280', fontSize: 13, margin: '4px 0 0' }}>
+            <p style={{ color: '#1a1f2e', fontSize: 14, fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#f5a623', display: 'inline-block' }}></span>
               Visualisasi penduduk secara interaktif bersumber langsung dari Web API BPS Kabupaten Sijunjung
             </p>
           </div>
