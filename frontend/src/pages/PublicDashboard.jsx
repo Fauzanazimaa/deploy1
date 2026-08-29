@@ -1267,11 +1267,12 @@ function TabTenagaKerja() {
       
       const promises = targetYears.flatMap(y => {
         const thCode = y - 1900;
-        const tpakUrl = `https://webapi.bps.go.id/v1/api/list/model/data/lang/ind/domain/1304/var/192/th/${thCode}/key/65b35aa80f299dc0e1e9e98ee5589ba4`;
+        const tpakVar = y === 2025 ? 192 : 133;
+        const tpakUrl = `https://webapi.bps.go.id/v1/api/list/model/data/lang/ind/domain/1304/var/${tpakVar}/th/${thCode}/key/65b35aa80f299dc0e1e9e98ee5589ba4`;
         const tptUrl = `https://webapi.bps.go.id/v1/api/list/model/data/lang/ind/domain/1304/var/134/th/${thCode}/key/65b35aa80f299dc0e1e9e98ee5589ba4`;
         return [
-          { year: y, type: 'tpak', promise: axios.get(tpakUrl) },
-          { year: y, type: 'tpt', promise: axios.get(tptUrl) }
+          { year: y, type: 'tpak', varId: tpakVar, promise: axios.get(tpakUrl) },
+          { year: y, type: 'tpt', varId: 134, promise: axios.get(tptUrl) }
         ];
       });
 
@@ -1285,9 +1286,8 @@ function TabTenagaKerja() {
         if (res.status === 'fulfilled' && res.value.data.status === 'OK') {
           const content = res.value.data.datacontent;
           if (content && !Array.isArray(content)) {
-            const varVal = info.type === 'tpak' ? 192 : 134;
             const thCode = info.year - 1900;
-            const key = `1${varVal}0${thCode}0`;
+            const key = `1${info.varId}0${thCode}0`;
             const val = parseFloat(content[key]);
             if (!isNaN(val)) {
               if (info.type === 'tpak') {
