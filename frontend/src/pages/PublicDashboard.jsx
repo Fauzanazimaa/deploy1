@@ -1313,10 +1313,10 @@ function TabTenagaKerja() {
         const fallbackYears = [2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025];
         setYears(fallbackYears);
         setTpakData([70.8, 71.2, 71.8, 72.1, 72.5, 73.0, 73.5, 73.9, 74.8, 75.33]);
-        setTptData([4.8, 4.5, 4.3, 4.0, 3.8, 3.5, 3.2, 3.14, 3.0, 2.9]);
+        setTptData([4.85, 4.75, 4.68, 4.58, 4.52, 4.45, 4.38, 4.30, 4.42, 4.59]);
         setSummary({
           latestTpak: '75,33%',
-          latestTpt: '2,90%',
+          latestTpt: '4,59%',
           tpakYear: '2025',
           tptYear: '2025'
         });
