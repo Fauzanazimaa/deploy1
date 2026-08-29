@@ -166,6 +166,74 @@ function TabPenduduk() {
   const [hoveredKec, setHoveredKec] = useState(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
+  const [exportingPdf, setExportingPdf] = useState(false);
+
+  const downloadPDFReport = async () => {
+    setExportingPdf(true);
+    try {
+      const html2canvas = (await import('html2canvas')).default;
+      const { jsPDF } = await import('jspdf');
+
+      const element = document.getElementById('penduduk-report-content');
+      if (!element) return;
+
+      const originalBoxShadows = [];
+      const cards = element.querySelectorAll('[style*="box-shadow"], [style*="boxShadow"]');
+      cards.forEach((card) => {
+        originalBoxShadows.push({ el: card, val: card.style.boxShadow });
+        card.style.boxShadow = 'none';
+      });
+
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#f8fafc'
+      });
+
+      originalBoxShadows.forEach(item => {
+        item.el.style.boxShadow = item.val;
+      });
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      
+      const pdf = new jsPDF({
+        orientation: 'p',
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      const pdfWidth = 210;
+      const pdfHeight = 297;
+      const margin = 10;
+      const contentWidth = pdfWidth - (margin * 2);
+      
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+      const contentHeight = (imgHeight * contentWidth) / imgWidth;
+
+      let heightLeft = contentHeight;
+      let position = margin;
+
+      pdf.addImage(imgData, 'JPEG', margin, position, contentWidth, contentHeight);
+      heightLeft -= (pdfHeight - margin * 2);
+
+      while (heightLeft > 0) {
+        position = heightLeft - contentHeight + margin - 2;
+        pdf.addPage();
+        pdf.addImage(imgData, 'JPEG', margin, position, contentWidth, contentHeight);
+        heightLeft -= (pdfHeight - margin * 2);
+      }
+
+      pdf.save(`Laporan_Kependudukan_Sijunjung_${selectedYear}.pdf`);
+    } catch (err) {
+      console.error("Gagal mengekspor PDF:", err);
+      alert("Terjadi kesalahan saat memproses laporan PDF. Silakan coba lagi.");
+    } finally {
+      setExportingPdf(false);
+    }
+  };
+
   useEffect(() => {
     const detectYears = async () => {
       try {
@@ -746,29 +814,68 @@ function TabPenduduk() {
               Visualisasi penduduk secara interaktif bersumber langsung dari Web API BPS Kabupaten Sijunjung
             </p>
           </div>
-          <div className="d-flex align-items-center gap-2">
-            <span style={{ fontSize: 13, fontWeight: 600, color: '#4b5563' }}>Pilih Tahun:</span>
-            <select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-              style={{
-                padding: '8px 16px',
-                borderRadius: 10,
-                border: '1px solid #d1d5db',
-                background: '#fff',
-                fontSize: 13,
-                fontWeight: 600,
-                color: '#1f2937',
-                cursor: 'pointer',
-                outline: 'none',
-                boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
-                transition: 'border-color 0.15s ease'
-              }}
-            >
-              {availableYears.map(y => (
-                <option key={y} value={y}>{y}</option>
-              ))}
-            </select>
+          <div className="d-flex align-items-center gap-3">
+            <div className="d-flex align-items-center gap-2">
+              <span style={{ fontSize: 13, fontWeight: 600, color: '#4b5563' }}>Pilih Tahun:</span>
+              <select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: 10,
+                  border: '1px solid #d1d5db',
+                  background: '#fff',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: '#1f2937',
+                  cursor: 'pointer',
+                  outline: 'none',
+                  boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
+                  transition: 'border-color 0.15s ease'
+                }}
+              >
+                {availableYears.map(y => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+            </div>
+
+            {!loading && !error && (mappedData || genderData || ageProjectionData) && (
+              <button
+                onClick={downloadPDFReport}
+                disabled={exportingPdf}
+                className="btn btn-outline-primary d-flex align-items-center gap-2"
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: 10,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  borderColor: '#3b82f6',
+                  color: '#3b82f6',
+                  background: '#fff',
+                  transition: 'all 0.15s ease',
+                  boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#eff6ff';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = '#fff';
+                }}
+              >
+                {exportingPdf ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm text-primary" role="status" aria-hidden="true" style={{ width: '14px', height: '14px' }}></span>
+                    <span>Mengekspor...</span>
+                  </>
+                ) : (
+                  <>
+                    <i className="bi bi-file-earmark-pdf-fill" style={{ color: '#ef4444' }}></i>
+                    <span>Ekspor Laporan PDF</span>
+                  </>
+                )}
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -800,7 +907,7 @@ function TabPenduduk() {
           </p>
         </div>
       ) : (
-        <div>
+        <div id="penduduk-report-content" style={{ padding: 16, background: '#f8fafc', borderRadius: 14 }}>
           {/* Summary Cards */}
           <div className="row g-3 mb-4">
             {[
