@@ -51,11 +51,12 @@ export default function PublicDashboard() {
         <div style={{ maxWidth: 760, margin: '0 auto' }}>
           <h1 style={{
             color: '#fff',
-            fontFamily: "'Bebas Neue', sans-serif",
-            fontSize: 'clamp(44px, 7vw, 68px)',
+            fontFamily: "'Sora', sans-serif",
+            fontWeight: 800,
+            fontSize: 'clamp(32px, 5.5vw, 54px)',
             margin: '0 0 10px',
-            lineHeight: 1.1,
-            letterSpacing: '0.08em',
+            lineHeight: 1.15,
+            letterSpacing: '0.04em',
             background: 'linear-gradient(to right, #ffffff 40%, #f5a623 100%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',

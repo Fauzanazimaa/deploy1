@@ -36,9 +36,10 @@ export function SejatiLogo({ size = 36, variant = 'compact', gap = 10 }) {
       <div style={{ lineHeight: 1.15 }}>
         <div style={{
           color: nameColor,
-          fontSize: nameFontSize + 4,
-          letterSpacing: '0.08em',
-          fontFamily: "'Bebas Neue', sans-serif",
+          fontWeight: 800,
+          fontSize: nameFontSize,
+          letterSpacing: '0.04em',
+          fontFamily: "'Sora', sans-serif",
         }}>
           SEJATI
         </div>
