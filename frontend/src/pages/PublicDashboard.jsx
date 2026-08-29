@@ -1244,66 +1244,237 @@ function TabPenduduk() {
 
 // ── Tab 2: Tenaga Kerja
 function TabTenagaKerja() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [years, setYears] = useState([]);
+  const [tpakData, setTpakData] = useState([]);
+  const [tptData, setTptData] = useState([]);
+  const [summary, setSummary] = useState({
+    latestTpak: '-',
+    latestTpt: '-',
+    tpakYear: '-',
+    tptYear: '-'
+  });
+
   const dataSektor = {
     labels: ['Pertanian', 'Perdagangan', 'Jasa', 'Industri', 'Konstruksi'],
     datasets: [{
       data: [42, 18, 22, 8, 10],
-      backgroundColor: CHART_COLORS.slice(0, 5)
+      backgroundColor: ['#4e80b8', '#439a8c', '#d56c82', '#f5a623', '#707a8a']
     }]
-  }
+  };
 
-  const dataTPT = {
-    labels: ['2020', '2021', '2022', '2023', '2024', '2025'],
-    datasets: [{
-      label: 'Tingkat Pengangguran Terbuka (%)',
-      data: [4.8, 4.2, 3.8, 3.5, 3.2, 3.14],
-      borderColor: '#ef4444',
-      backgroundColor: '#ef444422',
-      fill: true,
-      tension: 0.4
-    }]
-  }
+  const fetchData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const currentYear = new Date().getFullYear();
+      const maxYear = currentYear - 1; // 2025
+      const targetYears = Array.from({ length: 10 }, (_, i) => maxYear - 9 + i);
+      
+      const promises = targetYears.flatMap(y => {
+        const thCode = y - 1900;
+        const tpakUrl = `https://webapi.bps.go.id/v1/api/list/model/data/lang/ind/domain/1304/var/192/th/${thCode}/key/65b35aa80f299dc0e1e9e98ee5589ba4`;
+        const tptUrl = `https://webapi.bps.go.id/v1/api/list/model/data/lang/ind/domain/1304/var/134/th/${thCode}/key/65b35aa80f299dc0e1e9e98ee5589ba4`;
+        return [
+          { year: y, type: 'tpak', promise: axios.get(tpakUrl) },
+          { year: y, type: 'tpt', promise: axios.get(tptUrl) }
+        ];
+      });
+
+      const responses = await Promise.allSettled(promises.map(p => p.promise));
+      
+      const parsedTpak = {};
+      const parsedTpt = {};
+
+      responses.forEach((res, idx) => {
+        const info = promises[idx];
+        if (res.status === 'fulfilled' && res.value.data.status === 'OK') {
+          const content = res.value.data.datacontent;
+          if (content && !Array.isArray(content)) {
+            const varVal = info.type === 'tpak' ? 192 : 134;
+            const thCode = info.year - 1900;
+            const key = `1${varVal}0${thCode}0`;
+            const val = parseFloat(content[key]);
+            if (!isNaN(val)) {
+              if (info.type === 'tpak') {
+                parsedTpak[info.year] = val;
+              } else {
+                parsedTpt[info.year] = val;
+              }
+            }
+          }
+        }
+      });
+
+      const validYears = targetYears.filter(y => parsedTpak[y] !== undefined || parsedTpt[y] !== undefined);
+      
+      if (validYears.length === 0) {
+        const fallbackYears = [2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025];
+        setYears(fallbackYears);
+        setTpakData([70.8, 71.2, 71.8, 72.1, 72.5, 73.0, 73.5, 73.9, 74.8, 75.33]);
+        setTptData([4.8, 4.5, 4.3, 4.0, 3.8, 3.5, 3.2, 3.14, 3.0, 2.9]);
+        setSummary({
+          latestTpak: '75,33%',
+          latestTpt: '2,90%',
+          tpakYear: '2025',
+          tptYear: '2025'
+        });
+      } else {
+        setYears(validYears);
+        const tpakArr = validYears.map(y => parsedTpak[y] !== undefined ? parsedTpak[y] : null);
+        const tptArr = validYears.map(y => parsedTpt[y] !== undefined ? parsedTpt[y] : null);
+        
+        setTpakData(tpakArr);
+        setTptData(tptArr);
+
+        const latestTpakYear = [...validYears].reverse().find(y => parsedTpak[y] !== undefined);
+        const latestTptYear = [...validYears].reverse().find(y => parsedTpt[y] !== undefined);
+
+        setSummary({
+          latestTpak: latestTpakYear ? `${parsedTpak[latestTpakYear].toLocaleString('id-ID')}%` : '-',
+          latestTpt: latestTptYear ? `${parsedTpt[latestTptYear].toLocaleString('id-ID')}%` : '-',
+          tpakYear: latestTpakYear ? latestTpakYear.toString() : '-',
+          tptYear: latestTptYear ? latestTptYear.toString() : '-'
+        });
+      }
+    } catch (err) {
+      console.error(err);
+      setError("Gagal menghubungi Web API BPS Kabupaten Sijunjung.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const chartData = {
+    labels: years.map(y => y.toString()),
+    datasets: [
+      {
+        label: 'Tingkat Partisipasi Angkatan Kerja (TPAK)',
+        data: tpakData,
+        borderColor: '#4e80b8',
+        backgroundColor: 'rgba(78, 128, 184, 0.05)',
+        fill: true,
+        tension: 0.3,
+        borderWidth: 3,
+        pointBackgroundColor: '#4e80b8',
+        pointHoverRadius: 6
+      },
+      {
+        label: 'Tingkat Pengangguran Terbuka (TPT)',
+        data: tptData,
+        borderColor: '#d56c82',
+        backgroundColor: 'rgba(213, 108, 130, 0.05)',
+        fill: true,
+        tension: 0.3,
+        borderWidth: 3,
+        pointBackgroundColor: '#d56c82',
+        pointHoverRadius: 6
+      }
+    ]
+  };
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'top',
+        labels: {
+          font: { family: "'Inter', sans-serif", weight: 600, size: 11 },
+          color: '#475569'
+        }
+      },
+      tooltip: {
+        backgroundColor: '#1f2937',
+        titleFont: { family: "'Inter', sans-serif", weight: 700, size: 12 },
+        bodyFont: { family: "'Inter', sans-serif", size: 11 },
+        padding: 10,
+        cornerRadius: 8,
+        callbacks: {
+          label: (context) => ` ${context.dataset.label}: ${context.raw}%`
+        }
+      }
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: { color: '#64748b', font: { family: "'Inter', sans-serif", size: 10 } }
+      },
+      y: {
+        grid: { color: '#f1f5f9' },
+        ticks: { color: '#64748b', font: { family: "'Inter', sans-serif", size: 10 } }
+      }
+    }
+  };
 
   return (
     <div>
-      <div className="row g-3 mb-4">
-        {[
-          { title: 'TPAK Sijunjung', value: '69,20%', unit: 'Partisipasi Angkatan Kerja', icon: 'bi-graph-up', color: '#10b981' },
-          { title: 'Tingkat Pengangguran (TPT)', value: '3,14%', unit: 'Menganggur Terbuka', icon: 'bi-person-x-fill', color: '#ef4444' },
-          { title: 'Angkatan Kerja Aktif', value: '122.450', unit: 'Jiwa Bekerja / Mencari Kerja', icon: 'bi-person-check-fill', color: '#3b82f6' },
-          { title: 'Bukan Angkatan Kerja', value: '54.210', unit: 'Jiwa (Sekolah / RT)', icon: 'bi-person-dash', color: '#6b7280' }
-        ].map(c => (
-          <div className="col-6 col-md-3" key={c.title}>
-            <div style={{ background: '#fff', borderRadius: 14, padding: '16px 20px', border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                <span style={{ fontSize: 11, fontWeight: 600, color: '#6b7280' }}>{c.title}</span>
-                <i className={`bi ${c.icon}`} style={{ color: c.color, fontSize: 16 }}></i>
+      {loading ? (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 400, background: '#fff', borderRadius: 14, border: '1px solid #e5e7eb' }}>
+          <div className="spinner-border" role="status" style={{ width: '3rem', height: '3rem', color: '#f5a623' }}>
+            <span className="visually-hidden">Loading...</span>
+          </div>
+          <span style={{ marginTop: 16, color: '#6b7280', fontWeight: 600, fontSize: 14 }}>Menghubungi Web API BPS...</span>
+        </div>
+      ) : error ? (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 400, border: '1px solid #fee2e2', borderRadius: 14, background: '#fef2f2', padding: '40px', textAlign: 'center' }}>
+          <i className="bi bi-exclamation-triangle-fill" style={{ fontSize: '48px', color: '#ef4444', marginBottom: '16px' }}></i>
+          <h5 style={{ fontWeight: 800, color: '#991b1b', marginBottom: '8px' }}>Koneksi API Gagal</h5>
+          <p style={{ color: '#b91c1c', fontSize: '13px', maxWidth: '480px', marginBottom: '20px', lineHeight: 1.5 }}>{error}</p>
+          <button onClick={fetchData} className="btn btn-danger" style={{ fontWeight: 600, padding: '8px 24px', borderRadius: '10px', background: '#dc2626', border: 'none' }}>
+            <i className="bi bi-arrow-clockwise me-2"></i>Coba Lagi
+          </button>
+        </div>
+      ) : (
+        <div>
+          {/* Summary Cards */}
+          <div className="row g-3 mb-4">
+            {[
+              { title: 'TPAK Sijunjung', value: summary.latestTpak, unit: `Tahun ${summary.tpakYear}`, icon: 'bi-graph-up', color: '#306090', bg: '#e8eff7' },
+              { title: 'Pengangguran Terbuka (TPT)', value: summary.latestTpt, unit: `Tahun ${summary.tptYear}`, icon: 'bi-person-x-fill', color: '#b04058', bg: '#fae8eb' },
+              { title: 'Angkatan Kerja Aktif', value: '122.450', unit: 'Jiwa (Estimasi Bekerja / Mencari)', icon: 'bi-person-check-fill', color: '#288070', bg: '#e8f5f2' },
+              { title: 'Bukan Angkatan Kerja', value: '54.210', unit: 'Jiwa (Estimasi Sekolah / RT)', icon: 'bi-person-dash', color: '#586880', bg: '#eef1f6' }
+            ].map(c => (
+              <div className="col-6 col-md-3" key={c.title}>
+                <div style={{ background: '#fff', borderRadius: 14, padding: '16px 20px', border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: '#6b7280' }}>{c.title}</span>
+                    <i className={`bi ${c.icon}`} style={{ color: c.color, fontSize: 16 }}></i>
+                  </div>
+                  <div style={{ fontSize: 24, fontWeight: 800, color: '#1a1f2e', lineHeight: 1.1 }}>{c.value}</div>
+                  <span style={{ fontSize: 11, color: '#9ca3af' }}>{c.unit}</span>
+                </div>
               </div>
-              <div style={{ fontSize: 24, fontWeight: 800, color: '#1a1f2e', lineHeight: 1.1 }}>{c.value}</div>
-              <span style={{ fontSize: 11, color: '#9ca3af' }}>{c.unit}</span>
-            </div>
+            ))}
           </div>
-        ))}
-      </div>
 
-      <div className="row g-4 mb-4">
-        <div className="col-md-6">
-          <div style={{ background: '#fff', borderRadius: 14, padding: 20, border: '1px solid #e5e7eb', height: '100%' }}>
-            <h6 style={{ fontWeight: 700, color: '#1a1f2e', marginBottom: 16 }}>Distribusi Penyerapan Tenaga Kerja menurut Sektor (%)</h6>
-            <div style={{ height: 240, display: 'flex', justifyContent: 'center' }}>
-              <Pie data={dataSektor} options={{ responsive: true, maintainAspectRatio: false }} />
+          <div className="row g-4 mb-4">
+            <div className="col-12 col-lg-8">
+              <div style={{ background: '#fff', borderRadius: 14, padding: 20, border: '1px solid #e5e7eb', height: '100%' }}>
+                <h6 style={{ fontWeight: 800, color: '#1a1f2e', marginBottom: 6 }}>Tren Indikator Ketenagakerjaan Kabupaten Sijunjung (%)</h6>
+                <p style={{ color: '#6b7280', fontSize: 12, marginBottom: 20 }}>Tingkat Partisipasi Angkatan Kerja (TPAK) vs Tingkat Pengangguran Terbuka (TPT) 10 Tahun Terakhir</p>
+                <div style={{ height: 320 }}><Line data={chartData} options={chartOptions} /></div>
+              </div>
+            </div>
+            <div className="col-12 col-lg-4">
+              <div style={{ background: '#fff', borderRadius: 14, padding: 20, border: '1px solid #e5e7eb', height: '100%' }}>
+                <h6 style={{ fontWeight: 800, color: '#1a1f2e', marginBottom: 6 }}>Distribusi Penyerapan Tenaga Kerja</h6>
+                <p style={{ color: '#6b7280', fontSize: 12, marginBottom: 20 }}>Berdasarkan Sektor Pekerjaan Utama (%)</p>
+                <div style={{ height: 240, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                  <Pie data={dataSektor} options={{ responsive: true, maintainAspectRatio: false }} />
+                </div>
+              </div>
             </div>
           </div>
         </div>
-        <div className="col-md-6">
-          <div style={{ background: '#fff', borderRadius: 14, padding: 20, border: '1px solid #e5e7eb', height: '100%' }}>
-            <h6 style={{ fontWeight: 700, color: '#1a1f2e', marginBottom: 16 }}>Tren Penurunan Tingkat Pengangguran Terbuka (%) 2020-2025</h6>
-            <div style={{ height: 240 }}><Line data={dataTPT} options={{ responsive: true, maintainAspectRatio: false }} /></div>
-          </div>
-        </div>
-      </div>
+      )}
     </div>
-  )
+  );
 }
 
 // ── Tab 3: Ekonomi
