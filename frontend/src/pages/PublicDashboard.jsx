@@ -650,8 +650,8 @@ function TabPenduduk() {
       const ratio = (val - minVal) / (maxVal - minVal);
       // Beautiful HSL scale from light slate blue to rich desaturated slate indigo
       const hue = 210 + ratio * 20; // 210 (blue) to 230 (indigo)
-      const sat = 35 + ratio * 15;  // 35% to 50%
-      const light = 92 - ratio * 42; // 92% (very light) to 50% (muted)
+      const sat = 45 + ratio * 15;  // 45% to 60%
+      const light = 90 - ratio * 42; // 90% (very light) to 48% (rich)
       return `hsl(${hue.toFixed(0)}, ${sat.toFixed(0)}%, ${light.toFixed(0)}%)`;
     };
     
@@ -714,8 +714,8 @@ function TabPenduduk() {
     const mid = start + stepVal / 2;
     const ratio = (mid - minVal) / (maxVal - minVal);
     const hue = 210 + ratio * 20;
-    const sat = 35 + ratio * 15;
-    const light = 92 - ratio * 42;
+    const sat = 45 + ratio * 15;
+    const light = 90 - ratio * 42;
     const color = `hsl(${hue.toFixed(0)}, ${sat.toFixed(0)}%, ${light.toFixed(0)}%)`;
     legendItems.push({
       label: `${start.toFixed(1)} - ${end.toFixed(1)}`,
@@ -736,13 +736,13 @@ function TabPenduduk() {
         {
           label: 'Laki-Laki',
           data: maleValues,
-          backgroundColor: '#6b8eae', // premium desaturated slate blue
+          backgroundColor: '#4e80b8', // elegant rich steel blue
           borderRadius: 4,
         },
         {
           label: 'Perempuan',
           data: femaleValues,
-          backgroundColor: '#c88b97', // premium desaturated muted rose
+          backgroundColor: '#d56c82', // elegant rich rose pink
           borderRadius: 4,
         }
       ]
@@ -794,13 +794,13 @@ function TabPenduduk() {
         {
           label: 'Laki-Laki',
           data: ageProjectionData.male,
-          backgroundColor: '#6b8eae', // premium desaturated slate blue
+          backgroundColor: '#4e80b8', // elegant rich steel blue
           borderRadius: 4
         },
         {
           label: 'Perempuan',
           data: ageProjectionData.female,
-          backgroundColor: '#c88b97', // premium desaturated muted rose
+          backgroundColor: '#d56c82', // elegant rich rose pink
           borderRadius: 4
         }
       ]
@@ -818,7 +818,7 @@ function TabPenduduk() {
         {
           label: 'Total Penduduk',
           data: ageProjectionData.total || ageProjectionData.labels.map(() => 0),
-          backgroundColor: '#729e92', // premium desaturated sage green
+          backgroundColor: '#439a8c', // elegant rich jade teal
           borderRadius: 4
         }
       ]
@@ -971,10 +971,10 @@ function TabPenduduk() {
           {/* Summary Cards */}
           <div className="row g-3 mb-4">
             {[
-              { title: 'Total Penduduk Kecamatan', value: parseFloat(totalPopulation).toLocaleString('id-ID'), unit: 'Ribu Jiwa', icon: 'bi-people-fill', color: '#4b6b94', bg: '#f1f5f9' },
-              { title: 'Kecamatan Terpadat', value: maxKec ? maxKec.value.toLocaleString('id-ID') : '-', unit: maxKec ? `${maxKec.label} (Ribu Jiwa)` : '', icon: 'bi-graph-up-arrow', color: '#508a7b', bg: '#f0f7f5' },
-              { title: 'Kecamatan Terjarang', value: minKec ? minKec.value.toLocaleString('id-ID') : '-', unit: minKec ? `${minKec.label} (Ribu Jiwa)` : '', icon: 'bi-graph-down-arrow', color: '#b06b77', bg: '#faf0f2' },
-              { title: 'Rata-rata Penduduk', value: (totalPopulation / 8).toFixed(2).toLocaleString('id-ID'), unit: 'Ribu Jiwa per Kecamatan', icon: 'bi-calculator', color: '#707a8a', bg: '#f3f4f6' }
+              { title: 'Total Penduduk Kecamatan', value: parseFloat(totalPopulation).toLocaleString('id-ID'), unit: 'Ribu Jiwa', icon: 'bi-people-fill', color: '#306090', bg: '#e8eff7' },
+              { title: 'Kecamatan Terpadat', value: maxKec ? maxKec.value.toLocaleString('id-ID') : '-', unit: maxKec ? `${maxKec.label} (Ribu Jiwa)` : '', icon: 'bi-graph-up-arrow', color: '#288070', bg: '#e8f5f2' },
+              { title: 'Kecamatan Terjarang', value: minKec ? minKec.value.toLocaleString('id-ID') : '-', unit: minKec ? `${minKec.label} (Ribu Jiwa)` : '', icon: 'bi-graph-down-arrow', color: '#b04058', bg: '#fae8eb' },
+              { title: 'Rata-rata Penduduk', value: (totalPopulation / 8).toFixed(2).toLocaleString('id-ID'), unit: 'Ribu Jiwa per Kecamatan', icon: 'bi-calculator', color: '#586880', bg: '#eef1f6' }
             ].map(c => (
               <div className="col-12 col-sm-6 col-md-3" key={c.title}>
                 <div style={{ background: '#fff', borderRadius: 14, padding: '16px 20px', border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', display: 'flex', alignItems: 'center', gap: 16 }}>
@@ -1069,8 +1069,8 @@ function TabPenduduk() {
                       </div>
                       {genderData?.[hoveredKec.bpsCode] && (
                         <div style={{ marginTop: 8, paddingTop: 6, borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', gap: 12, fontSize: 11, color: '#e2e8f0' }}>
-                          <div>L: <span style={{ color: '#8bb1d6', fontWeight: 700 }}>{genderData[hoveredKec.bpsCode].male.toLocaleString('id-ID')}k</span></div>
-                          <div>P: <span style={{ color: '#f2b6c4', fontWeight: 700 }}>{genderData[hoveredKec.bpsCode].female.toLocaleString('id-ID')}k</span></div>
+                          <div>L: <span style={{ color: '#7da7d9', fontWeight: 700 }}>{genderData[hoveredKec.bpsCode].male.toLocaleString('id-ID')}k</span></div>
+                          <div>P: <span style={{ color: '#e695a7', fontWeight: 700 }}>{genderData[hoveredKec.bpsCode].female.toLocaleString('id-ID')}k</span></div>
                         </div>
                       )}
                       <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 6 }}>
