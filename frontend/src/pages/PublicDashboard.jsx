@@ -49,7 +49,20 @@ export default function PublicDashboard() {
       {/* ── Hero Banner ── */}
       <div style={{ background: `linear-gradient(135deg, ${SIDEBAR_BG} 0%, #2d3748 100%)`, padding: '40px 28px 36px', textAlign: 'center' }}>
         <div style={{ maxWidth: 760, margin: '0 auto' }}>
-          <h1 style={{ color: '#fff', fontWeight: 800, fontSize: 'clamp(28px, 4.5vw, 42px)', margin: '0 0 4px', lineHeight: 1.1, letterSpacing: '0.02em' }}>
+          <h1 style={{
+            color: '#fff',
+            fontFamily: "'Outfit', sans-serif",
+            fontWeight: 900,
+            fontSize: 'clamp(32px, 5.5vw, 54px)',
+            margin: '0 0 8px',
+            lineHeight: 1.1,
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase',
+            background: 'linear-gradient(to right, #ffffff 40%, #f5a623 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            display: 'inline-block'
+          }}>
             SEJATI
           </h1>
           <p style={{ color: ACCENT, fontWeight: 700, fontSize: 'clamp(14px, 2.2vw, 18px)', margin: '0 0 16px', letterSpacing: '0.03em', textTransform: 'uppercase' }}>
