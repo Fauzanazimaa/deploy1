@@ -162,6 +162,7 @@ function TabPenduduk() {
   const [bpsData, setBpsData] = useState(null);
   const [mappedData, setMappedData] = useState(null);
   const [genderData, setGenderData] = useState(null);
+  const [ageProjectionData, setAgeProjectionData] = useState(null);
   const [hoveredKec, setHoveredKec] = useState(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
@@ -173,10 +174,12 @@ function TabPenduduk() {
           const thCode = y - 1900;
           const url47 = `https://webapi.bps.go.id/v1/api/list/model/data/lang/ind/domain/1304/var/47/th/${thCode}/key/65b35aa80f299dc0e1e9e98ee5589ba4`;
           const url51 = `https://webapi.bps.go.id/v1/api/list/model/data/lang/ind/domain/1304/var/51/th/${thCode}/key/65b35aa80f299dc0e1e9e98ee5589ba4`;
+          const url26 = `https://webapi.bps.go.id/v1/api/list/model/data/lang/ind/domain/1304/var/26/th/${thCode}/key/65b35aa80f299dc0e1e9e98ee5589ba4`;
           try {
-            const [res47, res51] = await Promise.allSettled([
+            const [res47, res51, res26] = await Promise.allSettled([
               axios.get(url47),
-              axios.get(url51)
+              axios.get(url51),
+              axios.get(url26)
             ]);
             const isAvail47 = res47.status === 'fulfilled' && 
                              res47.value.data.status === 'OK' && 
@@ -190,7 +193,13 @@ function TabPenduduk() {
                              res51.value.data.datacontent && 
                              !Array.isArray(res51.value.data.datacontent) && 
                              Object.keys(res51.value.data.datacontent).length > 0;
-            return { year: y, hasData: isAvail47 || isAvail51 };
+            const isAvail26 = res26.status === 'fulfilled' && 
+                             res26.value.data.status === 'OK' && 
+                             res26.value.data['data-availability'] === 'available' && 
+                             res26.value.data.datacontent && 
+                             !Array.isArray(res26.value.data.datacontent) && 
+                             Object.keys(res26.value.data.datacontent).length > 0;
+            return { year: y, hasData: isAvail47 || isAvail51 || isAvail26 };
           } catch {
             return { year: y, hasData: false };
           }
@@ -224,11 +233,15 @@ function TabPenduduk() {
     const thCode = year - 1900;
     const url47 = `https://webapi.bps.go.id/v1/api/list/model/data/lang/ind/domain/1304/var/47/th/${thCode}/key/65b35aa80f299dc0e1e9e98ee5589ba4`;
     const url51 = `https://webapi.bps.go.id/v1/api/list/model/data/lang/ind/domain/1304/var/51/th/${thCode}/key/65b35aa80f299dc0e1e9e98ee5589ba4`;
+    const url27 = `https://webapi.bps.go.id/v1/api/list/model/data/lang/ind/domain/1304/var/27/th/${thCode}/key/65b35aa80f299dc0e1e9e98ee5589ba4`;
+    const url26 = `https://webapi.bps.go.id/v1/api/list/model/data/lang/ind/domain/1304/var/26/th/${thCode}/key/65b35aa80f299dc0e1e9e98ee5589ba4`;
     
     try {
-      const [res47, res51] = await Promise.allSettled([
+      const [res47, res51, res27, res26] = await Promise.allSettled([
         axios.get(url47),
-        axios.get(url51)
+        axios.get(url51),
+        axios.get(url27),
+        axios.get(url26)
       ]);
 
       const kecamatenList = [
@@ -352,9 +365,83 @@ function TabPenduduk() {
         setGenderData(null);
       }
 
-      // If both rejected, throw error
-      if (res47.status === 'rejected' && res51.status === 'rejected') {
-        throw new Error('Kedua API BPS gagal diakses. Periksa koneksi atau API BPS sedang offline.');
+      // Parse Var 26 & 27 (Age Projection)
+      const isFulfilled26 = res26.status === 'fulfilled' && res26.value.data.status === 'OK';
+      const isFulfilled27 = res27.status === 'fulfilled' && res27.value.data.status === 'OK';
+
+      if (isFulfilled26 || isFulfilled27) {
+        const ageGroups = [
+          { code: 1, label: '0-4' },
+          { code: 2, label: '5-9' },
+          { code: 3, label: '10-14' },
+          { code: 4, label: '15-19' },
+          { code: 5, label: '20-24' },
+          { code: 6, label: '25-29' },
+          { code: 7, label: '30-34' },
+          { code: 8, label: '35-39' },
+          { code: 9, label: '40-44' },
+          { code: 10, label: '45-49' },
+          { code: 11, label: '50-54' },
+          { code: 12, label: '55-59' },
+          { code: 13, label: '60-64' },
+          { code: 14, label: '65-69' },
+          { code: 15, label: '70-74' },
+          { code: 16, label: '75+' }
+        ];
+
+        const ageRecords = {
+          labels: ageGroups.map(g => g.label),
+          male: [],
+          female: []
+        };
+
+        let hasData27 = false;
+        let hasData26 = false;
+
+        if (isFulfilled27) {
+          const data27 = res27.value.data;
+          const availability27 = data27['data-availability'];
+          const datacontent27 = data27.datacontent;
+
+          if (availability27 === 'available' && datacontent27 && !Array.isArray(datacontent27)) {
+            ageGroups.forEach(g => {
+              const key = `${g.code}270${thCode}0`;
+              const val = parseFloat(datacontent27[key]);
+              ageRecords.male.push(!isNaN(val) ? normalizeBpsValue(val) : 0);
+            });
+            hasData27 = true;
+          }
+        }
+
+        if (isFulfilled26) {
+          const data26 = res26.value.data;
+          const availability26 = data26['data-availability'];
+          const datacontent26 = data26.datacontent;
+
+          if (availability26 === 'available' && datacontent26 && !Array.isArray(datacontent26)) {
+            ageGroups.forEach(g => {
+              const key = `${g.code}260${thCode}0`;
+              const val = parseFloat(datacontent26[key]);
+              ageRecords.female.push(!isNaN(val) ? normalizeBpsValue(val) : 0);
+            });
+            hasData26 = true;
+          }
+        }
+
+        if (hasData26 || hasData27) {
+          if (ageRecords.male.length === 0) ageRecords.male = ageGroups.map(() => 0);
+          if (ageRecords.female.length === 0) ageRecords.female = ageGroups.map(() => 0);
+          setAgeProjectionData(ageRecords);
+        } else {
+          setAgeProjectionData(null);
+        }
+      } else {
+        setAgeProjectionData(null);
+      }
+
+      // If all rejected, throw error
+      if (res47.status === 'rejected' && res51.status === 'rejected' && res26.status === 'rejected' && res27.status === 'rejected') {
+        throw new Error('Semua API BPS gagal diakses. Periksa koneksi atau API BPS sedang offline.');
       }
 
     } catch (err) {
@@ -567,6 +654,65 @@ function TabPenduduk() {
     }
   };
 
+  // Prepare age projection bar chart
+  const getAgeProjectionChartData = () => {
+    if (!ageProjectionData) return null;
+    return {
+      labels: ageProjectionData.labels,
+      datasets: [
+        {
+          label: 'Laki-Laki',
+          data: ageProjectionData.male,
+          backgroundColor: '#3b82f6',
+          borderRadius: 4
+        },
+        {
+          label: 'Perempuan',
+          data: ageProjectionData.female,
+          backgroundColor: '#ec4899',
+          borderRadius: 4
+        }
+      ]
+    };
+  };
+
+  const ageProjectionChartData = getAgeProjectionChartData();
+
+  const ageProjectionChartOptions = {
+    indexAxis: 'y', // Makes the chart horizontal
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'top',
+        labels: {
+          font: { family: "'Inter', sans-serif", weight: 600, size: 11 },
+          color: '#475569'
+        }
+      },
+      tooltip: {
+        backgroundColor: '#1f2937',
+        titleFont: { family: "'Inter', sans-serif", weight: 700, size: 12 },
+        bodyFont: { family: "'Inter', sans-serif", size: 11 },
+        padding: 10,
+        cornerRadius: 8,
+        callbacks: {
+          label: (context) => ` ${context.dataset.label}: ${context.raw} Ribu Jiwa`
+        }
+      }
+    },
+    scales: {
+      x: {
+        grid: { color: '#f1f5f9' },
+        ticks: { color: '#64748b', font: { family: "'Inter', sans-serif", size: 10 } }
+      },
+      y: {
+        grid: { display: false },
+        ticks: { color: '#64748b', font: { family: "'Inter', sans-serif", size: 10 } }
+      }
+    }
+  };
+
   return (
     <div>
       {/* Title & Control Panel */}
@@ -626,12 +772,12 @@ function TabPenduduk() {
             <i className="bi bi-arrow-clockwise me-2"></i>Coba Lagi
           </button>
         </div>
-      ) : (!mappedData && !genderData) ? (
+      ) : (!mappedData && !genderData && !ageProjectionData) ? (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 400, border: '1px dashed #cbd5e1', borderRadius: 14, background: '#fff', padding: '40px', textAlign: 'center' }}>
           <i className="bi bi-cloud-slash" style={{ fontSize: '48px', color: '#94a3b8', marginBottom: '16px' }}></i>
           <h5 style={{ fontWeight: 800, color: '#334155', marginBottom: '8px' }}>Data Kependudukan Belum Tersedia</h5>
           <p style={{ color: '#64748b', fontSize: '13px', maxWidth: '420px', lineHeight: 1.5 }}>
-            Data Jumlah Penduduk maupun Rincian Jenis Kelamin untuk tahun <strong>{selectedYear}</strong> belum dipublikasikan atau tidak ditemukan di Web API BPS Kabupaten Sijunjung.
+            Data Jumlah Penduduk, Rincian Jenis Kelamin, maupun Proyeksi Kelompok Umur untuk tahun <strong>{selectedYear}</strong> belum dipublikasikan atau tidak ditemukan di Web API BPS Kabupaten Sijunjung.
           </p>
         </div>
       ) : (
@@ -857,6 +1003,29 @@ function TabPenduduk() {
               <i className="bi bi-bar-chart-line" style={{ fontSize: '36px', color: '#94a3b8', display: 'block', marginBottom: 12 }}></i>
               <h6 style={{ fontWeight: 700, color: '#475569', marginBottom: 4 }}>Rincian Jenis Kelamin Belum Tersedia</h6>
               <p style={{ color: '#64748b', fontSize: 12, margin: 0 }}>Data rincian jenis kelamin per kecamatan untuk tahun <strong>{selectedYear}</strong> belum dipublikasikan oleh BPS Kabupaten Sijunjung.</p>
+            </div>
+          )}
+
+          {/* Age Projection Chart Section */}
+          {ageProjectionData ? (
+            <div style={{ marginTop: 24, background: '#fff', borderRadius: 14, padding: 24, border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+              <h6 style={{ fontWeight: 800, color: '#1a1f2e', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <i className="bi bi-bar-chart-steps" style={{ color: '#3b82f6' }}></i>
+                Proyeksi Penduduk Kabupaten Sijunjung Menurut Kelompok Umur ({selectedYear})
+              </h6>
+              <div style={{ height: 450 }}>
+                <Bar data={ageProjectionChartData} options={ageProjectionChartOptions} />
+              </div>
+              <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
+                <i className="bi bi-info-circle"></i>
+                <span>Sumber: Web API BPS Kabupaten Sijunjung (Variabel: Proyeksi Penduduk Kabupaten Sijunjung Menurut Kelompok Umur)</span>
+              </div>
+            </div>
+          ) : (
+            <div style={{ marginTop: 24, background: '#fff', borderRadius: 14, padding: '40px', border: '1px dashed #cbd5e1', textAlign: 'center' }}>
+              <i className="bi bi-bar-chart-steps" style={{ fontSize: '36px', color: '#94a3b8', display: 'block', marginBottom: 12 }}></i>
+              <h6 style={{ fontWeight: 700, color: '#475569', marginBottom: 4 }}>Proyeksi Kelompok Umur Belum Tersedia</h6>
+              <p style={{ color: '#64748b', fontSize: 12, margin: 0 }}>Data proyeksi kelompok umur untuk tahun <strong>{selectedYear}</strong> belum dipublikasikan oleh BPS Kabupaten Sijunjung.</p>
             </div>
           )}
         </div>
