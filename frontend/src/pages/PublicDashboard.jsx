@@ -167,6 +167,7 @@ function TabPenduduk() {
   const [error, setError] = useState(null);
   const [bpsData, setBpsData] = useState(null);
   const [mappedData, setMappedData] = useState(null);
+  const [genderData, setGenderData] = useState(null);
   const [hoveredKec, setHoveredKec] = useState(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
@@ -216,49 +217,55 @@ function TabPenduduk() {
     setLoading(true);
     setError(null);
     const thCode = year - 1900;
-    const url = `https://webapi.bps.go.id/v1/api/list/model/data/lang/ind/domain/1304/var/47/th/${thCode}/key/65b35aa80f299dc0e1e9e98ee5589ba4`;
+    const url47 = `https://webapi.bps.go.id/v1/api/list/model/data/lang/ind/domain/1304/var/47/th/${thCode}/key/65b35aa80f299dc0e1e9e98ee5589ba4`;
+    const url51 = `https://webapi.bps.go.id/v1/api/list/model/data/lang/ind/domain/1304/var/51/th/${thCode}/key/65b35aa80f299dc0e1e9e98ee5589ba4`;
     
     try {
-      const response = await axios.get(url);
-      const data = response.data;
+      const [res47, res51] = await Promise.all([
+        axios.get(url47),
+        axios.get(url51)
+      ]);
+
+      const data47 = res47.data;
+      const data51 = res51.data;
       
-      if (data.status !== 'OK') {
+      if (data47.status !== 'OK') {
         throw new Error('API status not OK');
       }
       
-      setBpsData(data);
+      setBpsData(data47);
       
-      const availability = data['data-availability'];
-      const datacontent = data.datacontent;
+      const availability47 = data47['data-availability'];
+      const datacontent47 = data47.datacontent;
       
-      if (availability !== 'available' || !datacontent || Array.isArray(datacontent) || Object.keys(datacontent).length === 0) {
+      const kecamatenList = [
+        { code: 1, label: 'Kamang Baru' },
+        { code: 2, label: 'Tanjung Gadang' },
+        { code: 3, label: 'Sijunjung' },
+        { code: 4, label: 'Lubuk Tarok' },
+        { code: 5, label: 'IV Nagari' },
+        { code: 6, label: 'Kupitan' },
+        { code: 100, label: 'Koto Tujuh' },
+        { code: 110, label: 'Sumpur Kudus' }
+      ];
+
+      if (availability47 !== 'available' || !datacontent47 || Array.isArray(datacontent47) || Object.keys(datacontent47).length === 0) {
         setMappedData(null);
       } else {
-        const varVal = data.var?.[0]?.val || 47;
+        const varVal = data47.var?.[0]?.val || 47;
         const records = {};
-        
-        const kecamatenList = [
-          { code: 1, label: 'Kamang Baru' },
-          { code: 2, label: 'Tanjung Gadang' },
-          { code: 3, label: 'Sijunjung' },
-          { code: 4, label: 'Lubuk Tarok' },
-          { code: 5, label: 'IV Nagari' },
-          { code: 6, label: 'Kupitan' },
-          { code: 100, label: 'Koto Tujuh' },
-          { code: 110, label: 'Sumpur Kudus' }
-        ];
         
         let hasValidData = false;
         kecamatenList.forEach(kec => {
           const primaryKey = `${kec.code}${varVal}0${thCode}0`;
-          let valStr = datacontent[primaryKey];
+          let valStr = datacontent47[primaryKey];
           
           if (valStr === undefined) {
             const prefix = `${kec.code}${varVal}`;
             const suffix = `${thCode}`;
-            const matchedKey = Object.keys(datacontent).find(k => k.startsWith(prefix) && k.includes(suffix));
+            const matchedKey = Object.keys(datacontent47).find(k => k.startsWith(prefix) && k.includes(suffix));
             if (matchedKey) {
-              valStr = datacontent[matchedKey];
+              valStr = datacontent47[matchedKey];
             }
           }
           
@@ -269,7 +276,7 @@ function TabPenduduk() {
                 code: kec.code,
                 label: kec.label,
                 value: val,
-                unit: data.var?.[0]?.unit || 'Ribu Jiwa'
+                unit: data47.var?.[0]?.unit || 'Ribu Jiwa'
               };
               hasValidData = true;
             }
@@ -282,6 +289,46 @@ function TabPenduduk() {
           setMappedData(null);
         }
       }
+
+      // Parse Var 51
+      if (data51.status === 'OK' && data51['data-availability'] === 'available' && data51.datacontent && !Array.isArray(data51.datacontent)) {
+        const datacontent51 = data51.datacontent;
+        const genderRecords = {};
+        let hasValidGenderData = false;
+
+        kecamatenList.forEach(kec => {
+          // Male: turvar 27
+          const keyMale = `${kec.code}5127${thCode}0`;
+          const valMale = parseFloat(datacontent51[keyMale]);
+
+          // Female: turvar 28
+          const keyFemale = `${kec.code}5128${thCode}0`;
+          const valFemale = parseFloat(datacontent51[keyFemale]);
+
+          // Total: turvar 29
+          const keyTotal = `${kec.code}5129${thCode}0`;
+          const valTotal = parseFloat(datacontent51[keyTotal]);
+
+          if (!isNaN(valMale) && !isNaN(valFemale)) {
+            genderRecords[kec.code] = {
+              male: valMale,
+              female: valFemale,
+              total: !isNaN(valTotal) ? valTotal : (valMale + valFemale),
+              label: kec.label
+            };
+            hasValidGenderData = true;
+          }
+        });
+
+        if (hasValidGenderData) {
+          setGenderData(genderRecords);
+        } else {
+          setGenderData(null);
+        }
+      } else {
+        setGenderData(null);
+      }
+
     } catch (err) {
       console.error(err);
       setError('Gagal memuat data dari Web API BPS. Silakan periksa koneksi internet Anda atau coba lagi nanti.');
@@ -422,6 +469,68 @@ function TabPenduduk() {
       color
     });
   }
+
+  // Prepare gender data bar chart
+  const getBarChartData = () => {
+    if (!genderData) return null;
+    const labels = Object.values(genderData).map(d => d.label);
+    const maleValues = Object.values(genderData).map(d => d.male);
+    const femaleValues = Object.values(genderData).map(d => d.female);
+    
+    return {
+      labels,
+      datasets: [
+        {
+          label: 'Laki-Laki',
+          data: maleValues,
+          backgroundColor: '#3b82f6', // soft premium blue
+          borderRadius: 4,
+        },
+        {
+          label: 'Perempuan',
+          data: femaleValues,
+          backgroundColor: '#ec4899', // soft premium pink
+          borderRadius: 4,
+        }
+      ]
+    };
+  };
+
+  const barChartData = getBarChartData();
+
+  const barChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'top',
+        labels: {
+          font: { family: "'Inter', sans-serif", weight: 600, size: 11 },
+          color: '#475569'
+        }
+      },
+      tooltip: {
+        backgroundColor: '#1f2937',
+        titleFont: { family: "'Inter', sans-serif", weight: 700, size: 12 },
+        bodyFont: { family: "'Inter', sans-serif", size: 11 },
+        padding: 10,
+        cornerRadius: 8,
+        callbacks: {
+          label: (context) => ` ${context.dataset.label}: ${context.raw} Ribu Jiwa`
+        }
+      }
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: { color: '#64748b', font: { family: "'Inter', sans-serif", size: 10 } }
+      },
+      y: {
+        grid: { color: '#f1f5f9' },
+        ticks: { color: '#64748b', font: { family: "'Inter', sans-serif", size: 10 } }
+      }
+    }
+  };
 
   return (
     <div>
@@ -666,6 +775,23 @@ function TabPenduduk() {
               </div>
             </div>
           </div>
+
+          {/* Bar Chart Section */}
+          {genderData && (
+            <div style={{ marginTop: 24, background: '#fff', borderRadius: 14, padding: 24, border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+              <h6 style={{ fontWeight: 800, color: '#1a1f2e', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <i className="bi bi-bar-chart-line" style={{ color: '#ec4899' }}></i>
+                Jumlah Penduduk Menurut Kecamatan dan Jenis Kelamin ({selectedYear})
+              </h6>
+              <div style={{ height: 350 }}>
+                <Bar data={barChartData} options={barChartOptions} />
+              </div>
+              <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
+                <i className="bi bi-info-circle"></i>
+                <span>Sumber: Web API BPS Kabupaten Sijunjung (Variabel: Jumlah Penduduk menurut Kecamatan dan Jenis Kelamin)</span>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
