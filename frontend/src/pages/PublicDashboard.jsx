@@ -51,19 +51,18 @@ export default function PublicDashboard() {
         <div style={{ maxWidth: 760, margin: '0 auto' }}>
           <h1 style={{
             color: '#fff',
-            fontFamily: "'Fredoka', sans-serif",
-            fontWeight: 700,
-            fontSize: 'clamp(36px, 6vw, 58px)',
-            margin: '0 0 12px',
-            lineHeight: 1.15,
-            letterSpacing: '0.02em',
+            fontFamily: "'Bebas Neue', sans-serif",
+            fontSize: 'clamp(44px, 7vw, 68px)',
+            margin: '0 0 10px',
+            lineHeight: 1.1,
+            letterSpacing: '0.08em',
             background: 'linear-gradient(to right, #ffffff 40%, #f5a623 100%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             display: 'inline-block',
             filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.35))'
           }}>
-            Sejati
+            SEJATI
           </h1>
           <p style={{ color: ACCENT, fontWeight: 700, fontSize: 'clamp(14px, 2.2vw, 18px)', margin: '0 0 16px', letterSpacing: '0.03em', textTransform: 'uppercase' }}>
             Sistem Jejaring Pengumpulan Data Statistik Terintegrasi
