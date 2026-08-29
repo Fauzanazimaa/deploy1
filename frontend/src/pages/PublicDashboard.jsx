@@ -101,11 +101,6 @@ export default function PublicDashboard() {
 
       {/* ── Content View ── */}
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 20px 60px' }}>
-        <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, fontSize: 11, color: '#6b7280', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
-          <i className="bi bi-info-circle-fill" style={{ color: '#3b82f6', fontSize: 14 }}></i>
-          <span>Mode Simulasi: Data di bawah divisualisasikan berdasarkan rilis data terbaru BPS Kabupaten Sijunjung. Sinkronisasi API BPS aktif otomatis.</span>
-        </div>
-
         {activeTab === 'penduduk' && <TabPenduduk />}
         {activeTab === 'tenaga_kerja' && <TabTenagaKerja />}
         {activeTab === 'ekonomi' && <TabEkonomi />}
@@ -584,7 +579,7 @@ function TabPenduduk() {
               Jumlah Penduduk Kabupaten Sijunjung Menurut Kecamatan
             </h5>
             <p style={{ color: '#6b7280', fontSize: 13, margin: '4px 0 0' }}>
-              Visualisasi geospasial interaktif bersumber langsung dari Web API BPS Kabupaten Sijunjung
+              Visualisasi penduduk secara interaktif bersumber langsung dari Web API BPS Kabupaten Sijunjung
             </p>
           </div>
           <div className="d-flex align-items-center gap-2">
