@@ -177,15 +177,26 @@ function TabPenduduk() {
         const yearsRange = Array.from({ length: 21 }, (_, i) => 2020 + i); // 2020 to 2040
         const checkPromises = yearsRange.map(async (y) => {
           const thCode = y - 1900;
-          const url = `https://webapi.bps.go.id/v1/api/list/model/data/lang/ind/domain/1304/var/47/th/${thCode}/key/65b35aa80f299dc0e1e9e98ee5589ba4`;
+          const url47 = `https://webapi.bps.go.id/v1/api/list/model/data/lang/ind/domain/1304/var/47/th/${thCode}/key/65b35aa80f299dc0e1e9e98ee5589ba4`;
+          const url51 = `https://webapi.bps.go.id/v1/api/list/model/data/lang/ind/domain/1304/var/51/th/${thCode}/key/65b35aa80f299dc0e1e9e98ee5589ba4`;
           try {
-            const res = await axios.get(url);
-            const isAvail = res.data.status === 'OK' && 
-                            res.data['data-availability'] === 'available' && 
-                            res.data.datacontent && 
-                            !Array.isArray(res.data.datacontent) && 
-                            Object.keys(res.data.datacontent).length > 0;
-            return { year: y, hasData: isAvail };
+            const [res47, res51] = await Promise.allSettled([
+              axios.get(url47),
+              axios.get(url51)
+            ]);
+            const isAvail47 = res47.status === 'fulfilled' && 
+                             res47.value.data.status === 'OK' && 
+                             res47.value.data['data-availability'] === 'available' && 
+                             res47.value.data.datacontent && 
+                             !Array.isArray(res47.value.data.datacontent) && 
+                             Object.keys(res47.value.data.datacontent).length > 0;
+            const isAvail51 = res51.status === 'fulfilled' && 
+                             res51.value.data.status === 'OK' && 
+                             res51.value.data['data-availability'] === 'available' && 
+                             res51.value.data.datacontent && 
+                             !Array.isArray(res51.value.data.datacontent) && 
+                             Object.keys(res51.value.data.datacontent).length > 0;
+            return { year: y, hasData: isAvail47 || isAvail51 };
           } catch {
             return { year: y, hasData: false };
           }
@@ -221,23 +232,11 @@ function TabPenduduk() {
     const url51 = `https://webapi.bps.go.id/v1/api/list/model/data/lang/ind/domain/1304/var/51/th/${thCode}/key/65b35aa80f299dc0e1e9e98ee5589ba4`;
     
     try {
-      const [res47, res51] = await Promise.all([
+      const [res47, res51] = await Promise.allSettled([
         axios.get(url47),
         axios.get(url51)
       ]);
 
-      const data47 = res47.data;
-      const data51 = res51.data;
-      
-      if (data47.status !== 'OK') {
-        throw new Error('API status not OK');
-      }
-      
-      setBpsData(data47);
-      
-      const availability47 = data47['data-availability'];
-      const datacontent47 = data47.datacontent;
-      
       const kecamatenList = [
         { code: 1, label: 'Kamang Baru' },
         { code: 2, label: 'Tanjung Gadang' },
@@ -249,89 +248,110 @@ function TabPenduduk() {
         { code: 110, label: 'Sumpur Kudus' }
       ];
 
-      if (availability47 !== 'available' || !datacontent47 || Array.isArray(datacontent47) || Object.keys(datacontent47).length === 0) {
-        setMappedData(null);
-      } else {
-        const varVal = data47.var?.[0]?.val || 47;
-        const records = {};
-        
-        let hasValidData = false;
-        kecamatenList.forEach(kec => {
-          const primaryKey = `${kec.code}${varVal}0${thCode}0`;
-          let valStr = datacontent47[primaryKey];
-          
-          if (valStr === undefined) {
-            const prefix = `${kec.code}${varVal}`;
-            const suffix = `${thCode}`;
-            const matchedKey = Object.keys(datacontent47).find(k => k.startsWith(prefix) && k.includes(suffix));
-            if (matchedKey) {
-              valStr = datacontent47[matchedKey];
-            }
-          }
-          
-          if (valStr !== undefined) {
-            const val = parseFloat(valStr);
-            if (!isNaN(val)) {
-              records[kec.code] = {
-                code: kec.code,
-                label: kec.label,
-                value: val,
-                unit: data47.var?.[0]?.unit || 'Ribu Jiwa'
-              };
-              hasValidData = true;
-            }
-          }
-        });
-        
-        if (hasValidData) {
-          setMappedData(records);
-        } else {
+      // Parse Var 47 (Map)
+      if (res47.status === 'fulfilled' && res47.value.data.status === 'OK') {
+        const data47 = res47.value.data;
+        setBpsData(data47);
+        const availability47 = data47['data-availability'];
+        const datacontent47 = data47.datacontent;
+
+        if (availability47 !== 'available' || !datacontent47 || Array.isArray(datacontent47) || Object.keys(datacontent47).length === 0) {
           setMappedData(null);
+        } else {
+          const varVal = data47.var?.[0]?.val || 47;
+          const records = {};
+          let hasValidData = false;
+          kecamatenList.forEach(kec => {
+            const primaryKey = `${kec.code}${varVal}0${thCode}0`;
+            let valStr = datacontent47[primaryKey];
+            
+            if (valStr === undefined) {
+              const prefix = `${kec.code}${varVal}`;
+              const suffix = `${thCode}`;
+              const matchedKey = Object.keys(datacontent47).find(k => k.startsWith(prefix) && k.includes(suffix));
+              if (matchedKey) {
+                valStr = datacontent47[matchedKey];
+              }
+            }
+            
+            if (valStr !== undefined) {
+              const val = parseFloat(valStr);
+              if (!isNaN(val)) {
+                records[kec.code] = {
+                  code: kec.code,
+                  label: kec.label,
+                  value: val,
+                  unit: data47.var?.[0]?.unit || 'Ribu Jiwa'
+                };
+                hasValidData = true;
+              }
+            }
+          });
+          
+          if (hasValidData) {
+            setMappedData(records);
+          } else {
+            setMappedData(null);
+          }
         }
+      } else {
+        setMappedData(null);
       }
 
-      // Parse Var 51
-      if (data51.status === 'OK' && data51['data-availability'] === 'available' && data51.datacontent && !Array.isArray(data51.datacontent)) {
+      // Parse Var 51 (Gender)
+      if (res51.status === 'fulfilled' && res51.value.data.status === 'OK') {
+        const data51 = res51.value.data;
+        const availability51 = data51['data-availability'];
         const datacontent51 = data51.datacontent;
-        const genderRecords = {};
-        let hasValidGenderData = false;
 
-        kecamatenList.forEach(kec => {
-          // Male: turvar 27
-          const keyMale = `${kec.code}5127${thCode}0`;
-          const valMale = parseFloat(datacontent51[keyMale]);
-
-          // Female: turvar 28
-          const keyFemale = `${kec.code}5128${thCode}0`;
-          const valFemale = parseFloat(datacontent51[keyFemale]);
-
-          // Total: turvar 29
-          const keyTotal = `${kec.code}5129${thCode}0`;
-          const valTotal = parseFloat(datacontent51[keyTotal]);
-
-          if (!isNaN(valMale) && !isNaN(valFemale)) {
-            genderRecords[kec.code] = {
-              male: valMale,
-              female: valFemale,
-              total: !isNaN(valTotal) ? valTotal : (valMale + valFemale),
-              label: kec.label
-            };
-            hasValidGenderData = true;
-          }
-        });
-
-        if (hasValidGenderData) {
-          setGenderData(genderRecords);
-        } else {
+        if (availability51 !== 'available' || !datacontent51 || Array.isArray(datacontent51) || Object.keys(datacontent51).length === 0) {
           setGenderData(null);
+        } else {
+          const genderRecords = {};
+          let hasValidGenderData = false;
+
+          kecamatenList.forEach(kec => {
+            // Male: turvar 27
+            const keyMale = `${kec.code}5127${thCode}0`;
+            const valMale = parseFloat(datacontent51[keyMale]);
+
+            // Female: turvar 28
+            const keyFemale = `${kec.code}5128${thCode}0`;
+            const valFemale = parseFloat(datacontent51[keyFemale]);
+
+            // Total: turvar 29
+            const keyTotal = `${kec.code}5129${thCode}0`;
+            const valTotal = parseFloat(datacontent51[keyTotal]);
+
+            if (!isNaN(valMale) && !isNaN(valFemale)) {
+              genderRecords[kec.code] = {
+                male: valMale,
+                female: valFemale,
+                total: !isNaN(valTotal) ? valTotal : (valMale + valFemale),
+                label: kec.label
+              };
+              hasValidGenderData = true;
+            }
+          });
+
+          if (hasValidGenderData) {
+            setGenderData(genderRecords);
+          } else {
+            setGenderData(null);
+          }
         }
       } else {
         setGenderData(null);
       }
 
+      // If both rejected, throw error
+      if (res47.status === 'rejected' && res51.status === 'rejected') {
+        throw new Error('Kedua API BPS gagal diakses. Periksa koneksi atau API BPS sedang offline.');
+      }
+
     } catch (err) {
       console.error(err);
-      setError('Gagal memuat data dari Web API BPS. Silakan periksa koneksi internet Anda atau coba lagi nanti.');
+      setError(err.message || 'Gagal memuat data dari Web API BPS. Silakan periksa koneksi internet Anda atau coba lagi nanti.');
     } finally {
       setLoading(false);
     }
@@ -439,7 +459,9 @@ function TabPenduduk() {
   // Summary stats
   const totalPopulation = mappedData
     ? Object.values(mappedData).reduce((sum, r) => sum + r.value, 0).toFixed(2)
-    : null;
+    : (genderData
+        ? Object.values(genderData).reduce((sum, r) => sum + r.total, 0).toFixed(2)
+        : null);
     
   let maxKec = null;
   let minKec = null;
@@ -448,6 +470,11 @@ function TabPenduduk() {
     Object.values(mappedData).forEach(r => {
       if (!maxKec || r.value > maxKec.value) maxKec = r;
       if (!minKec || r.value < minKec.value) minKec = r;
+    });
+  } else if (genderData) {
+    Object.values(genderData).forEach(r => {
+      if (!maxKec || r.total > maxKec.value) maxKec = { label: r.label, value: r.total };
+      if (!minKec || r.total < minKec.value) minKec = { label: r.label, value: r.total };
     });
   }
 
@@ -591,12 +618,12 @@ function TabPenduduk() {
             <i className="bi bi-arrow-clockwise me-2"></i>Coba Lagi
           </button>
         </div>
-      ) : !mappedData ? (
+      ) : (!mappedData && !genderData) ? (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 400, border: '1px dashed #cbd5e1', borderRadius: 14, background: '#fff', padding: '40px', textAlign: 'center' }}>
           <i className="bi bi-cloud-slash" style={{ fontSize: '48px', color: '#94a3b8', marginBottom: '16px' }}></i>
-          <h5 style={{ fontWeight: 800, color: '#334155', marginBottom: '8px' }}>Data Belum Tersedia</h5>
+          <h5 style={{ fontWeight: 800, color: '#334155', marginBottom: '8px' }}>Data Kependudukan Belum Tersedia</h5>
           <p style={{ color: '#64748b', fontSize: '13px', maxWidth: '420px', lineHeight: 1.5 }}>
-            Data Jumlah Penduduk Menurut Kecamatan untuk tahun <strong>{selectedYear}</strong> belum dipublikasikan atau tidak ditemukan di Web API BPS Kabupaten Sijunjung.
+            Data Jumlah Penduduk maupun Rincian Jenis Kelamin untuk tahun <strong>{selectedYear}</strong> belum dipublikasikan atau tidak ditemukan di Web API BPS Kabupaten Sijunjung.
           </p>
         </div>
       ) : (
@@ -625,7 +652,8 @@ function TabPenduduk() {
           </div>
 
           {/* Map and Table Split Screen */}
-          <div className="row g-4">
+          {mappedData ? (
+            <div className="row g-4">
             {/* Map Column */}
             <div className="col-lg-7">
               <div style={{ background: '#fff', borderRadius: 14, padding: 24, border: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -775,9 +803,16 @@ function TabPenduduk() {
               </div>
             </div>
           </div>
+          ) : (
+            <div style={{ background: '#fff', borderRadius: 14, padding: '40px', border: '1px dashed #cbd5e1', textAlign: 'center', marginBottom: 20 }}>
+              <i className="bi bi-map" style={{ fontSize: '36px', color: '#94a3b8', display: 'block', marginBottom: 12 }}></i>
+              <h6 style={{ fontWeight: 700, color: '#475569', marginBottom: 4 }}>Peta Distribusi Penduduk Belum Tersedia</h6>
+              <p style={{ color: '#64748b', fontSize: 12, margin: 0 }}>Data geografis peta kecamatan untuk tahun <strong>{selectedYear}</strong> belum dipublikasikan oleh BPS Kabupaten Sijunjung.</p>
+            </div>
+          )}
 
           {/* Bar Chart Section */}
-          {genderData && (
+          {genderData ? (
             <div style={{ marginTop: 24, background: '#fff', borderRadius: 14, padding: 24, border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
               <h6 style={{ fontWeight: 800, color: '#1a1f2e', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
                 <i className="bi bi-bar-chart-line" style={{ color: '#ec4899' }}></i>
@@ -790,6 +825,12 @@ function TabPenduduk() {
                 <i className="bi bi-info-circle"></i>
                 <span>Sumber: Web API BPS Kabupaten Sijunjung (Variabel: Jumlah Penduduk menurut Kecamatan dan Jenis Kelamin)</span>
               </div>
+            </div>
+          ) : (
+            <div style={{ marginTop: 24, background: '#fff', borderRadius: 14, padding: '40px', border: '1px dashed #cbd5e1', textAlign: 'center' }}>
+              <i className="bi bi-bar-chart-line" style={{ fontSize: '36px', color: '#94a3b8', display: 'block', marginBottom: 12 }}></i>
+              <h6 style={{ fontWeight: 700, color: '#475569', marginBottom: 4 }}>Rincian Jenis Kelamin Belum Tersedia</h6>
+              <p style={{ color: '#64748b', fontSize: 12, margin: 0 }}>Data rincian jenis kelamin per kecamatan untuk tahun <strong>{selectedYear}</strong> belum dipublikasikan oleh BPS Kabupaten Sijunjung.</p>
             </div>
           )}
         </div>
