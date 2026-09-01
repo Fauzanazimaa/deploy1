@@ -20,7 +20,6 @@ class User(db.Model):
     tasks_assigned = db.relationship('Task', foreign_keys='Task.assigned_to', backref='assignee', lazy=True, cascade='all, delete-orphan')
     tasks_created = db.relationship('Task', foreign_keys='Task.assigned_by', backref='creator', lazy=True)
     submissions = db.relationship('Submission', backref='contributor', lazy=True, cascade='all, delete-orphan')
-    manual_entries = db.relationship('ManualEntry', backref='entered_by_user', lazy=True, cascade='all, delete-orphan')
 
     def to_dict(self):
         return {
@@ -45,7 +44,6 @@ class DataType(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     tasks = db.relationship('Task', backref='data_type', lazy=True, cascade='all, delete-orphan')
-    manual_entries = db.relationship('ManualEntry', backref='data_type', lazy=True, cascade='all, delete-orphan')
     templates = db.relationship('ExcelTemplate', backref='data_type', lazy=True, cascade='all, delete-orphan')
 
     def get_fields_schema(self):
@@ -132,31 +130,6 @@ class Submission(db.Model):
         }
 
 
-class ManualEntry(db.Model):
-    __tablename__ = 'manual_entries'
-    id = db.Column(db.Integer, primary_key=True)
-    data_type_id = db.Column(db.Integer, db.ForeignKey('data_types.id'), nullable=False)
-    data = db.Column(db.Text)  # JSON string
-    entered_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-    def get_data(self):
-        if self.data:
-            return json.loads(self.data)
-        return {}
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'data_type_id': self.data_type_id,
-            'data_type_name': self.data_type.name if self.data_type else None,
-            'data': self.get_data(),
-            'entered_by': self.entered_by,
-            'entered_by_username': self.entered_by_user.username if self.entered_by_user else None,
-            'created_at': self.created_at.isoformat()
-        }
-
-
 class ExcelTemplate(db.Model):
     __tablename__ = 'excel_templates'
     id = db.Column(db.Integer, primary_key=True)
@@ -178,72 +151,6 @@ class ExcelTemplate(db.Model):
             'created_by': self.created_by,
             'creator_username': self.creator.username if self.creator else None,
             'created_at': self.created_at.isoformat()
-        }
-
-
-class DashboardWidget(db.Model):
-    """
-    Konfigurasi widget yang tampil di dashboard viewer.
-    Admin menentukan data apa yang ditampilkan, chart apa, dll.
-    """
-    __tablename__ = 'dashboard_widgets'
-    id            = db.Column(db.Integer, primary_key=True)
-    title         = db.Column(db.String(200), nullable=False)
-    description   = db.Column(db.Text)
-    category      = db.Column(db.String(50), default='Umum')
-    data_type_id  = db.Column(db.Integer, db.ForeignKey('data_types.id'), nullable=True)
-    # Sumber data: 'manual' | 'approved_submissions' | 'both'
-    data_source   = db.Column(db.String(20), default='both')
-    # Tipe tampilan: 'bar' | 'line' | 'pie' | 'doughnut' | 'area' | 'table' | 'number'
-    chart_type    = db.Column(db.String(20), default='bar')
-    # Field sumbu X / kategori (nama key data, e.g. "__row_label" atau nama kolom)
-    label_field   = db.Column(db.String(100))
-    # Field sumbu Y / nilai
-    value_field   = db.Column(db.String(100))
-    # Field seri/legenda (opsional, untuk grouped chart)
-    series_field  = db.Column(db.String(100))
-    # Konfigurasi visualisasi tambahan (JSON): header_level, label_field_label, dll
-    viz_config    = db.Column(db.Text)
-    # Tampilkan di viewer publik?
-    is_visible    = db.Column(db.Boolean, default=True)
-    # Bisa di-download?
-    allow_download = db.Column(db.Boolean, default=True)
-    # Urutan tampil
-    sort_order    = db.Column(db.Integer, default=0)
-    created_by    = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    created_at    = db.Column(db.DateTime, default=datetime.utcnow)
-
-    data_type = db.relationship('DataType', foreign_keys=[data_type_id])
-    creator   = db.relationship('User',     foreign_keys=[created_by])
-
-    def get_viz_config(self):
-        if self.viz_config:
-            try:
-                return json.loads(self.viz_config)
-            except Exception:
-                return {}
-        return {}
-
-    def to_dict(self):
-        return {
-            'id':             self.id,
-            'title':          self.title,
-            'description':    self.description,
-            'category':       self.category or 'Umum',
-            'data_type_id':   self.data_type_id,
-            'data_type_name': self.data_type.name if self.data_type else None,
-            'data_source':    self.data_source,
-            'chart_type':     self.chart_type,
-            'label_field':    self.label_field,
-            'value_field':    self.value_field,
-            'series_field':   self.series_field,
-            'viz_config':     self.get_viz_config(),
-            'is_visible':     self.is_visible,
-            'allow_download': self.allow_download,
-            'sort_order':     self.sort_order,
-            'created_by':     self.created_by,
-            'creator_username': self.creator.username if self.creator else None,
-            'created_at':     self.created_at.isoformat(),
         }
 
 

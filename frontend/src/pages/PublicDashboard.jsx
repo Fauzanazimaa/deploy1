@@ -35,26 +35,65 @@ export default function PublicDashboard() {
     <div style={{ minHeight: '100vh', background: '#f5f6fa', fontFamily: "'Inter', sans-serif" }}>
 
       {/* ── Top Navigation ── */}
-      <nav style={{ background: SIDEBAR_BG, height: 64, display: 'flex', alignItems: 'center', padding: '0 28px', position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 2px 12px rgba(0,0,0,0.18)' }}>
-        <SejatiLogo size={36} variant="full" />
+      <nav className="public-nav" style={{
+        background: 'rgba(26, 31, 46, 0.98)',
+        backdropFilter: 'blur(12px)',
+        height: 60,
+        display: 'flex',
+        alignItems: 'center',
+        position: 'sticky',
+        top: 0,
+        zIndex: 100,
+        borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.15)'
+      }}>
+        <div style={{ width: '100%', maxWidth: 1200, margin: '0 auto', padding: '0 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          {/* Logo Responsive: Full on Desktop/Tablet, Compact on Mobile */}
+          <div className="nav-logo-wrap">
+            <div className="d-none d-sm-block">
+              <SejatiLogo size={36} variant="full" />
+            </div>
+            <div className="d-block d-sm-none">
+              <SejatiLogo size={30} variant="compact" />
+            </div>
+          </div>
 
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
-          <button onClick={() => setOpenLogin(openLogin ? null : 'login')}
-            style={{ background: ACCENT, border: 'none', color: '#fff', padding: '7px 16px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontFamily: "'Inter',sans-serif" }}>
-            <i className="bi bi-box-arrow-in-right"></i> Login
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <button
+              onClick={() => setOpenLogin(openLogin ? null : 'login')}
+              className="nav-login-btn"
+              style={{
+                background: 'linear-gradient(135deg, #f5a623 0%, #d97706 100%)',
+                border: 'none',
+                color: '#fff',
+                padding: '7px 16px',
+                borderRadius: 20,
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                fontFamily: "'Inter',sans-serif",
+                boxShadow: '0 2px 8px rgba(245,166,35,0.35)',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <i className="bi bi-box-arrow-in-right"></i> Login
+            </button>
+          </div>
         </div>
       </nav>
 
       {/* ── Hero Banner ── */}
-      <div style={{ background: `linear-gradient(135deg, ${SIDEBAR_BG} 0%, #2d3748 100%)`, padding: '40px 28px 36px', textAlign: 'center' }}>
+      <div className="public-hero" style={{ background: `linear-gradient(135deg, ${SIDEBAR_BG} 0%, #2d3748 100%)`, padding: '36px 20px 30px', textAlign: 'center' }}>
         <div style={{ maxWidth: 760, margin: '0 auto' }}>
           <h1 style={{
             color: '#fff',
             fontFamily: "'Sora', sans-serif",
             fontWeight: 800,
-            fontSize: 'clamp(32px, 5.5vw, 54px)',
-            margin: '0 0 10px',
+            fontSize: 'clamp(28px, 5.5vw, 54px)',
+            margin: '0 0 8px',
             lineHeight: 1.15,
             letterSpacing: '0.04em',
             background: 'linear-gradient(to right, #ffffff 40%, #f5a623 100%)',
@@ -65,54 +104,82 @@ export default function PublicDashboard() {
           }}>
             SEJATI
           </h1>
-          <p style={{ color: ACCENT, fontWeight: 700, fontSize: 'clamp(14px, 2.2vw, 18px)', margin: '0 0 16px', letterSpacing: '0.03em', textTransform: 'uppercase' }}>
+          <p style={{ color: ACCENT, fontWeight: 700, fontSize: 'clamp(12px, 2.2vw, 17px)', margin: '0 0 10px', letterSpacing: '0.03em', textTransform: 'uppercase' }}>
             Sistem Jejaring Pengumpulan Data Statistik Terintegrasi
           </p>
-          <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: 13, margin: '0 auto 20px', lineHeight: 1.6 }}>
+          <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, margin: '0 auto 12px', lineHeight: 1.6, maxWidth: 640 }}>
             Pusat pengumpulan data statistik terpadu dan akses indikator makro sektoral Kabupaten Sijunjung secara real-time yang bersumber langsung dari API Badan Pusat Statistik (BPS) & dinas terkait.
           </p>
         </div>
       </div>
 
-      {/* ── Sub Navigation Tabs (BPS API Categories) ── */}
-      <div style={{ background: '#fff', borderBottom: '1px solid #e5e7eb', position: 'sticky', top: 64, zIndex: 90, boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', justifyContent: 'center', gap: 8, overflowX: 'auto', padding: '0 20px' }}>
-          {[
-            { id: 'penduduk', label: 'Penduduk', icon: 'bi-people' },
-            { id: 'tenaga_kerja', label: 'Tenaga Kerja', icon: 'bi-briefcase' },
-            { id: 'ekonomi', label: 'Ekonomi', icon: 'bi-graph-up-arrow' },
-            { id: 'kemiskinan', label: 'Kemiskinan', icon: 'bi-activity' },
-            { id: 'ipm', label: 'IPM', icon: 'bi-award' },
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              style={{
-                background: 'none',
-                border: 'none',
-                borderBottom: activeTab === tab.id ? `3px solid ${ACCENT}` : '3px solid transparent',
-                color: activeTab === tab.id ? '#1a1f2e' : '#6b7280',
-                padding: '16px 14px',
-                fontSize: 13,
-                fontWeight: activeTab === tab.id ? 700 : 500,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                whiteSpace: 'nowrap',
-                fontFamily: "'Inter', sans-serif",
-                transition: 'all 0.15s'
-              }}
-            >
-              <i className={`bi ${tab.icon}`} style={{ color: activeTab === tab.id ? ACCENT : '#9ca3af', fontSize: 15 }}></i>
-              {tab.label}
-            </button>
-          ))}
+      {/* ── Sub Navigation Tabs (BPS API Categories - Pill Style) ── */}
+      <div className="public-subnav" style={{
+        background: '#ffffff',
+        borderBottom: '1px solid #e5e7eb',
+        position: 'sticky',
+        top: 60,
+        zIndex: 90,
+        boxShadow: '0 2px 10px rgba(0,0,0,0.03)'
+      }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <div
+            className="hide-scrollbar public-tabs-scroll"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              overflowX: 'auto',
+              WebkitOverflowScrolling: 'touch',
+              padding: '10px 16px',
+              scrollSnapType: 'x proximity'
+            }}
+          >
+            {[
+              { id: 'penduduk', label: 'Penduduk', icon: 'bi-people-fill' },
+              { id: 'tenaga_kerja', label: 'Tenaga Kerja', icon: 'bi-briefcase-fill' },
+              { id: 'ekonomi', label: 'Ekonomi', icon: 'bi-graph-up-arrow' },
+              { id: 'kemiskinan', label: 'Kemiskinan', icon: 'bi-pie-chart-fill' },
+              { id: 'ipm', label: 'IPM', icon: 'bi-award-fill' },
+            ].map(tab => {
+              const isActive = activeTab === tab.id
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`public-tab-btn ${isActive ? 'active' : ''}`}
+                  style={{
+                    background: isActive ? '#1a1f2e' : '#f8fafc',
+                    color: isActive ? '#f5a623' : '#475569',
+                    border: isActive ? '1px solid #1a1f2e' : '1px solid #e2e8f0',
+                    borderRadius: 24,
+                    padding: '8px 16px',
+                    fontSize: 13,
+                    fontWeight: isActive ? 700 : 600,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 7,
+                    whiteSpace: 'nowrap',
+                    fontFamily: "'Inter', sans-serif",
+                    transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)',
+                    flexShrink: 0,
+                    boxShadow: isActive ? '0 2px 8px rgba(26,31,46,0.18)' : 'none',
+                    scrollSnapAlign: 'start'
+                  }}
+                >
+                  <i className={`bi ${tab.icon}`} style={{ color: isActive ? '#f5a623' : '#94a3b8', fontSize: 13 }}></i>
+                  {tab.label}
+                </button>
+              )
+            })}
+          </div>
         </div>
       </div>
 
       {/* ── Content View ── */}
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 20px 60px' }}>
+      <div className="public-content" style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 20px 60px' }}>
         {activeTab === 'penduduk' && <TabPenduduk />}
         {activeTab === 'tenaga_kerja' && <TabTenagaKerja />}
         {activeTab === 'ekonomi' && <TabEkonomi />}
@@ -131,11 +198,36 @@ export default function PublicDashboard() {
         <div>Data makro bersumber dari Badan Pusat Statistik Kabupaten Sijunjung. Bebas digunakan untuk kepentingan publik.</div>
       </footer>
 
-      {/* ── Login Panel (dropdown) ── */}
+      {/* ── Login Modal Dialog (Centered & Responsive) ── */}
       {openLogin && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 200 }} onClick={() => setOpenLogin(null)}>
-          <div onClick={e => e.stopPropagation()}
-            style={{ position: 'fixed', top: 72, right: 20, width: 320, background: '#fff', borderRadius: 14, boxShadow: '0 16px 48px rgba(0,0,0,0.2)', overflow: 'hidden', fontFamily: "'Inter',sans-serif" }}>
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 200,
+            background: 'rgba(15, 23, 42, 0.65)',
+            backdropFilter: 'blur(5px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px'
+          }}
+          onClick={() => setOpenLogin(null)}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            className="public-login-modal"
+            style={{
+              width: '100%',
+              maxWidth: 360,
+              background: '#fff',
+              borderRadius: 16,
+              boxShadow: '0 20px 50px rgba(0,0,0,0.3)',
+              overflow: 'hidden',
+              fontFamily: "'Inter',sans-serif",
+              animation: 'popIn 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
+            }}
+          >
             <LoginPanel onClose={() => setOpenLogin(null)} />
           </div>
         </div>
@@ -143,8 +235,97 @@ export default function PublicDashboard() {
 
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes popIn {
+          from { opacity: 0; transform: scale(0.94) translateY(8px); }
+          to { opacity: 1; transform: scale(1) translateY(0); }
+        }
         * { box-sizing: border-box; }
-        body { margin: 0; }
+        body { margin: 0; overflow-x: hidden; }
+        
+        .hide-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .hide-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+
+        .public-tab-btn:hover {
+          background: #e2e8f0;
+        }
+        .public-tab-btn.active:hover {
+          background: #232a3d;
+        }
+
+        /* ── Mobile Responsiveness Media Queries (≤ 768px) ── */
+        @media (max-width: 768px) {
+          .public-nav {
+            height: 54px !important;
+          }
+          .public-nav > div {
+            padding: 0 14px !important;
+          }
+          .public-subnav {
+            top: 54px !important;
+          }
+          .public-tabs-scroll {
+            justify-content: flex-start !important;
+            padding: 8px 12px !important;
+            gap: 6px !important;
+          }
+          .public-tab-btn {
+            padding: 7px 12px !important;
+            font-size: 12px !important;
+            border-radius: 20px !important;
+          }
+          .public-hero {
+            padding: 24px 14px 18px !important;
+          }
+          .public-content {
+            padding: 14px 10px 48px !important;
+          }
+          .public-card {
+            padding: 12px 14px !important;
+            border-radius: 12px !important;
+          }
+          .public-stat-val {
+            font-size: 18px !important;
+          }
+          .public-stat-title {
+            font-size: 10px !important;
+          }
+          .public-stat-unit {
+            font-size: 10px !important;
+          }
+          .public-chart-container {
+            height: 240px !important;
+          }
+          .public-tall-chart {
+            height: 380px !important;
+          }
+          .public-map-container {
+            min-height: 280px !important;
+            padding: 8px !important;
+          }
+          .public-map-svg {
+            max-height: 280px !important;
+          }
+          .public-control-panel {
+            padding: 14px !important;
+            border-radius: 12px !important;
+          }
+          .public-control-panel-controls {
+            width: 100% !important;
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 10px !important;
+          }
+          .public-control-panel-controls select,
+          .public-control-panel-controls button {
+            width: 100% !important;
+            justify-content: center !important;
+          }
+        }
       `}</style>
     </div>
   )
@@ -865,16 +1046,16 @@ function TabPenduduk() {
   return (
     <div>
       {/* Title & Control Panel */}
-      <div style={{ background: '#fff', borderRadius: 14, padding: '20px 24px', border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', marginBottom: 20 }}>
+      <div className="public-control-panel" style={{ background: '#fff', borderRadius: 14, padding: '20px 24px', border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', marginBottom: 20 }}>
         <div className="d-flex flex-wrap justify-content-between align-items-center gap-3">
           <div>
             <p style={{ color: '#1a1f2e', fontSize: 14, fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#f5a623', display: 'inline-block' }}></span>
+              <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#f5a623', display: 'inline-block', flexShrink: 0 }}></span>
               Visualisasi penduduk secara interaktif bersumber langsung dari Web API BPS Kabupaten Sijunjung
             </p>
           </div>
-          <div className="d-flex align-items-center gap-3">
-            <div className="d-flex align-items-center gap-2">
+          <div className="d-flex align-items-center gap-3 public-control-panel-controls">
+            <div className="d-flex align-items-center gap-2 select-year-wrap">
               <span style={{ fontSize: 13, fontWeight: 600, color: '#4b5563' }}>Pilih Tahun:</span>
               <select
                 value={selectedYear}
@@ -903,7 +1084,7 @@ function TabPenduduk() {
               <button
                 onClick={downloadPDFReport}
                 disabled={exportingPdf}
-                className="btn btn-outline-primary d-flex align-items-center gap-2"
+                className="btn btn-outline-primary d-flex align-items-center gap-2 btn-export"
                 style={{
                   padding: '8px 16px',
                   borderRadius: 10,
@@ -969,22 +1150,22 @@ function TabPenduduk() {
         <div id="penduduk-report-content" style={{ padding: 16, background: '#f8fafc', borderRadius: 14 }}>
           <div id="report-page-1" style={{ background: '#f8fafc', borderRadius: 14 }}>
           {/* Summary Cards */}
-          <div className="row g-3 mb-4">
+          <div className="row g-2 g-md-3 mb-4">
             {[
-              { title: 'Total Penduduk Kecamatan', value: parseFloat(totalPopulation).toLocaleString('id-ID'), unit: 'Ribu Jiwa', icon: 'bi-people-fill', color: '#306090', bg: '#e8eff7' },
+              { title: 'Total Penduduk', value: parseFloat(totalPopulation).toLocaleString('id-ID'), unit: 'Ribu Jiwa', icon: 'bi-people-fill', color: '#306090', bg: '#e8eff7' },
               { title: 'Kecamatan Terpadat', value: maxKec ? maxKec.value.toLocaleString('id-ID') : '-', unit: maxKec ? `${maxKec.label} (Ribu Jiwa)` : '', icon: 'bi-graph-up-arrow', color: '#288070', bg: '#e8f5f2' },
               { title: 'Kecamatan Terjarang', value: minKec ? minKec.value.toLocaleString('id-ID') : '-', unit: minKec ? `${minKec.label} (Ribu Jiwa)` : '', icon: 'bi-graph-down-arrow', color: '#b04058', bg: '#fae8eb' },
-              { title: 'Rata-rata Penduduk', value: (totalPopulation / 8).toFixed(2).toLocaleString('id-ID'), unit: 'Ribu Jiwa per Kecamatan', icon: 'bi-calculator', color: '#586880', bg: '#eef1f6' }
+              { title: 'Rata-rata Kecamatan', value: (totalPopulation / 8).toFixed(2).toLocaleString('id-ID'), unit: 'Ribu Jiwa / Kecamatan', icon: 'bi-calculator', color: '#586880', bg: '#eef1f6' }
             ].map(c => (
-              <div className="col-12 col-sm-6 col-md-3" key={c.title}>
-                <div style={{ background: '#fff', borderRadius: 14, padding: '16px 20px', border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', display: 'flex', alignItems: 'center', gap: 16 }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 10, background: c.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <i className={`bi ${c.icon}`} style={{ color: c.color, fontSize: 18 }}></i>
+              <div className="col-6 col-md-3" key={c.title}>
+                <div className="public-card" style={{ background: '#fff', borderRadius: 14, padding: '16px 18px', border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', display: 'flex', alignItems: 'center', gap: 12, height: '100%' }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 10, background: c.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <i className={`bi ${c.icon}`} style={{ color: c.color, fontSize: 16 }}></i>
                   </div>
-                  <div>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 2 }}>{c.title}</span>
-                    <span style={{ fontSize: 20, fontWeight: 800, color: '#1a1f2e', lineHeight: 1.1, display: 'inline-block', marginRight: 4 }}>{c.value}</span>
-                    <span style={{ fontSize: 11, color: '#9ca3af', display: 'block', marginTop: 2 }}>{c.unit}</span>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <span className="public-stat-title" style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.title}</span>
+                    <span className="public-stat-val" style={{ fontSize: 'clamp(16px, 3.5vw, 20px)', fontWeight: 800, color: '#1a1f2e', lineHeight: 1.1, display: 'inline-block', marginRight: 2 }}>{c.value}</span>
+                    <span className="public-stat-unit" style={{ fontSize: 10, color: '#9ca3af', display: 'block', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.unit}</span>
                   </div>
                 </div>
               </div>
@@ -993,22 +1174,24 @@ function TabPenduduk() {
 
           {/* Map and Table Split Screen */}
           {mappedData ? (
-            <div className="row g-4">
+            <div className="row g-3 g-md-4">
             {/* Map Column */}
-            <div className="col-lg-7">
-              <div style={{ background: '#fff', borderRadius: 14, padding: 24, border: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column', height: '100%' }}>
-                <h6 style={{ fontWeight: 800, color: '#1a1f2e', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div className="col-12 col-lg-7">
+              <div className="public-card" style={{ background: '#fff', borderRadius: 14, padding: 20, border: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column', height: '100%' }}>
+                <h6 style={{ fontWeight: 800, color: '#1a1f2e', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
                   <i className="bi bi-map" style={{ color: '#f5a623' }}></i>
                   Peta Distribusi Penduduk
                 </h6>
                 <div 
-                  style={{ position: 'relative', flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc', borderRadius: 10, padding: 12, minHeight: 380 }}
+                  className="public-map-container"
+                  style={{ position: 'relative', flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc', borderRadius: 10, padding: 12, minHeight: 360 }}
                   onMouseMove={handleMouseMove}
                 >
                   <svg
                     viewBox="0 0 800 500"
                     width="100%"
                     height="100%"
+                    className="public-map-svg"
                     style={{ maxHeight: 420 }}
                   >
                     {paths.map(path => (
@@ -1024,6 +1207,8 @@ function TabPenduduk() {
                         }}
                         onMouseEnter={() => setHoveredKec(path)}
                         onMouseLeave={() => setHoveredKec(null)}
+                        onClick={() => setHoveredKec(hoveredKec?.bpsCode === path.bpsCode ? null : path)}
+                        onTouchStart={() => setHoveredKec(path)}
                       />
                     ))}
                     {/* Active/Hovered path overlay drawn on top for a sharp thick border */}
@@ -1045,56 +1230,57 @@ function TabPenduduk() {
                   {hoveredKec && (
                     <div style={{
                       position: 'fixed',
-                      left: mousePos.x + 15,
-                      top: mousePos.y + 15,
+                      left: Math.min(mousePos.x + 15, window.innerWidth - 240),
+                      top: Math.max(10, mousePos.y + 15),
                       background: 'rgba(15, 23, 42, 0.95)',
                       backdropFilter: 'blur(4px)',
                       color: '#fff',
-                      padding: '12px 16px',
+                      padding: '10px 14px',
                       borderRadius: 10,
                       boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3)',
                       pointerEvents: 'none',
                       zIndex: 9999,
                       border: '1px solid rgba(255, 255, 255, 0.15)',
-                      fontFamily: "'Inter', sans-serif"
+                      fontFamily: "'Inter', sans-serif",
+                      maxWidth: 240
                     }}>
-                      <div style={{ fontSize: 11, fontWeight: 600, color: '#f5a623', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>
+                      <div style={{ fontSize: 10, fontWeight: 600, color: '#f5a623', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>
                         Kecamatan
                       </div>
-                      <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 6, borderBottom: '1px solid rgba(255,255,255,0.15)', paddingBottom: 4 }}>
+                      <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 4, borderBottom: '1px solid rgba(255,255,255,0.15)', paddingBottom: 4 }}>
                         {hoveredKec.label}
                       </div>
-                      <div style={{ fontSize: 12 }}>
-                        Total Penduduk: <strong style={{ color: '#38bdf8', fontSize: 13 }}>{hoveredKec.value !== null ? hoveredKec.value.toLocaleString('id-ID') : '-'}</strong> ribu jiwa
+                      <div style={{ fontSize: 11 }}>
+                        Total: <strong style={{ color: '#38bdf8', fontSize: 12 }}>{hoveredKec.value !== null ? hoveredKec.value.toLocaleString('id-ID') : '-'}</strong> ribu jiwa
                       </div>
                       {genderData?.[hoveredKec.bpsCode] && (
-                        <div style={{ marginTop: 8, paddingTop: 6, borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', gap: 12, fontSize: 11, color: '#e2e8f0' }}>
+                        <div style={{ marginTop: 6, paddingTop: 4, borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', gap: 10, fontSize: 11, color: '#e2e8f0' }}>
                           <div>L: <span style={{ color: '#7da7d9', fontWeight: 700 }}>{genderData[hoveredKec.bpsCode].male.toLocaleString('id-ID')}k</span></div>
                           <div>P: <span style={{ color: '#e695a7', fontWeight: 700 }}>{genderData[hoveredKec.bpsCode].female.toLocaleString('id-ID')}k</span></div>
                         </div>
                       )}
-                      <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 6 }}>
-                        Sumber Data: BPS ({selectedYear})
+                      <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 4 }}>
+                        Sumber: BPS ({selectedYear})
                       </div>
                     </div>
                   )}
                 </div>
 
                 {/* Legend bar */}
-                <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid #f1f5f9' }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
+                <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid #f1f5f9' }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
                     Rentang Jumlah Penduduk (Ribu Jiwa)
                   </div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
                     {legendItems.map((item, idx) => (
                       <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span style={{ width: 14, height: 14, borderRadius: 3, background: item.color, display: 'inline-block' }}></span>
-                        <span style={{ fontSize: 11, fontWeight: 600, color: '#4b5563' }}>{item.label}</span>
+                        <span style={{ width: 12, height: 12, borderRadius: 3, background: item.color, display: 'inline-block' }}></span>
+                        <span style={{ fontSize: 10, fontWeight: 600, color: '#4b5563' }}>{item.label}</span>
                       </div>
                     ))}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ width: 14, height: 14, borderRadius: 3, background: '#f1f5f9', border: '1px solid #cbd5e1', display: 'inline-block' }}></span>
-                      <span style={{ fontSize: 11, fontWeight: 600, color: '#4b5563' }}>Tidak ada data</span>
+                      <span style={{ width: 12, height: 12, borderRadius: 3, background: '#f1f5f9', border: '1px solid #cbd5e1', display: 'inline-block' }}></span>
+                      <span style={{ fontSize: 10, fontWeight: 600, color: '#4b5563' }}>Tidak ada data</span>
                     </div>
                   </div>
                 </div>
@@ -1102,19 +1288,19 @@ function TabPenduduk() {
             </div>
 
             {/* Table Column */}
-            <div className="col-lg-5">
-              <div style={{ background: '#fff', borderRadius: 14, padding: 24, border: '1px solid #e5e7eb', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                <h6 style={{ fontWeight: 800, color: '#1a1f2e', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div className="col-12 col-lg-5">
+              <div className="public-card" style={{ background: '#fff', borderRadius: 14, padding: 20, border: '1px solid #e5e7eb', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                <h6 style={{ fontWeight: 800, color: '#1a1f2e', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
                   <i className="bi bi-table" style={{ color: '#3b82f6' }}></i>
                   Tabel Rincian Kecamatan ({selectedYear})
                 </h6>
-                <div className="table-responsive" style={{ flexGrow: 1 }}>
+                <div className="table-responsive" style={{ flexGrow: 1, WebkitOverflowScrolling: 'touch' }}>
                   <table className="table table-hover align-middle text-start" style={{ fontSize: 12, margin: 0 }}>
                     <thead>
                       <tr style={{ background: '#f8fafc', color: '#475569' }}>
-                        <th style={{ padding: '12px 8px', borderBottom: '2px solid #e2e8f0' }}>Kecamatan</th>
-                        <th style={{ padding: '12px 8px', borderBottom: '2px solid #e2e8f0', textAlign: 'right' }}>Jumlah</th>
-                        <th style={{ padding: '12px 8px', borderBottom: '2px solid #e2e8f0', textAlign: 'right' }}>Persentase</th>
+                        <th style={{ padding: '10px 8px', borderBottom: '2px solid #e2e8f0' }}>Kecamatan</th>
+                        <th style={{ padding: '10px 8px', borderBottom: '2px solid #e2e8f0', textAlign: 'right' }}>Jumlah</th>
+                        <th style={{ padding: '10px 8px', borderBottom: '2px solid #e2e8f0', textAlign: 'right' }}>Persentase</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1131,12 +1317,13 @@ function TabPenduduk() {
                             }}
                             onMouseEnter={() => setHoveredKec(path)}
                             onMouseLeave={() => setHoveredKec(null)}
+                            onClick={() => setHoveredKec(hoveredKec?.bpsCode === path.bpsCode ? null : path)}
                           >
-                            <td style={{ padding: '10px 8px', fontWeight: 600, color: '#1e293b' }}>{path.label}</td>
-                            <td style={{ padding: '10px 8px', textAlign: 'right', fontWeight: 700, color: '#3b82f6' }}>
+                            <td style={{ padding: '9px 8px', fontWeight: 600, color: '#1e293b' }}>{path.label}</td>
+                            <td style={{ padding: '9px 8px', textAlign: 'right', fontWeight: 700, color: '#3b82f6' }}>
                               {path.value !== null ? `${path.value.toLocaleString('id-ID')} ribu` : '-'}
                             </td>
-                            <td style={{ padding: '10px 8px', textAlign: 'right', color: '#64748b' }}>
+                            <td style={{ padding: '9px 8px', textAlign: 'right', color: '#64748b' }}>
                               {pct !== '-' ? `${pct}%` : '-'}
                             </td>
                           </tr>
@@ -1145,24 +1332,24 @@ function TabPenduduk() {
                     </tbody>
                     <tfoot>
                       <tr style={{ background: '#f8fafc', fontWeight: 800 }}>
-                        <td style={{ padding: '12px 8px' }}>Kabupaten Sijunjung (Total)</td>
-                        <td style={{ padding: '12px 8px', textAlign: 'right', color: '#1e293b' }}>
+                        <td style={{ padding: '10px 8px' }}>Kabupaten Sijunjung (Total)</td>
+                        <td style={{ padding: '10px 8px', textAlign: 'right', color: '#1e293b' }}>
                           {parseFloat(totalPopulation).toLocaleString('id-ID')} ribu
                         </td>
-                        <td style={{ padding: '12px 8px', textAlign: 'right', color: '#1e293b' }}>100.00%</td>
+                        <td style={{ padding: '10px 8px', textAlign: 'right', color: '#1e293b' }}>100.00%</td>
                       </tr>
                     </tfoot>
                   </table>
                 </div>
-                <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 16, display: 'flex', justifyBetween: 'center', alignItems: 'center', gap: 4 }}>
+                <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 14, display: 'flex', alignItems: 'center', gap: 4 }}>
                   <i className="bi bi-info-circle"></i>
-                  <span>Arahkan kursor pada peta atau tabel untuk berinteraksi.</span>
+                  <span>Ketuk atau arahkan kursor pada peta atau tabel untuk berinteraksi.</span>
                 </div>
               </div>
             </div>
           </div>
           ) : (
-            <div style={{ background: '#fff', borderRadius: 14, padding: '40px', border: '1px dashed #cbd5e1', textAlign: 'center', marginBottom: 20 }}>
+            <div className="public-card" style={{ background: '#fff', borderRadius: 14, padding: '36px 20px', border: '1px dashed #cbd5e1', textAlign: 'center', marginBottom: 20 }}>
               <i className="bi bi-map" style={{ fontSize: '36px', color: '#94a3b8', display: 'block', marginBottom: 12 }}></i>
               <h6 style={{ fontWeight: 700, color: '#475569', marginBottom: 4 }}>Peta Distribusi Penduduk Belum Tersedia</h6>
               <p style={{ color: '#64748b', fontSize: 12, margin: 0 }}>Data geografis peta kecamatan untuk tahun <strong>{selectedYear}</strong> belum dipublikasikan oleh BPS Kabupaten Sijunjung.</p>
@@ -1173,12 +1360,12 @@ function TabPenduduk() {
           {/* Bar Chart Section */}
           <div id="report-page-2">
           {genderData ? (
-            <div style={{ marginTop: 24, background: '#fff', borderRadius: 14, padding: 24, border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-              <h6 style={{ fontWeight: 800, color: '#1a1f2e', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div className="public-card" style={{ marginTop: 20, background: '#fff', borderRadius: 14, padding: 20, border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+              <h6 style={{ fontWeight: 800, color: '#1a1f2e', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
                 <i className="bi bi-bar-chart-line" style={{ color: '#ec4899' }}></i>
                 Jumlah Penduduk Menurut Kecamatan dan Jenis Kelamin ({selectedYear})
               </h6>
-              <div style={{ height: 350 }}>
+              <div className="public-chart-container" style={{ height: 350 }}>
                 <Bar data={barChartData} options={barChartOptions} />
               </div>
               <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -1187,7 +1374,7 @@ function TabPenduduk() {
               </div>
             </div>
           ) : (
-            <div style={{ marginTop: 24, background: '#fff', borderRadius: 14, padding: '40px', border: '1px dashed #cbd5e1', textAlign: 'center' }}>
+            <div className="public-card" style={{ marginTop: 20, background: '#fff', borderRadius: 14, padding: '36px 20px', border: '1px dashed #cbd5e1', textAlign: 'center' }}>
               <i className="bi bi-bar-chart-line" style={{ fontSize: '36px', color: '#94a3b8', display: 'block', marginBottom: 12 }}></i>
               <h6 style={{ fontWeight: 700, color: '#475569', marginBottom: 4 }}>Rincian Jenis Kelamin Belum Tersedia</h6>
               <p style={{ color: '#64748b', fontSize: 12, margin: 0 }}>Data rincian jenis kelamin per kecamatan untuk tahun <strong>{selectedYear}</strong> belum dipublikasikan oleh BPS Kabupaten Sijunjung.</p>
@@ -1197,14 +1384,14 @@ function TabPenduduk() {
 
           {/* Age Projection Chart Section */}
           {ageProjectionData ? (
-            <div style={{ marginTop: 24, display: 'flex', flexDirection: 'column', gap: 24 }}>
+            <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 20 }}>
               {/* Split Gender Chart */}
-              <div id="report-page-3" style={{ background: '#fff', borderRadius: 14, padding: 24, border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-                <h6 style={{ fontWeight: 800, color: '#1a1f2e', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div id="report-page-3" className="public-card" style={{ background: '#fff', borderRadius: 14, padding: 20, border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                <h6 style={{ fontWeight: 800, color: '#1a1f2e', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
                   <i className="bi bi-bar-chart-steps" style={{ color: '#3b82f6' }}></i>
-                  Proyeksi Penduduk Sijunjung Menurut Kelompok Umur dan Jenis Kelamin ({selectedYear})
+                  Proyeksi Penduduk Menurut Kelompok Umur dan Jenis Kelamin ({selectedYear})
                 </h6>
-                <div style={{ height: 550 }}>
+                <div className="public-tall-chart" style={{ height: 520 }}>
                   <Bar data={ageProjectionChartData} options={ageProjectionChartOptions} />
                 </div>
                 <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -1214,12 +1401,12 @@ function TabPenduduk() {
               </div>
 
               {/* Total Population Chart */}
-              <div id="report-page-4" style={{ background: '#fff', borderRadius: 14, padding: 24, border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-                <h6 style={{ fontWeight: 800, color: '#1a1f2e', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div id="report-page-4" className="public-card" style={{ background: '#fff', borderRadius: 14, padding: 20, border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                <h6 style={{ fontWeight: 800, color: '#1a1f2e', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
                   <i className="bi bi-bar-chart-steps" style={{ color: '#5cbca9' }}></i>
-                  Total Proyeksi Penduduk Sijunjung Menurut Kelompok Umur ({selectedYear})
+                  Total Proyeksi Penduduk Menurut Kelompok Umur ({selectedYear})
                 </h6>
-                <div style={{ height: 550 }}>
+                <div className="public-tall-chart" style={{ height: 520 }}>
                   <Bar data={ageProjectionTotalChartData} options={ageProjectionChartOptions} />
                 </div>
                 <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -1229,7 +1416,7 @@ function TabPenduduk() {
               </div>
             </div>
           ) : (
-            <div id="report-page-3" style={{ marginTop: 24, background: '#fff', borderRadius: 14, padding: '40px', border: '1px dashed #cbd5e1', textAlign: 'center' }}>
+            <div id="report-page-3" className="public-card" style={{ marginTop: 20, background: '#fff', borderRadius: 14, padding: '36px 20px', border: '1px dashed #cbd5e1', textAlign: 'center' }}>
               <i className="bi bi-bar-chart-steps" style={{ fontSize: '36px', color: '#94a3b8', display: 'block', marginBottom: 12 }}></i>
               <h6 style={{ fontWeight: 700, color: '#475569', marginBottom: 4 }}>Proyeksi Kelompok Umur Belum Tersedia</h6>
               <p style={{ color: '#64748b', fontSize: 12, margin: 0 }}>Data proyeksi kelompok umur untuk tahun <strong>{selectedYear}</strong> belum dipublikasikan oleh BPS Kabupaten Sijunjung.</p>
@@ -1595,19 +1782,19 @@ function TabTenagaKerja() {
       ) : (
         <div>
           {/* Header Panel */}
-          <div style={{ background: '#fff', borderRadius: 14, padding: '20px 24px', border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', marginBottom: 20 }}>
+          <div className="public-control-panel" style={{ background: '#fff', borderRadius: 14, padding: '20px 24px', border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', marginBottom: 20 }}>
             <div className="d-flex flex-wrap justify-content-between align-items-center gap-3">
               <div>
                 <p style={{ color: '#1a1f2e', fontSize: 14, fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#2d6a4f', display: 'inline-block' }}></span>
+                  <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#2d6a4f', display: 'inline-block', flexShrink: 0 }}></span>
                   Akses Indikator Tenaga Kerja Sijunjung Real-Time dari Web API BPS
                 </p>
               </div>
-              <div>
+              <div className="public-control-panel-controls">
                 <button
                   onClick={downloadPDFReportTenagaKerja}
                   disabled={exportingPdf}
-                  className="btn btn-outline-success d-flex align-items-center gap-2"
+                  className="btn btn-outline-success d-flex align-items-center gap-2 btn-export"
                   style={{
                     padding: '8px 16px',
                     borderRadius: 10,
@@ -1641,39 +1828,39 @@ function TabTenagaKerja() {
           <div id="tenaga-kerja-report-content" style={{ padding: 16, background: '#f8fafc', borderRadius: 14 }}>
             <div id="tenaga-kerja-page-1" style={{ background: '#f8fafc', borderRadius: 14 }}>
               {/* Summary Cards */}
-              <div className="row g-3 mb-4">
+              <div className="row g-2 g-md-3 mb-4">
                 {[
                   { title: 'TPAK Sijunjung', value: summary.latestTpak, unit: `Tahun ${summary.tpakYear}`, icon: 'bi-graph-up', color: '#2d6a4f', bg: '#e8f5e9' },
-                  { title: 'Pengangguran Terbuka (TPT)', value: summary.latestTpt, unit: `Tahun ${summary.tptYear}`, icon: 'bi-person-x-fill', color: '#c05621', bg: '#fdf2e9' },
-                  { title: 'Penduduk Usia Kerja (15+)', value: Math.round(popOver15 * 1000).toLocaleString('id-ID'), unit: 'Jiwa (Penduduk Berumur ≥ 15 Tahun)', icon: 'bi-person-check-fill', color: '#4a5d24', bg: '#f4f6f0' },
-                  { title: 'Penduduk di Bawah 15 Tahun', value: Math.round(popUnder15 * 1000).toLocaleString('id-ID'), unit: 'Jiwa (Penduduk Berumur < 15 Tahun)', icon: 'bi-person-dash', color: '#4a5568', bg: '#f7fafc' }
+                  { title: 'Pengangguran (TPT)', value: summary.latestTpt, unit: `Tahun ${summary.tptYear}`, icon: 'bi-person-x-fill', color: '#c05621', bg: '#fdf2e9' },
+                  { title: 'Usia Kerja (15+)', value: Math.round(popOver15 * 1000).toLocaleString('id-ID'), unit: 'Jiwa (Umur ≥ 15 Thn)', icon: 'bi-person-check-fill', color: '#4a5d24', bg: '#f4f6f0' },
+                  { title: 'Di Bawah 15 Thn', value: Math.round(popUnder15 * 1000).toLocaleString('id-ID'), unit: 'Jiwa (Umur < 15 Thn)', icon: 'bi-person-dash', color: '#4a5568', bg: '#f7fafc' }
                 ].map(c => (
                   <div className="col-6 col-md-3" key={c.title}>
-                    <div style={{ background: '#fff', borderRadius: 14, padding: '16px 20px', border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                        <span style={{ fontSize: 11, fontWeight: 600, color: '#6b7280' }}>{c.title}</span>
-                        <i className={`bi ${c.icon}`} style={{ color: c.color, fontSize: 16 }}></i>
+                    <div className="public-card" style={{ background: '#fff', borderRadius: 14, padding: '16px 18px', border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', height: '100%' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                        <span className="public-stat-title" style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.title}</span>
+                        <i className={`bi ${c.icon}`} style={{ color: c.color, fontSize: 15, flexShrink: 0 }}></i>
                       </div>
-                      <div style={{ fontSize: 24, fontWeight: 800, color: '#1a1f2e', lineHeight: 1.1 }}>{c.value}</div>
-                      <span style={{ fontSize: 11, color: '#9ca3af' }}>{c.unit}</span>
+                      <div className="public-stat-val" style={{ fontSize: 'clamp(16px, 3.5vw, 22px)', fontWeight: 800, color: '#1a1f2e', lineHeight: 1.1 }}>{c.value}</div>
+                      <span className="public-stat-unit" style={{ fontSize: 10, color: '#9ca3af', display: 'block', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.unit}</span>
                     </div>
                   </div>
                 ))}
               </div>
 
-              <div className="row g-4 mb-4">
+              <div className="row g-3 g-md-4 mb-4">
                 <div className="col-12 col-lg-6">
-                  <div style={{ background: '#fff', borderRadius: 14, padding: 20, border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-                    <h6 style={{ fontWeight: 800, color: '#1a1f2e', marginBottom: 6 }}>Tren Partisipasi Angkatan Kerja (TPAK)</h6>
-                    <p style={{ color: '#6b7280', fontSize: 12, marginBottom: 20 }}>Tingkat Partisipasi Angkatan Kerja Kabupaten Sijunjung (%) 10 Tahun Terakhir</p>
-                    <div style={{ height: 280 }}><Line data={chartDataTPAK} options={chartOptions('%')} /></div>
+                  <div className="public-card" style={{ background: '#fff', borderRadius: 14, padding: 20, border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                    <h6 style={{ fontWeight: 800, color: '#1a1f2e', marginBottom: 4 }}>Tren Partisipasi Angkatan Kerja (TPAK)</h6>
+                    <p style={{ color: '#6b7280', fontSize: 12, marginBottom: 16 }}>Tingkat Partisipasi Angkatan Kerja Kabupaten Sijunjung (%) 10 Tahun Terakhir</p>
+                    <div className="public-chart-container" style={{ height: 280 }}><Line data={chartDataTPAK} options={chartOptions('%')} /></div>
                   </div>
                 </div>
                 <div className="col-12 col-lg-6">
-                  <div style={{ background: '#fff', borderRadius: 14, padding: 20, border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-                    <h6 style={{ fontWeight: 800, color: '#1a1f2e', marginBottom: 6 }}>Tren Pengangguran Terbuka (TPT)</h6>
-                    <p style={{ color: '#6b7280', fontSize: 12, marginBottom: 20 }}>Tingkat Pengangguran Terbuka Kabupaten Sijunjung (%) 10 Tahun Terakhir</p>
-                    <div style={{ height: 280 }}><Line data={chartDataTPT} options={chartOptions('%')} /></div>
+                  <div className="public-card" style={{ background: '#fff', borderRadius: 14, padding: 20, border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                    <h6 style={{ fontWeight: 800, color: '#1a1f2e', marginBottom: 4 }}>Tren Pengangguran Terbuka (TPT)</h6>
+                    <p style={{ color: '#6b7280', fontSize: 12, marginBottom: 16 }}>Tingkat Pengangguran Terbuka Kabupaten Sijunjung (%) 10 Tahun Terakhir</p>
+                    <div className="public-chart-container" style={{ height: 280 }}><Line data={chartDataTPT} options={chartOptions('%')} /></div>
                   </div>
                 </div>
               </div>
@@ -1682,32 +1869,31 @@ function TabTenagaKerja() {
             {/* Page 2 for Report PDF */}
             <div id="tenaga-kerja-page-2" style={{ background: '#f8fafc', borderRadius: 14 }}>
               {/* Box Penjelasan Konsep & Indikator Ketenagakerjaan */}
-              <div style={{ background: '#fff', borderRadius: 14, padding: 24, border: '1px solid #e5e7eb', marginTop: 24 }}>
-                <h6 style={{ fontWeight: 800, color: '#1a1f2e', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div className="public-card" style={{ background: '#fff', borderRadius: 14, padding: 20, border: '1px solid #e5e7eb', marginTop: 20 }}>
+                <h6 style={{ fontWeight: 800, color: '#1a1f2e', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
                   <i className="bi bi-info-circle-fill" style={{ color: '#2d6a4f' }}></i>
                   Penjelasan Konsep & Indikator Ketenagakerjaan
                 </h6>
-                <div className="row g-4">
+                <div className="row g-3 g-md-4">
                   <div className="col-12 col-md-6">
-                    <div style={{ background: '#f8fafc', borderRadius: 10, padding: 18, border: '1px solid #f1f5f9', height: '100%' }}>
-                      <h6 style={{ fontWeight: 700, color: '#2d6a4f', fontSize: 14, display: 'block', marginBottom: 8 }}>Penduduk Usia Kerja & TPAK</h6>
-                      <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.6, margin: '0 0 12px' }}>
+                    <div style={{ background: '#f8fafc', borderRadius: 10, padding: 16, border: '1px solid #f1f5f9', height: '100%' }}>
+                      <h6 style={{ fontWeight: 700, color: '#2d6a4f', fontSize: 13, display: 'block', marginBottom: 8 }}>Penduduk Usia Kerja & TPAK</h6>
+                      <p style={{ fontSize: 12, color: '#475569', lineHeight: 1.6, margin: '0 0 10px' }}>
                         <strong>Penduduk usia kerja</strong> adalah penduduk berumur 15 tahun dan lebih. Semakin banyak penduduk usia kerja berarti jumlah penduduk yang berpotensi masuk ke dalam pasar tenaga kerja semakin besar.
                       </p>
-                      <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.6, margin: 0 }}>
-                        <strong>Tingkat Partisipasi Angkatan Kerja (TPAK)</strong> adalah persentase banyaknya angkatan kerja terhadap banyaknya penduduk yang berumur sepuluh tahun ke atas. Semakin tinggi nilai TPAK menunjukkan semakin besar proporsi penduduk usia kerja yang terlibat dalam kegiatan ekonomi, sedangkan TPAK yang rendah mencerminkan masih banyak penduduk usia kerja yang tidak berpartisipasi dalam pasar tenaga kerja, misalnya karena masih bersekolah, mengurus rumah tangga, atau alasan lainnya.
+                      <p style={{ fontSize: 12, color: '#475569', lineHeight: 1.6, margin: 0 }}>
+                        <strong>Tingkat Partisipasi Angkatan Kerja (TPAK)</strong> adalah persentase banyaknya angkatan kerja terhadap banyaknya penduduk yang berumur sepuluh tahun ke atas. Semakin tinggi nilai TPAK menunjukkan semakin besar proporsi penduduk usia kerja yang terlibat dalam kegiatan ekonomi.
                       </p>
                     </div>
                   </div>
                   <div className="col-12 col-md-6">
-                    <div style={{ background: '#f8fafc', borderRadius: 10, padding: 18, border: '1px solid #f1f5f9', height: '100%' }}>
-                      <h6 style={{ fontWeight: 700, color: '#c05621', fontSize: 14, display: 'block', marginBottom: 8 }}>Pengangguran & TPT</h6>
-                      <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.6, margin: '0 0 12px' }}>
-                        <strong>Pengangguran</strong> meliputi penduduk yang tidak bekerja tetapi sedang mencari pekerjaan, atau mempersiapkan suatu usaha, atau merasa tidak mungkin mendapat pekerjaan (putus asa), atau sudah diterima bekerja tetapi belum mulai bekerja.
-                        Semakin banyaknya pengangguran menunjukkan semakin besar jumlah penduduk usia kerja yang belum memperoleh pekerjaan. Hal ini mencerminkan adanya keterbatasan dalam penyerapan tenaga kerja oleh pasar kerja, sehingga pertumbuhan angkatan kerja tidak diimbangi dengan ketersediaan lapangan pekerjaan yang memadai.
+                    <div style={{ background: '#f8fafc', borderRadius: 10, padding: 16, border: '1px solid #f1f5f9', height: '100%' }}>
+                      <h6 style={{ fontWeight: 700, color: '#c05621', fontSize: 13, display: 'block', marginBottom: 8 }}>Pengangguran & TPT</h6>
+                      <p style={{ fontSize: 12, color: '#475569', lineHeight: 1.6, margin: '0 0 10px' }}>
+                        <strong>Pengangguran</strong> meliputi penduduk yang tidak bekerja tetapi sedang mencari pekerjaan, atau mempersiapkan suatu usaha, atau sudah diterima bekerja tetapi belum mulai bekerja.
                       </p>
-                      <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.6, margin: 0 }}>
-                        <strong>Tingkat Pengangguran Terbuka (TPT)</strong> adalah persentase jumlah penduduk yang sedang mencari kerja (pengangguran) terhadap total angkatan kerja (penduduk usia kerja yang bekerja, mencari kerja, atau memiliki pekerjaan tetapi sementara tidak bekerja). TPT digunakan untuk mengukur seberapa banyak tenaga kerja yang tidak terserap oleh pasar kerja.
+                      <p style={{ fontSize: 12, color: '#475569', lineHeight: 1.6, margin: 0 }}>
+                        <strong>Tingkat Pengangguran Terbuka (TPT)</strong> adalah persentase jumlah penduduk yang sedang mencari kerja terhadap total angkatan kerja. TPT digunakan untuk mengukur seberapa banyak tenaga kerja yang tidak terserap oleh pasar kerja.
                       </p>
                     </div>
                   </div>
@@ -1737,7 +1923,7 @@ function TabEkonomi() {
 
   return (
     <div>
-      <div className="row g-3 mb-4">
+      <div className="row g-2 g-md-3 mb-4">
         {[
           { title: 'Pertumbuhan Ekonomi', value: '4,85%', unit: 'Tahun 2025', icon: 'bi-arrow-up-right-circle-fill', color: '#10b981' },
           { title: 'PDRB ADHB', value: '8,42 T', unit: 'Rupiah (Berlaku)', icon: 'bi-wallet2', color: '#f5a623' },
@@ -1745,21 +1931,21 @@ function TabEkonomi() {
           { title: 'Laju Inflasi', value: '2,45%', unit: 'Tahunan (y-on-y)', icon: 'bi-graph-down', color: '#ef4444' }
         ].map(c => (
           <div className="col-6 col-md-3" key={c.title}>
-            <div style={{ background: '#fff', borderRadius: 14, padding: '16px 20px', border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                <span style={{ fontSize: 11, fontWeight: 600, color: '#6b7280' }}>{c.title}</span>
-                <i className={`bi ${c.icon}`} style={{ color: c.color, fontSize: 16 }}></i>
+            <div className="public-card" style={{ background: '#fff', borderRadius: 14, padding: '16px 18px', border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', height: '100%' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <span className="public-stat-title" style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.title}</span>
+                <i className={`bi ${c.icon}`} style={{ color: c.color, fontSize: 15, flexShrink: 0 }}></i>
               </div>
-              <div style={{ fontSize: 24, fontWeight: 800, color: '#1a1f2e', lineHeight: 1.1 }}>{c.value}</div>
-              <span style={{ fontSize: 11, color: '#9ca3af' }}>{c.unit}</span>
+              <div className="public-stat-val" style={{ fontSize: 'clamp(16px, 3.5vw, 22px)', fontWeight: 800, color: '#1a1f2e', lineHeight: 1.1 }}>{c.value}</div>
+              <span className="public-stat-unit" style={{ fontSize: 10, color: '#9ca3af', display: 'block', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.unit}</span>
             </div>
           </div>
         ))}
       </div>
 
-      <div style={{ background: '#fff', borderRadius: 14, padding: 20, border: '1px solid #e5e7eb', marginBottom: 20 }}>
-        <h6 style={{ fontWeight: 700, color: '#1a1f2e', marginBottom: 16 }}>Laju Pertumbuhan Ekonomi Sijunjung (%) 2020-2025</h6>
-        <div style={{ height: 260 }}><Line data={dataEkonomi} options={{ responsive: true, maintainAspectRatio: false }} /></div>
+      <div className="public-card" style={{ background: '#fff', borderRadius: 14, padding: 20, border: '1px solid #e5e7eb', marginBottom: 20 }}>
+        <h6 style={{ fontWeight: 700, color: '#1a1f2e', marginBottom: 14 }}>Laju Pertumbuhan Ekonomi Sijunjung (%) 2020-2025</h6>
+        <div className="public-chart-container" style={{ height: 260 }}><Line data={dataEkonomi} options={{ responsive: true, maintainAspectRatio: false }} /></div>
       </div>
     </div>
   )
@@ -1780,29 +1966,29 @@ function TabKemiskinan() {
 
   return (
     <div>
-      <div className="row g-3 mb-4">
+      <div className="row g-2 g-md-3 mb-4">
         {[
           { title: 'Persentase Miskin', value: '5,82%', unit: 'Dari Total Penduduk', icon: 'bi-percent', color: '#ef4444' },
-          { title: 'Jumlah Penduduk Miskin', value: '14,18', unit: 'Ribu Jiwa', icon: 'bi-person-fill-slash', color: '#e11d48' },
+          { title: 'Penduduk Miskin', value: '14,18', unit: 'Ribu Jiwa', icon: 'bi-person-fill-slash', color: '#e11d48' },
           { title: 'Garis Kemiskinan', value: '446.500', unit: 'Rp / Kapita / Bulan', icon: 'bi-cash-stack', color: '#16a34a' },
           { title: 'Indeks Kedalaman (P1)', value: '0,68', unit: 'Kesenjangan Pengeluaran', icon: 'bi-compass-fill', color: '#374151' }
         ].map(c => (
           <div className="col-6 col-md-3" key={c.title}>
-            <div style={{ background: '#fff', borderRadius: 14, padding: '16px 20px', border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                <span style={{ fontSize: 11, fontWeight: 600, color: '#6b7280' }}>{c.title}</span>
-                <i className={`bi ${c.icon}`} style={{ color: c.color, fontSize: 16 }}></i>
+            <div className="public-card" style={{ background: '#fff', borderRadius: 14, padding: '16px 18px', border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', height: '100%' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <span className="public-stat-title" style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.title}</span>
+                <i className={`bi ${c.icon}`} style={{ color: c.color, fontSize: 15, flexShrink: 0 }}></i>
               </div>
-              <div style={{ fontSize: 24, fontWeight: 800, color: '#1a1f2e', lineHeight: 1.1 }}>{c.value}</div>
-              <span style={{ fontSize: 11, color: '#9ca3af' }}>{c.unit}</span>
+              <div className="public-stat-val" style={{ fontSize: 'clamp(16px, 3.5vw, 22px)', fontWeight: 800, color: '#1a1f2e', lineHeight: 1.1 }}>{c.value}</div>
+              <span className="public-stat-unit" style={{ fontSize: 10, color: '#9ca3af', display: 'block', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.unit}</span>
             </div>
           </div>
         ))}
       </div>
 
-      <div style={{ background: '#fff', borderRadius: 14, padding: 20, border: '1px solid #e5e7eb', marginBottom: 20 }}>
-        <h6 style={{ fontWeight: 700, color: '#1a1f2e', marginBottom: 16 }}>Tren Penurunan Persentase Kemiskinan Sijunjung (2018 - 2025)</h6>
-        <div style={{ height: 260 }}><Line data={dataKemiskinan} options={{ responsive: true, maintainAspectRatio: false }} /></div>
+      <div className="public-card" style={{ background: '#fff', borderRadius: 14, padding: 20, border: '1px solid #e5e7eb', marginBottom: 20 }}>
+        <h6 style={{ fontWeight: 700, color: '#1a1f2e', marginBottom: 14 }}>Tren Penurunan Persentase Kemiskinan Sijunjung (2018 - 2025)</h6>
+        <div className="public-chart-container" style={{ height: 260 }}><Line data={dataKemiskinan} options={{ responsive: true, maintainAspectRatio: false }} /></div>
       </div>
     </div>
   )
@@ -1822,29 +2008,29 @@ function TabIPM() {
 
   return (
     <div>
-      <div className="row g-3 mb-4">
+      <div className="row g-2 g-md-3 mb-4">
         {[
-          { title: 'Indeks IPM Sijunjung', value: '69,45', unit: 'Kategori: Sedang', icon: 'bi-award-fill', color: '#10b981' },
+          { title: 'Indeks IPM', value: '69,45', unit: 'Kategori: Sedang', icon: 'bi-award-fill', color: '#10b981' },
           { title: 'Angka Harapan Hidup', value: '70,92', unit: 'Tahun (UHH)', icon: 'bi-heart-pulse-fill', color: '#ef4444' },
           { title: 'Harapan Lama Sekolah', value: '13,24', unit: 'Tahun (HLS)', icon: 'bi-book-half', color: '#3b82f6' },
-          { title: 'Rata-rata Lama Sekolah', value: '8,52', unit: 'Tahun (RLS)', icon: 'bi-journal-bookmark-fill', color: '#8b5cf6' }
+          { title: 'Rata-rata Sekolah', value: '8,52', unit: 'Tahun (RLS)', icon: 'bi-journal-bookmark-fill', color: '#8b5cf6' }
         ].map(c => (
           <div className="col-6 col-md-3" key={c.title}>
-            <div style={{ background: '#fff', borderRadius: 14, padding: '16px 20px', border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                <span style={{ fontSize: 11, fontWeight: 600, color: '#6b7280' }}>{c.title}</span>
-                <i className={`bi ${c.icon}`} style={{ color: c.color, fontSize: 16 }}></i>
+            <div className="public-card" style={{ background: '#fff', borderRadius: 14, padding: '16px 18px', border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', height: '100%' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <span className="public-stat-title" style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.title}</span>
+                <i className={`bi ${c.icon}`} style={{ color: c.color, fontSize: 15, flexShrink: 0 }}></i>
               </div>
-              <div style={{ fontSize: 24, fontWeight: 800, color: '#1a1f2e', lineHeight: 1.1 }}>{c.value}</div>
-              <span style={{ fontSize: 11, color: '#9ca3af' }}>{c.unit}</span>
+              <div className="public-stat-val" style={{ fontSize: 'clamp(16px, 3.5vw, 22px)', fontWeight: 800, color: '#1a1f2e', lineHeight: 1.1 }}>{c.value}</div>
+              <span className="public-stat-unit" style={{ fontSize: 10, color: '#9ca3af', display: 'block', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.unit}</span>
             </div>
           </div>
         ))}
       </div>
 
-      <div style={{ background: '#fff', borderRadius: 14, padding: 20, border: '1px solid #e5e7eb', marginBottom: 20 }}>
-        <h6 style={{ fontWeight: 700, color: '#1a1f2e', marginBottom: 16 }}>Progres Peningkatan Indeks Pembangunan Manusia (IPM) Sijunjung</h6>
-        <div style={{ height: 260 }}><Bar data={dataIPM} options={{ responsive: true, maintainAspectRatio: false }} /></div>
+      <div className="public-card" style={{ background: '#fff', borderRadius: 14, padding: 20, border: '1px solid #e5e7eb', marginBottom: 20 }}>
+        <h6 style={{ fontWeight: 700, color: '#1a1f2e', marginBottom: 14 }}>Progres Peningkatan Indeks Pembangunan Manusia (IPM) Sijunjung</h6>
+        <div className="public-chart-container" style={{ height: 260 }}><Bar data={dataIPM} options={{ responsive: true, maintainAspectRatio: false }} /></div>
       </div>
     </div>
   )

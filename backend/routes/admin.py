@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify, send_file, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from werkzeug.security import generate_password_hash
 from werkzeug.utils import secure_filename
-from models import db, User, DataType, Task, Submission, ManualEntry, ExcelTemplate
+from models import db, User, DataType, Task, Submission, ExcelTemplate
 from utils.excel import generate_template, parse_excel_structure
 from utils.excel_parser import parse_excel_to_preview_grid, read_submission_data, parse_excel_schema_from_template
 from storage import upload_file, download_file, delete_file, get_public_url, UPLOADS_BUCKET, TEMPLATES_BUCKET
@@ -1135,50 +1135,7 @@ def delete_submission(sub_id):
 
 
 
-# ─── Manual Entries ───────────────────────────────────────────────────────────
 
-@admin_bp.route('/manual-entries', methods=['GET'])
-@jwt_required()
-def get_manual_entries():
-    user, err, code = require_admin()
-    if err:
-        return err, code
-    entries = ManualEntry.query.order_by(ManualEntry.created_at.desc()).all()
-    return jsonify([e.to_dict() for e in entries]), 200
-
-
-@admin_bp.route('/manual-entries', methods=['POST'])
-@jwt_required()
-def create_manual_entry():
-    user, err, code = require_admin()
-    if err:
-        return err, code
-
-    data = request.get_json()
-    if not data or not data.get('data_type_id'):
-        return jsonify({'error': 'data_type_id is required'}), 400
-
-    entry = ManualEntry(
-        data_type_id=data['data_type_id'],
-        data=json.dumps(data.get('data', {})),
-        entered_by=int(get_jwt_identity()),
-    )
-    db.session.add(entry)
-    db.session.commit()
-    return jsonify(entry.to_dict()), 201
-
-
-@admin_bp.route('/manual-entries/<int:entry_id>', methods=['DELETE'])
-@jwt_required()
-def delete_manual_entry(entry_id):
-    user, err, code = require_admin()
-    if err:
-        return err, code
-
-    entry = ManualEntry.query.get_or_404(entry_id)
-    db.session.delete(entry)
-    db.session.commit()
-    return jsonify({'message': 'Entry deleted'}), 200
 
 
 # ─── Dashboard Stats ──────────────────────────────────────────────────────────

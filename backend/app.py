@@ -67,6 +67,8 @@ def create_app():
                 db.session.execute(text("ALTER TABLE assignment_letters ADD COLUMN IF NOT EXISTS reference_number VARCHAR(100)"))
                 db.session.execute(text("ALTER TABLE assignment_letters ADD COLUMN IF NOT EXISTS activity_name VARCHAR(255)"))
                 db.session.execute(text("ALTER TABLE data_types ALTER COLUMN name TYPE VARCHAR(255)"))
+                db.session.execute(text("DROP TABLE IF EXISTS manual_entries CASCADE"))
+                db.session.execute(text("DROP TABLE IF EXISTS dashboard_widgets CASCADE"))
                 db.session.commit()
             else:
                 for col, typ in [('whatsapp', 'VARCHAR(30)'), ('password_plain', 'VARCHAR(256)')]:
@@ -81,6 +83,12 @@ def create_app():
                         db.session.commit()
                     except Exception:
                         db.session.rollback()
+                try:
+                    db.session.execute(text("DROP TABLE IF EXISTS manual_entries"))
+                    db.session.execute(text("DROP TABLE IF EXISTS dashboard_widgets"))
+                    db.session.commit()
+                except Exception:
+                    db.session.rollback()
         except Exception as e:
             db.session.rollback()
             app.logger.warning(f"Startup migration failed or skipped: {str(e)}")

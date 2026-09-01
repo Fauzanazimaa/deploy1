@@ -6,7 +6,7 @@ lalu ditransformasi (unpivot) ke tidy format untuk visualisasi.
 """
 from flask import Blueprint, request, jsonify, send_file
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models import db, User, DashboardWidget, DataType, ManualEntry, Task, Submission
+from models import db, User, DataType, Task, Submission
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment
 import io, json
@@ -32,19 +32,10 @@ def _require_admin():
 
 def _get_all_rows(data_type_id: int) -> list:
     """
-    Ambil semua baris data dari ManualEntry + approved Submission (form source).
+    Ambil semua baris data dari approved Submission (form source).
     Kembalikan dalam format RAW (cross-table: __row_label + __col_N).
     """
     rows = []
-    for entry in ManualEntry.query.filter_by(data_type_id=data_type_id).all():
-        try:
-            d = entry.get_data()
-            if isinstance(d, list):
-                rows.extend([r for r in d if isinstance(r, dict)])
-            elif isinstance(d, dict):
-                rows.append(d)
-        except Exception:
-            pass
 
     subs = (Submission.query.filter_by(status='approved')
             .join(Task, Task.id == Submission.task_id)

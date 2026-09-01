@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, send_file
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models import db, User, Task, Submission, ManualEntry, DataType
+from models import db, User, Task, Submission, DataType
 from sqlalchemy import func
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment
@@ -27,18 +27,15 @@ def viewer_dashboard():
         approved_count = db.session.query(func.count(Task.id)).filter(
             Task.data_type_id == dt.id, Task.status == 'approved'
         ).scalar()
-        manual_count = ManualEntry.query.filter_by(data_type_id=dt.id).count()
         data_type_stats.append({
             'id': dt.id, 'name': dt.name,
             'approved_tasks': approved_count,
-            'manual_entries': manual_count,
-            'total': approved_count + manual_count,
+            'total': approved_count,
         })
 
     return jsonify({
         'approved_tasks':      Task.query.filter_by(status='approved').count(),
         'total_data_types':    DataType.query.count(),
-        'total_manual_entries': ManualEntry.query.count(),
         'approved_submissions': Submission.query.filter_by(status='approved').count(),
         'data_type_stats':     data_type_stats,
     }), 200
@@ -53,18 +50,12 @@ def get_approved_data():
 
     data_type_id = request.args.get('data_type_id', type=int)
 
-    query = ManualEntry.query
-    if data_type_id:
-        query = query.filter_by(data_type_id=data_type_id)
-    manual_entries = query.order_by(ManualEntry.created_at.desc()).all()
-
     sub_query = Submission.query.filter_by(status='approved')
     if data_type_id:
         sub_query = sub_query.join(Task).filter(Task.data_type_id == data_type_id)
     approved_submissions = sub_query.order_by(Submission.reviewed_at.desc()).all()
 
     return jsonify({
-        'manual_entries':      [e.to_dict() for e in manual_entries],
         'approved_submissions': [s.to_dict() for s in approved_submissions],
     }), 200
 
@@ -93,11 +84,10 @@ def export_data():
     data_type = DataType.query.get_or_404(data_type_id)
     fields = data_type.get_fields_schema()
 
-    manual_entries = (ManualEntry.query
-                      .filter_by(data_type_id=data_type_id)
-                      .order_by(ManualEntry.created_at.desc()).all())
     approved_submissions = (Submission.query
                             .filter_by(status='approved')
+                            .join(Task).filter(Task.data_type_id == data_type_id)
+                            .order_by(Submission.reviewed_at.desc()).all())
                             .join(Task).filter(Task.data_type_id == data_type_id)
                             .order_by(Submission.reviewed_at.desc()).all())
 
@@ -121,14 +111,6 @@ def export_data():
         cell.alignment = header_align
 
     row_idx = 2
-    for idx, entry in enumerate(manual_entries, 1):
-        ws.cell(row=row_idx, column=1, value=idx)
-        ws.cell(row=row_idx, column=2, value='Entri Manual')
-        entry_data = entry.get_data()
-        for ci, field in enumerate(fields, 3):
-            ws.cell(row=row_idx, column=ci, value=entry_data.get(field.get('name', ''), '-'))
-        ws.cell(row=row_idx, column=len(headers), value=entry.created_at.strftime('%Y-%m-%d %H:%M'))
-        row_idx += 1
 
     for sub in approved_submissions:
         ws.cell(row=row_idx, column=1, value=row_idx - 1)
