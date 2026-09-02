@@ -88,8 +88,6 @@ def export_data():
                             .filter_by(status='approved')
                             .join(Task).filter(Task.data_type_id == data_type_id)
                             .order_by(Submission.reviewed_at.desc()).all())
-                            .join(Task).filter(Task.data_type_id == data_type_id)
-                            .order_by(Submission.reviewed_at.desc()).all())
 
     # Build Excel in memory
     wb = openpyxl.Workbook()

@@ -137,7 +137,6 @@ def delete_user(user_id):
             Submission.query.filter_by(task_id=task.id).delete()
             db.session.delete(task)
         Task.query.filter_by(assigned_by=target.id).update({'assigned_by': int(get_jwt_identity())})
-        ManualEntry.query.filter_by(entered_by=target.id).delete()
         db.session.delete(target)
         db.session.commit()
         return jsonify({'message': 'User deleted'}), 200
@@ -230,14 +229,7 @@ def delete_data_type(dt_id):
                 pass
             db.session.delete(tmpl)
 
-        # 3. Hapus manual entries
-        ManualEntry.query.filter_by(data_type_id=dt_id).delete()
-
-        # 4. Hapus dashboard widgets yang terkait
-        from models import DashboardWidget
-        DashboardWidget.query.filter_by(data_type_id=dt_id).delete()
-
-        # 5. Baru hapus data type-nya
+        # 3. Baru hapus data type-nya
         db.session.delete(dt)
         db.session.commit()
         return jsonify({'message': 'Data type deleted'}), 200
@@ -1163,7 +1155,6 @@ def dashboard_stats():
         'total_submissions':      Submission.query.count(),
         'pending_verifications':  Submission.query.filter_by(status='pending').count(),
         'total_data_types':       DataType.query.count(),
-        'total_manual_entries':   ManualEntry.query.count(),
         'recent_submissions':     [s.to_dict() for s in recent_submissions],
     }), 200
 
