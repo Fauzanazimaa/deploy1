@@ -9,6 +9,7 @@ import { Bar, Line, Pie, Doughnut } from 'react-chartjs-2'
 import { login as loginApi } from '../api'
 import { useAuth } from '../context/AuthContext'
 import SejatiLogo from '../components/SejatiLogo'
+import ThemeToggle from '../components/ThemeToggle'
 import sijunjungGeoJson from '../components/sijunjung_kecamatan.json'
 import axios from 'axios'
 
@@ -59,6 +60,7 @@ export default function PublicDashboard() {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <ThemeToggle darkNav={true} compact={false} />
             <button
               onClick={() => setOpenLogin(openLogin ? null : 'login')}
               className="nav-login-btn"

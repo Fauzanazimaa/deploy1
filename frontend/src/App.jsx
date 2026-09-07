@@ -1,6 +1,7 @@
 import React from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
+import { ThemeProvider } from './context/ThemeContext'
 import ProtectedRoute from './components/ProtectedRoute'
 
 import PublicDashboard from './pages/PublicDashboard'
@@ -26,61 +27,63 @@ import ViewerData from './pages/viewer/ViewerData'
 
 export default function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* Landing page publik — tidak butuh login */}
-          <Route path="/" element={<PublicDashboard />} />
-          <Route path="/login" element={<Login />} />
+    <ThemeProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Landing page publik — tidak butuh login */}
+            <Route path="/" element={<PublicDashboard />} />
+            <Route path="/login" element={<Login />} />
 
-          {/* Admin Routes */}
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute roles={['admin']}>
-                <AdminLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<AdminDashboard />} />
-            <Route path="users" element={<AdminUsers />} />
-            <Route path="data-schema" element={<AdminDataSchema />} />
-            <Route path="tasks" element={<AdminTasks />} />
-            <Route path="submissions" element={<AdminSubmissions />} />
-            <Route path="public-dashboard" element={<AdminPublicDashboard />} />
-          </Route>
+            {/* Admin Routes */}
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute roles={['admin']}>
+                  <AdminLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<AdminDashboard />} />
+              <Route path="users" element={<AdminUsers />} />
+              <Route path="data-schema" element={<AdminDataSchema />} />
+              <Route path="tasks" element={<AdminTasks />} />
+              <Route path="submissions" element={<AdminSubmissions />} />
+              <Route path="public-dashboard" element={<AdminPublicDashboard />} />
+            </Route>
 
-          {/* Contributor Routes */}
-          <Route
-            path="/contributor"
-            element={
-              <ProtectedRoute roles={['contributor']}>
-                <ContributorLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<ContributorDashboard />} />
-            <Route path="tasks" element={<ContributorTasks />} />
-            <Route path="submissions" element={<ContributorSubmissions />} />
-            <Route path="letters" element={<ContributorLetters />} />
-          </Route>
+            {/* Contributor Routes */}
+            <Route
+              path="/contributor"
+              element={
+                <ProtectedRoute roles={['contributor']}>
+                  <ContributorLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<ContributorDashboard />} />
+              <Route path="tasks" element={<ContributorTasks />} />
+              <Route path="submissions" element={<ContributorSubmissions />} />
+              <Route path="letters" element={<ContributorLetters />} />
+            </Route>
 
-          {/* Viewer Routes */}
-          <Route
-            path="/viewer"
-            element={
-              <ProtectedRoute roles={['viewer']}>
-                <ViewerLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<ViewerDashboard />} />
-            <Route path="data" element={<ViewerData />} />
-          </Route>
+            {/* Viewer Routes */}
+            <Route
+              path="/viewer"
+              element={
+                <ProtectedRoute roles={['viewer']}>
+                  <ViewerLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<ViewerDashboard />} />
+              <Route path="data" element={<ViewerData />} />
+            </Route>
 
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
+    </ThemeProvider>
   )
 }

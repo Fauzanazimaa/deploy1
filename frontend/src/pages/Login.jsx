@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { login } from '../api'
 import { useAuth } from '../context/AuthContext'
 import SejatiLogo from '../components/SejatiLogo'
+import ThemeToggle from '../components/ThemeToggle'
 
 const ACCENT = '#f5a623'
 const SIDEBAR_BG = '#1a1f2e'
@@ -47,13 +48,16 @@ export default function Login() {
   return (
     <div style={{ minHeight: '100vh', background: '#f5f6fa', fontFamily: "'Inter', sans-serif" }}>
       {/* Navbar */}
-      <nav style={{ background: SIDEBAR_BG, padding: '0 28px', height: 60, display: 'flex', alignItems: 'center' }}>
-        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-          <SejatiLogo size={34} variant="compact" />
-        </Link>
-        <Link to="/" style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, marginLeft: 16, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 5 }}>
-          <i className="bi bi-arrow-left"></i> Dashboard Publik
-        </Link>
+      <nav style={{ background: SIDEBAR_BG, padding: '0 28px', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
+            <SejatiLogo size={34} variant="compact" />
+          </Link>
+          <Link to="/" style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, marginLeft: 16, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 5 }}>
+            <i className="bi bi-arrow-left"></i> Dashboard Publik
+          </Link>
+        </div>
+        <ThemeToggle darkNav={true} compact={false} />
       </nav>
 
       {/* Center card */}

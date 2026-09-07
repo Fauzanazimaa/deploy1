@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import SejatiLogo from '../../components/SejatiLogo'
+import ThemeToggle from '../../components/ThemeToggle'
 
 const navGroups = [
   {
@@ -136,6 +137,7 @@ export default function AdminLayout() {
           </button>
           <SejatiLogo size={28} variant="icon" />
           <span style={{ color: '#fff', fontWeight: 700, fontSize: 14, flex: 1 }}>{currentLabel}</span>
+          <ThemeToggle darkNav={true} compact={true} style={{ height: 32, minWidth: 32, padding: '0 8px' }} />
           <div style={{ width: 32, height: 32, borderRadius: '50%', background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#fff', fontSize: 13 }}>
             {user?.username?.[0]?.toUpperCase() || 'A'}
           </div>
@@ -184,6 +186,7 @@ export default function AdminLayout() {
             <span style={{ color: ACCENT, fontWeight: 600 }}>{currentLabel}</span>
           </div>
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <ThemeToggle compact={false} />
             <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', color: ACCENT, fontSize: 12, fontWeight: 600, padding: '4px 12px', borderRadius: 20 }}>Admin</div>
             <div style={{ width: 34, height: 34, borderRadius: '50%', background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#fff', fontSize: 14 }} title={user?.username}>
               {user?.username?.[0]?.toUpperCase() || 'A'}

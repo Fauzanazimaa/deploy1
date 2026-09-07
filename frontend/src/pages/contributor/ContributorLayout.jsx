@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import SejatiLogo from '../../components/SejatiLogo'
+import ThemeToggle from '../../components/ThemeToggle'
 
 const navItems = [
   { to: '/contributor',             icon: 'bi-speedometer2',          label: 'Dashboard',          end: true },
@@ -52,6 +53,7 @@ export default function ContributorLayout() {
         <div style={{ height: 56, background: SIDEBAR_BG, display: 'flex', alignItems: 'center', padding: '0 16px', gap: 12, flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
           <SejatiLogo size={32} variant="icon" />
           <span style={{ color: '#fff', fontWeight: 700, fontSize: 15, flex: 1 }}>{currentLabel}</span>
+          <ThemeToggle darkNav={true} compact={true} style={{ height: 32, minWidth: 32, padding: '0 8px' }} />
           <div style={{ width: 32, height: 32, borderRadius: '50%', background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#fff', fontSize: 13 }}>
             {user?.username?.[0]?.toUpperCase() || 'K'}
           </div>
@@ -144,6 +146,7 @@ export default function ContributorLayout() {
             <span style={{ color: ACCENT, fontWeight: 600 }}>{currentLabel}</span>
           </div>
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <ThemeToggle compact={false} />
             <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', color: ACCENT, fontSize: 12, fontWeight: 600, padding: '4px 12px', borderRadius: 20 }}>Kontributor</div>
             <div style={{ width: 34, height: 34, borderRadius: '50%', background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#fff', fontSize: 14 }} title={user?.username}>
               {user?.username?.[0]?.toUpperCase() || 'K'}
