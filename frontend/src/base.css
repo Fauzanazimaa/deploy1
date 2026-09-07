@@ -306,7 +306,12 @@ table { min-width: 0; }
 }
 
 /* Tables in dark mode */
-[data-theme="dark"] table {
+[data-theme="dark"] table,
+[data-theme="dark"] .table {
+  --bs-table-bg: transparent !important;
+  --bs-table-accent-bg: transparent !important;
+  --bs-table-striped-bg: transparent !important;
+  --bs-table-hover-bg: #1e293b !important;
   color: #f1f5f9 !important;
   background-color: transparent !important;
 }
@@ -330,9 +335,13 @@ table { min-width: 0; }
   border-color: #222f47 !important;
 }
 
+[data-theme="dark"] .table > :not(caption) > * > *,
+[data-theme="dark"] table > :not(caption) > * > *,
 [data-theme="dark"] td {
-  border-color: #1e293b !important;
+  border-color: #222f47 !important;
   color: #e2e8f0 !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
 }
 
 [data-theme="dark"] td strong,
@@ -493,26 +502,48 @@ table { min-width: 0; }
 
 /* Public Dashboard Kecamatan Detail Table */
 .kecamatan-table {
-  border-collapse: separate;
-  border-spacing: 0;
+  width: 100%;
+  border-collapse: collapse;
+  background-color: transparent !important;
+}
+
+.kecamatan-table thead th {
+  padding: 10px 8px;
+  font-size: 12px;
+}
+
+.kecamatan-table tbody td {
+  padding: 10px 8px;
+  font-size: 12px;
+}
+
+.kecamatan-table tfoot td {
+  padding: 11px 8px;
+  font-size: 12px;
 }
 
 [data-theme="dark"] .kecamatan-table {
+  --bs-table-bg: transparent !important;
+  --bs-table-accent-bg: transparent !important;
   color: #f1f5f9 !important;
+  background-color: transparent !important;
 }
 
-[data-theme="dark"] .kecamatan-table thead tr {
-  background-color: #0f172a !important;
-}
-
+[data-theme="dark"] .kecamatan-table thead tr,
 [data-theme="dark"] .kecamatan-table thead th {
   background-color: #0f172a !important;
   color: #94a3b8 !important;
   border-bottom: 2px solid #222f47 !important;
 }
 
+[data-theme="dark"] .kecamatan-table tbody tr {
+  background-color: transparent !important;
+}
+
 [data-theme="dark"] .kecamatan-table tbody td {
-  border-bottom: 1px solid #1e293b !important;
+  background-color: transparent !important;
+  color: #f1f5f9 !important;
+  border-bottom: 1px solid #222f47 !important;
 }
 
 [data-theme="dark"] .kecamatan-table tbody tr:hover td,
@@ -524,5 +555,6 @@ table { min-width: 0; }
 [data-theme="dark"] .kecamatan-table tfoot td {
   background-color: #0f172a !important;
   border-top: 2px solid #222f47 !important;
+  color: #f1f5f9 !important;
 }
 

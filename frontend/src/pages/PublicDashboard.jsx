@@ -1361,12 +1361,12 @@ function TabPenduduk() {
                   Tabel Rincian Kecamatan ({selectedYear})
                 </h6>
                 <div className="table-responsive" style={{ flexGrow: 1, WebkitOverflowScrolling: 'touch' }}>
-                  <table className="table kecamatan-table align-middle text-start" style={{ fontSize: 12, margin: 0 }}>
+                  <table className="kecamatan-table align-middle text-start" style={{ width: '100%', fontSize: 12, margin: 0, background: 'transparent' }}>
                     <thead>
                       <tr style={{ background: isDark ? '#0f172a' : '#f8fafc' }}>
-                        <th style={{ padding: '10px 8px', borderBottom: isDark ? '2px solid #222f47' : '2px solid #e2e8f0', color: isDark ? '#94a3b8' : '#475569', fontWeight: 700 }}>Kecamatan</th>
-                        <th style={{ padding: '10px 8px', borderBottom: isDark ? '2px solid #222f47' : '2px solid #e2e8f0', textAlign: 'right', color: isDark ? '#94a3b8' : '#475569', fontWeight: 700 }}>Jumlah</th>
-                        <th style={{ padding: '10px 8px', borderBottom: isDark ? '2px solid #222f47' : '2px solid #e2e8f0', textAlign: 'right', color: isDark ? '#94a3b8' : '#475569', fontWeight: 700 }}>Persentase</th>
+                        <th style={{ padding: '10px 8px', borderBottom: isDark ? '2px solid #222f47' : '2px solid #e2e8f0', color: isDark ? '#94a3b8' : '#475569', fontWeight: 700, background: isDark ? '#0f172a' : '#f8fafc' }}>Kecamatan</th>
+                        <th style={{ padding: '10px 8px', borderBottom: isDark ? '2px solid #222f47' : '2px solid #e2e8f0', textAlign: 'right', color: isDark ? '#94a3b8' : '#475569', fontWeight: 700, background: isDark ? '#0f172a' : '#f8fafc' }}>Jumlah</th>
+                        <th style={{ padding: '10px 8px', borderBottom: isDark ? '2px solid #222f47' : '2px solid #e2e8f0', textAlign: 'right', color: isDark ? '#94a3b8' : '#475569', fontWeight: 700, background: isDark ? '#0f172a' : '#f8fafc' }}>Persentase</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1375,14 +1375,15 @@ function TabPenduduk() {
                           ? ((path.value / totalPopulation) * 100).toFixed(2) 
                           : '-';
                         const isHovered = hoveredKec?.bpsCode === path.bpsCode;
+                        const cellBg = isHovered 
+                          ? (isDark ? '#1e293b' : '#f1f5f9') 
+                          : 'transparent';
                         return (
                           <tr 
                             key={path.id} 
                             className={isHovered ? 'hovered-row' : ''}
                             style={{ 
-                              background: isHovered 
-                                ? (isDark ? '#1e293b' : '#f1f5f9') 
-                                : 'transparent',
+                              background: cellBg,
                               cursor: 'pointer',
                               transition: 'background 0.15s ease'
                             }}
@@ -1391,33 +1392,44 @@ function TabPenduduk() {
                             onClick={() => setHoveredKec(hoveredKec?.bpsCode === path.bpsCode ? null : path)}
                           >
                             <td style={{ 
-                              padding: '9px 8px', 
+                              padding: '10px 8px', 
                               fontWeight: 600, 
                               color: isHovered 
                                 ? (isDark ? '#60a5fa' : '#2563eb') 
-                                : (isDark ? '#f1f5f9' : '#1e293b'),
-                              borderBottom: isDark ? '1px solid #1e293b' : '1px solid #f1f5f9'
+                                : (isDark ? '#f8fafc' : '#1e293b'),
+                              borderBottom: isDark ? '1px solid #222f47' : '1px solid #f1f5f9',
+                              background: cellBg
                             }}>
-                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                                <span style={{ width: 8, height: 8, borderRadius: '50%', background: path.fill || '#94a3b8', display: 'inline-block', flexShrink: 0 }}></span>
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                                <span style={{ 
+                                  width: 8, 
+                                  height: 8, 
+                                  borderRadius: '50%', 
+                                  background: path.fill || '#94a3b8', 
+                                  display: 'inline-block', 
+                                  flexShrink: 0,
+                                  boxShadow: isDark ? '0 0 4px rgba(255,255,255,0.25)' : 'none'
+                                }}></span>
                                 {path.label}
                               </span>
                             </td>
                             <td style={{ 
-                              padding: '9px 8px', 
+                              padding: '10px 8px', 
                               textAlign: 'right', 
                               fontWeight: 700, 
                               color: isDark ? '#60a5fa' : '#2563eb',
-                              borderBottom: isDark ? '1px solid #1e293b' : '1px solid #f1f5f9'
+                              borderBottom: isDark ? '1px solid #222f47' : '1px solid #f1f5f9',
+                              background: cellBg
                             }}>
                               {path.value !== null ? `${path.value.toLocaleString('id-ID')} ribu` : '-'}
                             </td>
                             <td style={{ 
-                              padding: '9px 8px', 
+                              padding: '10px 8px', 
                               textAlign: 'right', 
                               fontWeight: 600,
-                              color: isDark ? '#94a3b8' : '#64748b',
-                              borderBottom: isDark ? '1px solid #1e293b' : '1px solid #f1f5f9'
+                              color: isDark ? '#cbd5e1' : '#64748b',
+                              borderBottom: isDark ? '1px solid #222f47' : '1px solid #f1f5f9',
+                              background: cellBg
                             }}>
                               {pct !== '-' ? `${pct}%` : '-'}
                             </td>
@@ -1427,11 +1439,11 @@ function TabPenduduk() {
                     </tbody>
                     <tfoot style={{ borderTop: isDark ? '2px solid #222f47' : '2px solid #e2e8f0' }}>
                       <tr style={{ background: isDark ? '#0f172a' : '#f8fafc', fontWeight: 800 }}>
-                        <td style={{ padding: '10px 8px', color: isDark ? '#f1f5f9' : '#1e293b' }}>Kabupaten Sijunjung (Total)</td>
-                        <td style={{ padding: '10px 8px', textAlign: 'right', fontWeight: 800, color: isDark ? '#60a5fa' : '#2563eb' }}>
+                        <td style={{ padding: '11px 8px', color: isDark ? '#f8fafc' : '#1e293b', background: isDark ? '#0f172a' : '#f8fafc' }}>Kabupaten Sijunjung (Total)</td>
+                        <td style={{ padding: '11px 8px', textAlign: 'right', fontWeight: 800, color: isDark ? '#60a5fa' : '#2563eb', background: isDark ? '#0f172a' : '#f8fafc' }}>
                           {parseFloat(totalPopulation).toLocaleString('id-ID')} ribu
                         </td>
-                        <td style={{ padding: '10px 8px', textAlign: 'right', fontWeight: 700, color: isDark ? '#94a3b8' : '#1e293b' }}>100.00%</td>
+                        <td style={{ padding: '11px 8px', textAlign: 'right', fontWeight: 700, color: isDark ? '#cbd5e1' : '#1e293b', background: isDark ? '#0f172a' : '#f8fafc' }}>100.00%</td>
                       </tr>
                     </tfoot>
                   </table>
