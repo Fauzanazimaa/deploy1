@@ -437,7 +437,12 @@ def get_my_submissions():
     user, err, code = require_contributor()
     if err:
         return err, code
+    from sqlalchemy.orm import joinedload
     submissions = (Submission.query
+                   .options(
+                       joinedload(Submission.task).joinedload(Task.data_type),
+                       joinedload(Submission.contributor)
+                   )
                    .filter_by(contributor_id=user.id)
                    .order_by(Submission.submitted_at.desc())
                    .all())
@@ -451,7 +456,13 @@ def dashboard_stats():
     if err:
         return err, code
 
+    from sqlalchemy.orm import joinedload
     recent_tasks = (Task.query
+                    .options(
+                        joinedload(Task.data_type),
+                        joinedload(Task.assignee),
+                        joinedload(Task.creator)
+                    )
                     .filter_by(assigned_to=user.id)
                     .order_by(Task.created_at.desc())
                     .limit(5).all())

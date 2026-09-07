@@ -43,6 +43,8 @@ export default function AdminTasks() {
   const [assignmentLetters, setAssignmentLetters] = useState([])
   const [uploadingLetter, setUploadingLetter] = useState(false)
   const [letterError, setLetterError] = useState('')
+  const [lettersLoading, setLettersLoading] = useState(false)
+  const [lettersLoaded, setLettersLoaded] = useState(false)
 
   const [uploadModalOpen, setUploadModalOpen] = useState(false)
   const [uploadForm, setUploadForm] = useState({ file: null, referenceNumber: '', activityName: '' })
@@ -69,20 +71,16 @@ export default function AdminTasks() {
     setCustomDialog({ isOpen: true, type: 'confirm', title, message, onConfirm })
   }
 
-  const fetchAll = async () => {
+  const fetchTasksData = async () => {
     try {
-      const [tasksRes, usersRes, dtRes, lettersRes, signedRes] = await Promise.all([
+      const [tasksRes, usersRes, dtRes] = await Promise.all([
         getAdminTasks(),
         getUsers(),
-        getDataTypes(),
-        getAdminAssignmentLetters(),
-        getAdminSignedCoverLetters()
+        getDataTypes()
       ])
       setTasks(tasksRes.data)
       setContributors(usersRes.data.filter((u) => u.role === 'contributor'))
       setDataTypes(dtRes.data)
-      setAssignmentLetters(lettersRes.data)
-      setSignedLetters(signedRes.data)
     } catch (e) {
       console.error(e)
     } finally {
@@ -90,7 +88,36 @@ export default function AdminTasks() {
     }
   }
 
-  useEffect(() => { fetchAll() }, [])
+  const fetchLettersData = async () => {
+    setLettersLoading(true)
+    try {
+      const [lettersRes, signedRes] = await Promise.all([
+        getAdminAssignmentLetters(),
+        getAdminSignedCoverLetters()
+      ])
+      setAssignmentLetters(lettersRes.data)
+      setSignedLetters(signedRes.data)
+      setLettersLoaded(true)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLettersLoading(false)
+    }
+  }
+
+  const fetchAll = async () => {
+    await Promise.all([fetchTasksData(), fetchLettersData()])
+  }
+
+  useEffect(() => {
+    fetchTasksData()
+  }, [])
+
+  useEffect(() => {
+    if (activeTab === 'letters' && !lettersLoaded) {
+      fetchLettersData()
+    }
+  }, [activeTab, lettersLoaded])
 
   const handleUploadLetter = async (title, file, referenceNumber, activityName) => {
     if (!file) return
@@ -105,7 +132,7 @@ export default function AdminTasks() {
       await uploadAssignmentLetter(fd)
       setUploadModalOpen(false)
       setUploadForm({ file: null, referenceNumber: '', activityName: '' })
-      fetchAll()
+      fetchLettersData()
     } catch (err) {
       setLetterError(err.response?.data?.error || 'Gagal mengupload surat permintaan data')
     } finally {
@@ -117,7 +144,7 @@ export default function AdminTasks() {
     showCustomConfirm('Hapus Surat Permintaan', 'Apakah Anda yakin ingin menghapus surat permintaan data ini?', async () => {
       try {
         await deleteAssignmentLetter(id)
-        fetchAll()
+        fetchLettersData()
       } catch (err) {
         showCustomAlert('Gagal', err.response?.data?.error || 'Gagal menghapus surat permintaan data')
       }
@@ -142,6 +169,9 @@ export default function AdminTasks() {
     setActiveSignedLetter(signedLetter)
     setShowPrintModal(true)
     setActiveSignatureUrl('')
+    if (assignmentLetters.length === 0) {
+      fetchLettersData()
+    }
     try {
       const res = await api.get(`/admin/signed-cover-letters/${signedLetter.id}/signature/download`, { responseType: 'blob' })
       const url = window.URL.createObjectURL(new Blob([res.data]))
@@ -155,7 +185,7 @@ export default function AdminTasks() {
     showCustomConfirm('Minta Ulang TTD', 'Apakah Anda yakin ingin meminta ulang tanda tangan untuk surat pengantar ini? Surat pengantar yang ada akan dihapus dan kontributor harus menandatangani ulang.', async () => {
       try {
         await resetSignedCoverLetter(signedId)
-        fetchAll()
+        fetchLettersData()
       } catch (err) {
         showCustomAlert('Gagal', err.response?.data?.error || 'Gagal meminta ulang tanda tangan surat pengantar')
       }
@@ -292,7 +322,7 @@ export default function AdminTasks() {
         await createTask(payload)
       }
       setShowModal(false)
-      fetchAll()
+      fetchTasksData()
     } catch (err) {
       setError(err.response?.data?.error || 'Terjadi kesalahan')
     } finally {
@@ -306,7 +336,7 @@ export default function AdminTasks() {
     try {
       await deleteTask(deleteConfirm.id)
       setDeleteConfirm(null)
-      fetchAll()
+      fetchTasksData()
     } catch (err) {
       showCustomAlert('Gagal', err.response?.data?.error || 'Gagal menghapus tugas')
     } finally {
@@ -702,7 +732,12 @@ export default function AdminTasks() {
             </div>
           )}
 
-          {getUniqueTaskTitles().length === 0 ? (
+          {lettersLoading && !lettersLoaded ? (
+            <div style={{ textAlign: 'center', padding: '40px 0' }}>
+              <div style={{ width: 36, height: 36, border: `3px solid ${ACCENT}30`, borderTopColor: ACCENT, borderRadius: '50%', animation: 'spin 0.7s linear infinite', display: 'inline-block' }} />
+              <div style={{ color: '#6b7280', fontSize: 12, marginTop: 10 }}>Memuat surat & data tanda tangan...</div>
+            </div>
+          ) : getUniqueTaskTitles().length === 0 ? (
             <div style={{ textAlign: 'center', padding: '36px 0', color: '#9ca3af', fontSize: 13 }}>
               <i className="bi bi-file-earmark-text" style={{ fontSize: 32, display: 'block', marginBottom: 10, opacity: 0.35 }}></i>
               Belum ada judul tugas yang dibuat. Buat tugas terlebih dahulu.

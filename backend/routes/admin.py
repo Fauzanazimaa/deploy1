@@ -581,7 +581,16 @@ def get_submissions():
     user, err, code = require_admin()
     if err:
         return err, code
-    submissions = Submission.query.order_by(Submission.submitted_at.desc()).all()
+    from sqlalchemy.orm import joinedload
+    submissions = (
+        Submission.query
+        .options(
+            joinedload(Submission.task).joinedload(Task.data_type),
+            joinedload(Submission.contributor)
+        )
+        .order_by(Submission.submitted_at.desc())
+        .all()
+    )
     return jsonify([s.to_dict() for s in submissions]), 200
 
 
@@ -1139,7 +1148,17 @@ def dashboard_stats():
     if err:
         return err, code
 
-    recent_submissions = Submission.query.order_by(Submission.submitted_at.desc()).limit(5).all()
+    from sqlalchemy.orm import joinedload
+    recent_submissions = (
+        Submission.query
+        .options(
+            joinedload(Submission.task).joinedload(Task.data_type),
+            joinedload(Submission.contributor)
+        )
+        .order_by(Submission.submitted_at.desc())
+        .limit(5)
+        .all()
+    )
 
     return jsonify({
         'total_users':          User.query.count(),

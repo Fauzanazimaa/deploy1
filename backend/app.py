@@ -55,43 +55,47 @@ def create_app():
     CORS(app, resources={r'/api/*': {'origins': '*'}})
 
     # ── Database Migration on Startup ──────────────────────────────────────────
-    with app.app_context():
-        # Create all tables that do not exist (e.g. signed_cover_letters)
-        db.create_all()
-        try:
-            from sqlalchemy import text
-            uri = app.config.get('SQLALCHEMY_DATABASE_URI', '')
-            if 'postgresql' in uri:
-                db.session.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS whatsapp VARCHAR(30)"))
-                db.session.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS password_plain VARCHAR(256)"))
-                db.session.execute(text("ALTER TABLE assignment_letters ADD COLUMN IF NOT EXISTS reference_number VARCHAR(100)"))
-                db.session.execute(text("ALTER TABLE assignment_letters ADD COLUMN IF NOT EXISTS activity_name VARCHAR(255)"))
-                db.session.execute(text("ALTER TABLE data_types ALTER COLUMN name TYPE VARCHAR(255)"))
-                db.session.execute(text("DROP TABLE IF EXISTS manual_entries CASCADE"))
-                db.session.execute(text("DROP TABLE IF EXISTS dashboard_widgets CASCADE"))
-                db.session.commit()
-            else:
-                for col, typ in [('whatsapp', 'VARCHAR(30)'), ('password_plain', 'VARCHAR(256)')]:
-                    try:
-                        db.session.execute(text(f"ALTER TABLE users ADD COLUMN {col} {typ}"))
-                        db.session.commit()
-                    except Exception:
-                        db.session.rollback()
-                for col, typ in [('reference_number', 'VARCHAR(100)'), ('activity_name', 'VARCHAR(255)')]:
-                    try:
-                        db.session.execute(text(f"ALTER TABLE assignment_letters ADD COLUMN {col} {typ}"))
-                        db.session.commit()
-                    except Exception:
-                        db.session.rollback()
-                try:
-                    db.session.execute(text("DROP TABLE IF EXISTS manual_entries"))
-                    db.session.execute(text("DROP TABLE IF EXISTS dashboard_widgets"))
+    # Di Vercel serverless, skema Supabase sudah lengkap dan up-to-date.
+    # Hanya jalankan migrasi saat lokal (SQLite) atau jika env RUN_MIGRATIONS=true.
+    # Menghindari 15-20 network roundtrips DDL dan table locks pada setiap cold start.
+    if IS_LOCAL or os.environ.get('RUN_MIGRATIONS', '').lower() in ('1', 'true'):
+        with app.app_context():
+            # Create all tables that do not exist (e.g. signed_cover_letters)
+            db.create_all()
+            try:
+                from sqlalchemy import text
+                uri = app.config.get('SQLALCHEMY_DATABASE_URI', '')
+                if 'postgresql' in uri:
+                    db.session.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS whatsapp VARCHAR(30)"))
+                    db.session.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS password_plain VARCHAR(256)"))
+                    db.session.execute(text("ALTER TABLE assignment_letters ADD COLUMN IF NOT EXISTS reference_number VARCHAR(100)"))
+                    db.session.execute(text("ALTER TABLE assignment_letters ADD COLUMN IF NOT EXISTS activity_name VARCHAR(255)"))
+                    db.session.execute(text("ALTER TABLE data_types ALTER COLUMN name TYPE VARCHAR(255)"))
+                    db.session.execute(text("DROP TABLE IF EXISTS manual_entries CASCADE"))
+                    db.session.execute(text("DROP TABLE IF EXISTS dashboard_widgets CASCADE"))
                     db.session.commit()
-                except Exception:
-                    db.session.rollback()
-        except Exception as e:
-            db.session.rollback()
-            app.logger.warning(f"Startup migration failed or skipped: {str(e)}")
+                else:
+                    for col, typ in [('whatsapp', 'VARCHAR(30)'), ('password_plain', 'VARCHAR(256)')]:
+                        try:
+                            db.session.execute(text(f"ALTER TABLE users ADD COLUMN {col} {typ}"))
+                            db.session.commit()
+                        except Exception:
+                            db.session.rollback()
+                    for col, typ in [('reference_number', 'VARCHAR(100)'), ('activity_name', 'VARCHAR(255)')]:
+                        try:
+                            db.session.execute(text(f"ALTER TABLE assignment_letters ADD COLUMN {col} {typ}"))
+                            db.session.commit()
+                        except Exception:
+                            db.session.rollback()
+                    try:
+                        db.session.execute(text("DROP TABLE IF EXISTS manual_entries"))
+                        db.session.execute(text("DROP TABLE IF EXISTS dashboard_widgets"))
+                        db.session.commit()
+                    except Exception:
+                        db.session.rollback()
+            except Exception as e:
+                db.session.rollback()
+                app.logger.warning(f"Startup migration failed or skipped: {str(e)}")
 
     # SQLite foreign key enforcement (hanya lokal)
     if IS_LOCAL:
