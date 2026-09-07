@@ -1,4 +1,4 @@
-﻿import React, { createContext, useContext, useState, useEffect } from 'react'
+import React, { createContext, useContext, useState, useEffect } from 'react'
 
 const ThemeContext = createContext({
   theme: 'light',
@@ -7,17 +7,21 @@ const ThemeContext = createContext({
   setTheme: () => {}
 })
 
+const THEME_KEY = 'sejati_theme_v2'
+
 export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(() => {
     try {
-      const saved = localStorage.getItem('sejati_theme')
-      if (saved === 'dark' || saved === 'light') return saved
-      if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-        return 'dark'
+      // Clean up legacy auto-saved theme key if present
+      if (typeof window !== 'undefined' && localStorage.getItem('sejati_theme')) {
+        localStorage.removeItem('sejati_theme')
       }
+      const saved = localStorage.getItem(THEME_KEY)
+      if (saved === 'dark' || saved === 'light') return saved
     } catch (e) {
       // fallback
     }
+    // Default theme is strictly white (light)
     return 'light'
   })
 
@@ -30,7 +34,7 @@ export function ThemeProvider({ children }) {
       } else {
         document.body.classList.remove('dark-theme')
       }
-      localStorage.setItem('sejati_theme', theme)
+      localStorage.setItem(THEME_KEY, theme)
     } catch (e) {}
   }, [theme])
 

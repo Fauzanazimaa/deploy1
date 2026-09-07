@@ -358,6 +358,7 @@ const BPS_TO_SHAPEFILE_MAP = {
 };
 
 function TabPenduduk() {
+  const { isDark } = useTheme();
   const [selectedYear, setSelectedYear] = useState(2025);
   const [availableYears, setAvailableYears] = useState([2020, 2021, 2022, 2023, 2024, 2025]);
   const [loading, setLoading] = useState(true);
@@ -1055,28 +1056,35 @@ function TabPenduduk() {
   return (
     <div>
       {/* Title & Control Panel */}
-      <div className="public-control-panel" style={{ background: '#fff', borderRadius: 14, padding: '20px 24px', border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', marginBottom: 20 }}>
+      <div className="public-control-panel" style={{ 
+        background: isDark ? '#151c2c' : '#fff', 
+        borderRadius: 14, 
+        padding: '20px 24px', 
+        border: isDark ? '1px solid #222f47' : '1px solid #e5e7eb', 
+        boxShadow: '0 2px 4px rgba(0,0,0,0.02)', 
+        marginBottom: 20 
+      }}>
         <div className="d-flex flex-wrap justify-content-between align-items-center gap-3">
           <div>
-            <p style={{ color: '#1a1f2e', fontSize: 14, fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <p style={{ color: isDark ? '#f8fafc' : '#1a1f2e', fontSize: 14, fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#f5a623', display: 'inline-block', flexShrink: 0 }}></span>
               Visualisasi penduduk secara interaktif bersumber langsung dari Web API BPS Kabupaten Sijunjung
             </p>
           </div>
           <div className="d-flex align-items-center gap-3 public-control-panel-controls">
             <div className="d-flex align-items-center gap-2 select-year-wrap">
-              <span style={{ fontSize: 13, fontWeight: 600, color: '#4b5563' }}>Pilih Tahun:</span>
+              <span style={{ fontSize: 13, fontWeight: 600, color: isDark ? '#94a3b8' : '#4b5563' }}>Pilih Tahun:</span>
               <select
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(parseInt(e.target.value))}
                 style={{
                   padding: '8px 16px',
                   borderRadius: 10,
-                  border: '1px solid #d1d5db',
-                  background: '#fff',
+                  border: isDark ? '1px solid #26334d' : '1px solid #d1d5db',
+                  background: isDark ? '#0f172a' : '#fff',
                   fontSize: 13,
                   fontWeight: 600,
-                  color: '#1f2937',
+                  color: isDark ? '#f8fafc' : '#1f2937',
                   cursor: 'pointer',
                   outline: 'none',
                   boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
@@ -1101,15 +1109,15 @@ function TabPenduduk() {
                   fontWeight: 600,
                   borderColor: '#3b82f6',
                   color: '#3b82f6',
-                  background: '#fff',
+                  background: isDark ? 'transparent' : '#fff',
                   transition: 'all 0.15s ease',
                   boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = '#eff6ff';
+                  e.currentTarget.style.background = isDark ? 'rgba(59, 130, 246, 0.15)' : '#eff6ff';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.background = '#fff';
+                  e.currentTarget.style.background = isDark ? 'transparent' : '#fff';
                 }}
               >
                 {exportingPdf ? (
@@ -1130,11 +1138,11 @@ function TabPenduduk() {
       </div>
 
       {loading ? (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 400, background: '#fff', borderRadius: 14, border: '1px solid #e5e7eb' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 400, background: isDark ? '#151c2c' : '#fff', borderRadius: 14, border: isDark ? '1px solid #222f47' : '1px solid #e5e7eb' }}>
           <div className="spinner-border" role="status" style={{ width: '3rem', height: '3rem', color: '#f5a623' }}>
             <span className="visually-hidden">Loading...</span>
           </div>
-          <span style={{ marginTop: 16, color: '#6b7280', fontWeight: 600, fontSize: 14 }}>Menghubungi Web API BPS...</span>
+          <span style={{ marginTop: 16, color: isDark ? '#94a3b8' : '#6b7280', fontWeight: 600, fontSize: 14 }}>Menghubungi Web API BPS...</span>
         </div>
       ) : error ? (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 400, border: '1px solid #fee2e2', borderRadius: 14, background: '#fef2f2', padding: '40px', textAlign: 'center' }}>
@@ -1148,16 +1156,16 @@ function TabPenduduk() {
           </button>
         </div>
       ) : (!mappedData && !genderData && !ageProjectionData) ? (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 400, border: '1px dashed #cbd5e1', borderRadius: 14, background: '#fff', padding: '40px', textAlign: 'center' }}>
-          <i className="bi bi-cloud-slash" style={{ fontSize: '48px', color: '#94a3b8', marginBottom: '16px' }}></i>
-          <h5 style={{ fontWeight: 800, color: '#334155', marginBottom: '8px' }}>Data Kependudukan Belum Tersedia</h5>
-          <p style={{ color: '#64748b', fontSize: '13px', maxWidth: '420px', lineHeight: 1.5 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 400, border: isDark ? '1px dashed #334155' : '1px dashed #cbd5e1', borderRadius: 14, background: isDark ? '#151c2c' : '#fff', padding: '40px', textAlign: 'center' }}>
+          <i className="bi bi-cloud-slash" style={{ fontSize: '48px', color: isDark ? '#64748b' : '#94a3b8', marginBottom: '16px' }}></i>
+          <h5 style={{ fontWeight: 800, color: isDark ? '#f8fafc' : '#334155', marginBottom: '8px' }}>Data Kependudukan Belum Tersedia</h5>
+          <p style={{ color: isDark ? '#94a3b8' : '#64748b', fontSize: '13px', maxWidth: '420px', lineHeight: 1.5 }}>
             Data Jumlah Penduduk, Rincian Jenis Kelamin, maupun Proyeksi Kelompok Umur untuk tahun <strong>{selectedYear}</strong> belum dipublikasikan atau tidak ditemukan di Web API BPS Kabupaten Sijunjung.
           </p>
         </div>
       ) : (
-        <div id="penduduk-report-content" style={{ padding: 16, background: '#f8fafc', borderRadius: 14 }}>
-          <div id="report-page-1" style={{ background: '#f8fafc', borderRadius: 14 }}>
+        <div id="penduduk-report-content" style={{ padding: 16, background: isDark ? '#0b0f19' : '#f8fafc', borderRadius: 14 }}>
+          <div id="report-page-1" style={{ background: isDark ? '#0b0f19' : '#f8fafc', borderRadius: 14 }}>
           {/* Summary Cards */}
           <div className="row g-2 g-md-3 mb-4">
             {[
@@ -1167,14 +1175,33 @@ function TabPenduduk() {
               { title: 'Rata-rata Kecamatan', value: (totalPopulation / 8).toFixed(2).toLocaleString('id-ID'), unit: 'Ribu Jiwa / Kecamatan', icon: 'bi-calculator', color: '#586880', bg: '#eef1f6' }
             ].map(c => (
               <div className="col-6 col-md-3" key={c.title}>
-                <div className="public-card" style={{ background: '#fff', borderRadius: 14, padding: '16px 18px', border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', display: 'flex', alignItems: 'center', gap: 12, height: '100%' }}>
-                  <div style={{ width: 40, height: 40, borderRadius: 10, background: c.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <div className="public-card" style={{ 
+                  background: isDark ? '#151c2c' : '#fff', 
+                  borderRadius: 14, 
+                  padding: '16px 18px', 
+                  border: isDark ? '1px solid #222f47' : '1px solid #e5e7eb', 
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.02)', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 12, 
+                  height: '100%' 
+                }}>
+                  <div style={{ 
+                    width: 40, 
+                    height: 40, 
+                    borderRadius: 10, 
+                    background: isDark ? 'rgba(255, 255, 255, 0.06)' : c.bg, 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    flexShrink: 0 
+                  }}>
                     <i className={`bi ${c.icon}`} style={{ color: c.color, fontSize: 16 }}></i>
                   </div>
                   <div style={{ minWidth: 0, flex: 1 }}>
-                    <span className="public-stat-title" style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.title}</span>
-                    <span className="public-stat-val" style={{ fontSize: 'clamp(16px, 3.5vw, 20px)', fontWeight: 800, color: '#1a1f2e', lineHeight: 1.1, display: 'inline-block', marginRight: 2 }}>{c.value}</span>
-                    <span className="public-stat-unit" style={{ fontSize: 10, color: '#9ca3af', display: 'block', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.unit}</span>
+                    <span className="public-stat-title" style={{ fontSize: 11, fontWeight: 600, color: isDark ? '#94a3b8' : '#6b7280', display: 'block', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.title}</span>
+                    <span className="public-stat-val" style={{ fontSize: 'clamp(16px, 3.5vw, 20px)', fontWeight: 800, color: isDark ? '#f8fafc' : '#1a1f2e', lineHeight: 1.1, display: 'inline-block', marginRight: 2 }}>{c.value}</span>
+                    <span className="public-stat-unit" style={{ fontSize: 10, color: isDark ? '#64748b' : '#9ca3af', display: 'block', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.unit}</span>
                   </div>
                 </div>
               </div>
@@ -1186,14 +1213,33 @@ function TabPenduduk() {
             <div className="row g-3 g-md-4">
             {/* Map Column */}
             <div className="col-12 col-lg-7">
-              <div className="public-card" style={{ background: '#fff', borderRadius: 14, padding: 20, border: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column', height: '100%' }}>
-                <h6 style={{ fontWeight: 800, color: '#1a1f2e', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div className="public-card" style={{ 
+                background: isDark ? '#151c2c' : '#fff', 
+                borderRadius: 14, 
+                padding: 20, 
+                border: isDark ? '1px solid #222f47' : '1px solid #e5e7eb', 
+                display: 'flex', 
+                flexDirection: 'column', 
+                height: '100%' 
+              }}>
+                <h6 style={{ fontWeight: 800, color: isDark ? '#f8fafc' : '#1a1f2e', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
                   <i className="bi bi-map" style={{ color: '#f5a623' }}></i>
                   Peta Distribusi Penduduk
                 </h6>
                 <div 
                   className="public-map-container"
-                  style={{ position: 'relative', flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc', borderRadius: 10, padding: 12, minHeight: 360 }}
+                  style={{ 
+                    position: 'relative', 
+                    flexGrow: 1, 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    background: isDark ? '#0f172a' : '#f8fafc', 
+                    border: isDark ? '1px solid #1e293b' : 'none',
+                    borderRadius: 10, 
+                    padding: 12, 
+                    minHeight: 360 
+                  }}
                   onMouseMove={handleMouseMove}
                 >
                   <svg
@@ -1208,7 +1254,7 @@ function TabPenduduk() {
                         key={path.id}
                         d={path.d}
                         fill={path.fill}
-                        stroke="#ffffff"
+                        stroke={isDark ? '#0f172a' : '#ffffff'}
                         strokeWidth={1.2}
                         style={{
                           transition: 'all 0.15s ease',
@@ -1225,11 +1271,11 @@ function TabPenduduk() {
                       <path
                         d={hoveredKec.d}
                         fill="none"
-                        stroke="#1a1f2e"
+                        stroke={isDark ? '#60a5fa' : '#1a1f2e'}
                         strokeWidth={3}
                         style={{
                           pointerEvents: 'none',
-                          filter: 'drop-shadow(0px 4px 12px rgba(0,0,0,0.25))'
+                          filter: isDark ? 'drop-shadow(0px 0px 8px rgba(96, 165, 250, 0.5))' : 'drop-shadow(0px 4px 12px rgba(0,0,0,0.25))'
                         }}
                       />
                     )}
@@ -1276,20 +1322,20 @@ function TabPenduduk() {
                 </div>
 
                 {/* Legend bar */}
-                <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid #f1f5f9' }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
+                <div style={{ marginTop: 16, paddingTop: 14, borderTop: isDark ? '1px solid #222f47' : '1px solid #f1f5f9' }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: isDark ? '#94a3b8' : '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
                     Rentang Jumlah Penduduk (Ribu Jiwa)
                   </div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
                     {legendItems.map((item, idx) => (
                       <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                         <span style={{ width: 12, height: 12, borderRadius: 3, background: item.color, display: 'inline-block' }}></span>
-                        <span style={{ fontSize: 10, fontWeight: 600, color: '#4b5563' }}>{item.label}</span>
+                        <span style={{ fontSize: 10, fontWeight: 600, color: isDark ? '#cbd5e1' : '#4b5563' }}>{item.label}</span>
                       </div>
                     ))}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ width: 12, height: 12, borderRadius: 3, background: '#f1f5f9', border: '1px solid #cbd5e1', display: 'inline-block' }}></span>
-                      <span style={{ fontSize: 10, fontWeight: 600, color: '#4b5563' }}>Tidak ada data</span>
+                      <span style={{ width: 12, height: 12, borderRadius: 3, background: isDark ? '#1e293b' : '#f1f5f9', border: isDark ? '1px solid #334155' : '1px solid #cbd5e1', display: 'inline-block' }}></span>
+                      <span style={{ fontSize: 10, fontWeight: 600, color: isDark ? '#94a3b8' : '#4b5563' }}>Tidak ada data</span>
                     </div>
                   </div>
                 </div>
@@ -1298,18 +1344,29 @@ function TabPenduduk() {
 
             {/* Table Column */}
             <div className="col-12 col-lg-5">
-              <div className="public-card" style={{ background: '#fff', borderRadius: 14, padding: 20, border: '1px solid #e5e7eb', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                <h6 style={{ fontWeight: 800, color: '#1a1f2e', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div 
+                className="public-card" 
+                style={{ 
+                  background: isDark ? '#151c2c' : '#fff', 
+                  borderRadius: 14, 
+                  padding: 20, 
+                  border: isDark ? '1px solid #222f47' : '1px solid #e5e7eb', 
+                  height: '100%', 
+                  display: 'flex', 
+                  flexDirection: 'column' 
+                }}
+              >
+                <h6 style={{ fontWeight: 800, color: isDark ? '#f8fafc' : '#1a1f2e', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
                   <i className="bi bi-table" style={{ color: '#3b82f6' }}></i>
                   Tabel Rincian Kecamatan ({selectedYear})
                 </h6>
                 <div className="table-responsive" style={{ flexGrow: 1, WebkitOverflowScrolling: 'touch' }}>
-                  <table className="table table-hover align-middle text-start" style={{ fontSize: 12, margin: 0 }}>
+                  <table className="table kecamatan-table align-middle text-start" style={{ fontSize: 12, margin: 0 }}>
                     <thead>
-                      <tr style={{ background: '#f8fafc', color: '#475569' }}>
-                        <th style={{ padding: '10px 8px', borderBottom: '2px solid #e2e8f0' }}>Kecamatan</th>
-                        <th style={{ padding: '10px 8px', borderBottom: '2px solid #e2e8f0', textAlign: 'right' }}>Jumlah</th>
-                        <th style={{ padding: '10px 8px', borderBottom: '2px solid #e2e8f0', textAlign: 'right' }}>Persentase</th>
+                      <tr style={{ background: isDark ? '#0f172a' : '#f8fafc' }}>
+                        <th style={{ padding: '10px 8px', borderBottom: isDark ? '2px solid #222f47' : '2px solid #e2e8f0', color: isDark ? '#94a3b8' : '#475569', fontWeight: 700 }}>Kecamatan</th>
+                        <th style={{ padding: '10px 8px', borderBottom: isDark ? '2px solid #222f47' : '2px solid #e2e8f0', textAlign: 'right', color: isDark ? '#94a3b8' : '#475569', fontWeight: 700 }}>Jumlah</th>
+                        <th style={{ padding: '10px 8px', borderBottom: isDark ? '2px solid #222f47' : '2px solid #e2e8f0', textAlign: 'right', color: isDark ? '#94a3b8' : '#475569', fontWeight: 700 }}>Persentase</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1317,40 +1374,69 @@ function TabPenduduk() {
                         const pct = totalPopulation && path.value 
                           ? ((path.value / totalPopulation) * 100).toFixed(2) 
                           : '-';
+                        const isHovered = hoveredKec?.bpsCode === path.bpsCode;
                         return (
                           <tr 
                             key={path.id} 
+                            className={isHovered ? 'hovered-row' : ''}
                             style={{ 
-                              background: hoveredKec?.bpsCode === path.bpsCode ? '#f8fafc' : 'transparent',
-                              transition: 'background 0.15s'
+                              background: isHovered 
+                                ? (isDark ? '#1e293b' : '#f1f5f9') 
+                                : 'transparent',
+                              cursor: 'pointer',
+                              transition: 'background 0.15s ease'
                             }}
                             onMouseEnter={() => setHoveredKec(path)}
                             onMouseLeave={() => setHoveredKec(null)}
                             onClick={() => setHoveredKec(hoveredKec?.bpsCode === path.bpsCode ? null : path)}
                           >
-                            <td style={{ padding: '9px 8px', fontWeight: 600, color: '#1e293b' }}>{path.label}</td>
-                            <td style={{ padding: '9px 8px', textAlign: 'right', fontWeight: 700, color: '#3b82f6' }}>
+                            <td style={{ 
+                              padding: '9px 8px', 
+                              fontWeight: 600, 
+                              color: isHovered 
+                                ? (isDark ? '#60a5fa' : '#2563eb') 
+                                : (isDark ? '#f1f5f9' : '#1e293b'),
+                              borderBottom: isDark ? '1px solid #1e293b' : '1px solid #f1f5f9'
+                            }}>
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                                <span style={{ width: 8, height: 8, borderRadius: '50%', background: path.fill || '#94a3b8', display: 'inline-block', flexShrink: 0 }}></span>
+                                {path.label}
+                              </span>
+                            </td>
+                            <td style={{ 
+                              padding: '9px 8px', 
+                              textAlign: 'right', 
+                              fontWeight: 700, 
+                              color: isDark ? '#60a5fa' : '#2563eb',
+                              borderBottom: isDark ? '1px solid #1e293b' : '1px solid #f1f5f9'
+                            }}>
                               {path.value !== null ? `${path.value.toLocaleString('id-ID')} ribu` : '-'}
                             </td>
-                            <td style={{ padding: '9px 8px', textAlign: 'right', color: '#64748b' }}>
+                            <td style={{ 
+                              padding: '9px 8px', 
+                              textAlign: 'right', 
+                              fontWeight: 600,
+                              color: isDark ? '#94a3b8' : '#64748b',
+                              borderBottom: isDark ? '1px solid #1e293b' : '1px solid #f1f5f9'
+                            }}>
                               {pct !== '-' ? `${pct}%` : '-'}
                             </td>
                           </tr>
                         );
                       })}
                     </tbody>
-                    <tfoot>
-                      <tr style={{ background: '#f8fafc', fontWeight: 800 }}>
-                        <td style={{ padding: '10px 8px' }}>Kabupaten Sijunjung (Total)</td>
-                        <td style={{ padding: '10px 8px', textAlign: 'right', color: '#1e293b' }}>
+                    <tfoot style={{ borderTop: isDark ? '2px solid #222f47' : '2px solid #e2e8f0' }}>
+                      <tr style={{ background: isDark ? '#0f172a' : '#f8fafc', fontWeight: 800 }}>
+                        <td style={{ padding: '10px 8px', color: isDark ? '#f1f5f9' : '#1e293b' }}>Kabupaten Sijunjung (Total)</td>
+                        <td style={{ padding: '10px 8px', textAlign: 'right', fontWeight: 800, color: isDark ? '#60a5fa' : '#2563eb' }}>
                           {parseFloat(totalPopulation).toLocaleString('id-ID')} ribu
                         </td>
-                        <td style={{ padding: '10px 8px', textAlign: 'right', color: '#1e293b' }}>100.00%</td>
+                        <td style={{ padding: '10px 8px', textAlign: 'right', fontWeight: 700, color: isDark ? '#94a3b8' : '#1e293b' }}>100.00%</td>
                       </tr>
                     </tfoot>
                   </table>
                 </div>
-                <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 14, display: 'flex', alignItems: 'center', gap: 4 }}>
+                <div style={{ fontSize: 11, color: isDark ? '#94a3b8' : '#64748b', marginTop: 14, display: 'flex', alignItems: 'center', gap: 4 }}>
                   <i className="bi bi-info-circle"></i>
                   <span>Ketuk atau arahkan kursor pada peta atau tabel untuk berinteraksi.</span>
                 </div>
@@ -1358,10 +1444,10 @@ function TabPenduduk() {
             </div>
           </div>
           ) : (
-            <div className="public-card" style={{ background: '#fff', borderRadius: 14, padding: '36px 20px', border: '1px dashed #cbd5e1', textAlign: 'center', marginBottom: 20 }}>
-              <i className="bi bi-map" style={{ fontSize: '36px', color: '#94a3b8', display: 'block', marginBottom: 12 }}></i>
-              <h6 style={{ fontWeight: 700, color: '#475569', marginBottom: 4 }}>Peta Distribusi Penduduk Belum Tersedia</h6>
-              <p style={{ color: '#64748b', fontSize: 12, margin: 0 }}>Data geografis peta kecamatan untuk tahun <strong>{selectedYear}</strong> belum dipublikasikan oleh BPS Kabupaten Sijunjung.</p>
+            <div className="public-card" style={{ background: isDark ? '#151c2c' : '#fff', borderRadius: 14, padding: '36px 20px', border: isDark ? '1px dashed #334155' : '1px dashed #cbd5e1', textAlign: 'center', marginBottom: 20 }}>
+              <i className="bi bi-map" style={{ fontSize: '36px', color: isDark ? '#64748b' : '#94a3b8', display: 'block', marginBottom: 12 }}></i>
+              <h6 style={{ fontWeight: 700, color: isDark ? '#cbd5e1' : '#475569', marginBottom: 4 }}>Peta Distribusi Penduduk Belum Tersedia</h6>
+              <p style={{ color: isDark ? '#94a3b8' : '#64748b', fontSize: 12, margin: 0 }}>Data geografis peta kecamatan untuk tahun <strong>{selectedYear}</strong> belum dipublikasikan oleh BPS Kabupaten Sijunjung.</p>
             </div>
           )}
           </div>
@@ -1369,24 +1455,24 @@ function TabPenduduk() {
           {/* Bar Chart Section */}
           <div id="report-page-2">
           {genderData ? (
-            <div className="public-card" style={{ marginTop: 20, background: '#fff', borderRadius: 14, padding: 20, border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-              <h6 style={{ fontWeight: 800, color: '#1a1f2e', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div className="public-card" style={{ marginTop: 20, background: isDark ? '#151c2c' : '#fff', borderRadius: 14, padding: 20, border: isDark ? '1px solid #222f47' : '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+              <h6 style={{ fontWeight: 800, color: isDark ? '#f8fafc' : '#1a1f2e', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
                 <i className="bi bi-bar-chart-line" style={{ color: '#ec4899' }}></i>
                 Jumlah Penduduk Menurut Kecamatan dan Jenis Kelamin ({selectedYear})
               </h6>
               <div className="public-chart-container" style={{ height: 350 }}>
                 <Bar data={barChartData} options={barChartOptions} />
               </div>
-              <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
+              <div style={{ fontSize: 11, color: isDark ? '#94a3b8' : '#64748b', marginTop: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
                 <i className="bi bi-info-circle"></i>
                 <span>Sumber: Web API BPS Kabupaten Sijunjung (Variabel: Jumlah Penduduk menurut Kecamatan dan Jenis Kelamin)</span>
               </div>
             </div>
           ) : (
-            <div className="public-card" style={{ marginTop: 20, background: '#fff', borderRadius: 14, padding: '36px 20px', border: '1px dashed #cbd5e1', textAlign: 'center' }}>
-              <i className="bi bi-bar-chart-line" style={{ fontSize: '36px', color: '#94a3b8', display: 'block', marginBottom: 12 }}></i>
-              <h6 style={{ fontWeight: 700, color: '#475569', marginBottom: 4 }}>Rincian Jenis Kelamin Belum Tersedia</h6>
-              <p style={{ color: '#64748b', fontSize: 12, margin: 0 }}>Data rincian jenis kelamin per kecamatan untuk tahun <strong>{selectedYear}</strong> belum dipublikasikan oleh BPS Kabupaten Sijunjung.</p>
+            <div className="public-card" style={{ marginTop: 20, background: isDark ? '#151c2c' : '#fff', borderRadius: 14, padding: '36px 20px', border: isDark ? '1px dashed #334155' : '1px dashed #cbd5e1', textAlign: 'center' }}>
+              <i className="bi bi-bar-chart-line" style={{ fontSize: '36px', color: isDark ? '#64748b' : '#94a3b8', display: 'block', marginBottom: 12 }}></i>
+              <h6 style={{ fontWeight: 700, color: isDark ? '#cbd5e1' : '#475569', marginBottom: 4 }}>Rincian Jenis Kelamin Belum Tersedia</h6>
+              <p style={{ color: isDark ? '#94a3b8' : '#64748b', fontSize: 12, margin: 0 }}>Data rincian jenis kelamin per kecamatan untuk tahun <strong>{selectedYear}</strong> belum dipublikasikan oleh BPS Kabupaten Sijunjung.</p>
             </div>
           )}
           </div>
@@ -1395,40 +1481,40 @@ function TabPenduduk() {
           {ageProjectionData ? (
             <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 20 }}>
               {/* Split Gender Chart */}
-              <div id="report-page-3" className="public-card" style={{ background: '#fff', borderRadius: 14, padding: 20, border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-                <h6 style={{ fontWeight: 800, color: '#1a1f2e', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div id="report-page-3" className="public-card" style={{ background: isDark ? '#151c2c' : '#fff', borderRadius: 14, padding: 20, border: isDark ? '1px solid #222f47' : '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                <h6 style={{ fontWeight: 800, color: isDark ? '#f8fafc' : '#1a1f2e', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
                   <i className="bi bi-bar-chart-steps" style={{ color: '#3b82f6' }}></i>
                   Proyeksi Penduduk Menurut Kelompok Umur dan Jenis Kelamin ({selectedYear})
                 </h6>
                 <div className="public-tall-chart" style={{ height: 520 }}>
                   <Bar data={ageProjectionChartData} options={ageProjectionChartOptions} />
                 </div>
-                <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
+                <div style={{ fontSize: 11, color: isDark ? '#94a3b8' : '#64748b', marginTop: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
                   <i className="bi bi-info-circle"></i>
                   <span>Sumber: Web API BPS Kabupaten Sijunjung (Variabel: Proyeksi Penduduk Menurut Kelompok Umur - Laki-Laki & Perempuan)</span>
                 </div>
               </div>
 
               {/* Total Population Chart */}
-              <div id="report-page-4" className="public-card" style={{ background: '#fff', borderRadius: 14, padding: 20, border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-                <h6 style={{ fontWeight: 800, color: '#1a1f2e', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div id="report-page-4" className="public-card" style={{ background: isDark ? '#151c2c' : '#fff', borderRadius: 14, padding: 20, border: isDark ? '1px solid #222f47' : '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                <h6 style={{ fontWeight: 800, color: isDark ? '#f8fafc' : '#1a1f2e', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
                   <i className="bi bi-bar-chart-steps" style={{ color: '#5cbca9' }}></i>
                   Total Proyeksi Penduduk Menurut Kelompok Umur ({selectedYear})
                 </h6>
                 <div className="public-tall-chart" style={{ height: 520 }}>
                   <Bar data={ageProjectionTotalChartData} options={ageProjectionChartOptions} />
                 </div>
-                <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
+                <div style={{ fontSize: 11, color: isDark ? '#94a3b8' : '#64748b', marginTop: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
                   <i className="bi bi-info-circle"></i>
                   <span>Sumber: Web API BPS Kabupaten Sijunjung (Variabel: Total Proyeksi Penduduk Menurut Kelompok Umur)</span>
                 </div>
               </div>
             </div>
           ) : (
-            <div id="report-page-3" className="public-card" style={{ marginTop: 20, background: '#fff', borderRadius: 14, padding: '36px 20px', border: '1px dashed #cbd5e1', textAlign: 'center' }}>
-              <i className="bi bi-bar-chart-steps" style={{ fontSize: '36px', color: '#94a3b8', display: 'block', marginBottom: 12 }}></i>
-              <h6 style={{ fontWeight: 700, color: '#475569', marginBottom: 4 }}>Proyeksi Kelompok Umur Belum Tersedia</h6>
-              <p style={{ color: '#64748b', fontSize: 12, margin: 0 }}>Data proyeksi kelompok umur untuk tahun <strong>{selectedYear}</strong> belum dipublikasikan oleh BPS Kabupaten Sijunjung.</p>
+            <div id="report-page-3" className="public-card" style={{ marginTop: 20, background: isDark ? '#151c2c' : '#fff', borderRadius: 14, padding: '36px 20px', border: isDark ? '1px dashed #334155' : '1px dashed #cbd5e1', textAlign: 'center' }}>
+              <i className="bi bi-bar-chart-steps" style={{ fontSize: '36px', color: isDark ? '#64748b' : '#94a3b8', display: 'block', marginBottom: 12 }}></i>
+              <h6 style={{ fontWeight: 700, color: isDark ? '#cbd5e1' : '#475569', marginBottom: 4 }}>Proyeksi Kelompok Umur Belum Tersedia</h6>
+              <p style={{ color: isDark ? '#94a3b8' : '#64748b', fontSize: 12, margin: 0 }}>Data proyeksi kelompok umur untuk tahun <strong>{selectedYear}</strong> belum dipublikasikan oleh BPS Kabupaten Sijunjung.</p>
             </div>
           )}
         </div>

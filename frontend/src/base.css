@@ -491,3 +491,38 @@ table { min-width: 0; }
   transform: translateY(-1px);
 }
 
+/* Public Dashboard Kecamatan Detail Table */
+.kecamatan-table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+[data-theme="dark"] .kecamatan-table {
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .kecamatan-table thead tr {
+  background-color: #0f172a !important;
+}
+
+[data-theme="dark"] .kecamatan-table thead th {
+  background-color: #0f172a !important;
+  color: #94a3b8 !important;
+  border-bottom: 2px solid #222f47 !important;
+}
+
+[data-theme="dark"] .kecamatan-table tbody td {
+  border-bottom: 1px solid #1e293b !important;
+}
+
+[data-theme="dark"] .kecamatan-table tbody tr:hover td,
+[data-theme="dark"] .kecamatan-table tbody tr.hovered-row td {
+  background-color: #1e293b !important;
+}
+
+[data-theme="dark"] .kecamatan-table tfoot tr,
+[data-theme="dark"] .kecamatan-table tfoot td {
+  background-color: #0f172a !important;
+  border-top: 2px solid #222f47 !important;
+}
+
