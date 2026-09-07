@@ -368,7 +368,7 @@ export default function DirectInputGrid({ taskId, onSubmitted, onCancel }) {
                             padding: '6px 10px',
                             fontSize: 12,
                             background: 'transparent',
-                            color: '#1a1f2e',
+                            color: 'inherit',
                             fontFamily: "'Inter', sans-serif",
                             minHeight: 30,
                             boxSizing: 'border-box',

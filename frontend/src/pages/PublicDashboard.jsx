@@ -8,6 +8,7 @@ import {
 import { Bar, Line, Pie, Doughnut } from 'react-chartjs-2'
 import { login as loginApi } from '../api'
 import { useAuth } from '../context/AuthContext'
+import { useTheme } from '../context/ThemeContext'
 import SejatiLogo from '../components/SejatiLogo'
 import ThemeToggle from '../components/ThemeToggle'
 import sijunjungGeoJson from '../components/sijunjung_kecamatan.json'
@@ -29,8 +30,14 @@ const CHART_COLORS = [
 
 export default function PublicDashboard() {
   const navigate = useNavigate()
+  const { isDark } = useTheme()
   const [openLogin, setOpenLogin] = useState(null)
   const [activeTab, setActiveTab] = useState('penduduk')
+
+  useEffect(() => {
+    ChartJS.defaults.color = isDark ? '#cbd5e1' : '#64748b'
+    ChartJS.defaults.borderColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)'
+  }, [isDark])
 
   return (
     <div style={{ minHeight: '100vh', background: '#f5f6fa', fontFamily: "'Inter', sans-serif" }}>

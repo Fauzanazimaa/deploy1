@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getAdminStats } from '../../api'
+import { useTheme } from '../../context/ThemeContext'
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement } from 'chart.js'
 import { Doughnut, Bar } from 'react-chartjs-2'
 
@@ -53,8 +54,14 @@ function StatCard({ icon, label, value, color, to }) {
 }
 
 export default function AdminDashboard() {
+  const { isDark } = useTheme()
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    ChartJS.defaults.color = isDark ? '#cbd5e1' : '#64748b'
+    ChartJS.defaults.borderColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)'
+  }, [isDark])
 
   const fetchStats = async () => {
     try {
