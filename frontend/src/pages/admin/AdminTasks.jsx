@@ -908,7 +908,7 @@ export default function AdminTasks() {
                     className="form-control" 
                     required 
                     list="task-titles-list"
-                    placeholder="contoh: KCDA (Kecamatan Dalam Angka), DDA (Daerah Dalam Angka), dll." 
+                    placeholder="contoh: KCDA, DDA, dll." 
                     value={form.title} 
                     onChange={e => setForm({ ...form, title: e.target.value })} 
                     style={{ fontSize: 13, fontFamily: "'Inter',sans-serif" }} 
