@@ -904,7 +904,24 @@ export default function AdminTasks() {
 
                 <div>
                   <label style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 5, letterSpacing: 0.5 }}>JUDUL TUGAS <span style={{ color: '#dc2626' }}>*</span></label>
-                  <input className="form-control" required placeholder="contoh: Data Kemiskinan Triwulan I" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} style={{ fontSize: 13, fontFamily: "'Inter',sans-serif" }} />
+                  <input 
+                    className="form-control" 
+                    required 
+                    list="task-titles-list"
+                    placeholder="contoh: KCDA (Kecamatan Dalam Angka), DDA (Daerah Dalam Angka), dll." 
+                    value={form.title} 
+                    onChange={e => setForm({ ...form, title: e.target.value })} 
+                    style={{ fontSize: 13, fontFamily: "'Inter',sans-serif" }} 
+                  />
+                  <datalist id="task-titles-list">
+                    {getUniqueTaskTitles().map(t => (
+                      <option key={t} value={t} />
+                    ))}
+                  </datalist>
+                  <span style={{ fontSize: 11, color: '#6b7280', marginTop: 5, display: 'block', lineHeight: 1.4 }}>
+                    <i className="bi bi-info-circle me-1" style={{ color: '#3b82f6' }}></i>
+                    Judul tugas dapat dibuat sama untuk beberapa tugas agar terhubung dengan surat permintaan data yang sama (misal: KCDA, DDA).
+                  </span>
                 </div>
 
                 <div>
