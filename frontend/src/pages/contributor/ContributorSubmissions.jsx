@@ -46,8 +46,10 @@ export default function ContributorSubmissions() {
       link.click()
       link.remove()
       window.URL.revokeObjectURL(url)
-    } catch {
-      alert('Gagal mengunduh file')
+    } catch (err) {
+      if (err.response?.status !== 401) {
+        alert('Gagal mengunduh file')
+      }
     }
   }
 

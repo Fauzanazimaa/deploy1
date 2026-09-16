@@ -73,7 +73,9 @@ export default function ContributorLetters() {
       a.remove()
       window.URL.revokeObjectURL(url)
     } catch (err) {
-      showCustomAlert('Gagal', 'Gagal mengunduh surat permintaan data')
+      if (err.response?.status !== 401) {
+        showCustomAlert('Gagal', 'Gagal mengunduh surat permintaan data')
+      }
     }
   }
 

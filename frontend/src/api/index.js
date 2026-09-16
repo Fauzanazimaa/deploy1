@@ -22,8 +22,12 @@ api.interceptors.response.use(
     const isPublic = url.startsWith('/public/') || url === '/auth/login'
     if (err.response?.status === 401 && !isPublic) {
       localStorage.removeItem('token')
+      localStorage.removeItem('authToken')
       localStorage.removeItem('user')
-      window.location.href = '/login'
+      localStorage.removeItem('userRole')
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login'
+      }
     }
     return Promise.reject(err)
   }

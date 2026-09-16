@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 from flask import Flask, send_file
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
@@ -36,6 +37,7 @@ def create_app():
     app.config['JWT_SECRET_KEY'] = os.environ.get(
         'JWT_SECRET_KEY', 'super-secret-jwt-key-change-in-production'
     )
+    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=7)
     app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB
 
     # Folder lokal hanya dipakai saat bukan production

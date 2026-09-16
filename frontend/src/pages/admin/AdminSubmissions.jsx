@@ -198,7 +198,11 @@ export default function AdminSubmissions() {
       link.setAttribute('download', `submission_${sub.id}_${sub.contributor_username}.xlsx`)
       document.body.appendChild(link); link.click(); link.remove()
       window.URL.revokeObjectURL(url)
-    } catch { alert('Gagal mengunduh file') }
+    } catch (err) {
+      if (err.response?.status !== 401) {
+        alert('Gagal mengunduh file')
+      }
+    }
   }
 
   const handlePreview = async (sub) => {

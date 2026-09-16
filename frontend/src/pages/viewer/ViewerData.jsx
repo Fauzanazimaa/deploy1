@@ -42,8 +42,12 @@ export default function ViewerData() {
       link.setAttribute('download', `export_${dt?.name || 'data'}_${new Date().toISOString().slice(0,10)}.xlsx`)
       document.body.appendChild(link); link.click(); link.remove()
       window.URL.revokeObjectURL(url)
-    } catch (err) { alert('Gagal export data'); console.error(err) }
-    finally { setExporting(false) }
+    } catch (err) {
+      if (err.response?.status !== 401) {
+        alert('Gagal export data')
+      }
+      console.error(err)
+    } finally { setExporting(false) }
   }
 
   const manualEntries = data?.manual_entries || []

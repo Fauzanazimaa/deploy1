@@ -86,8 +86,10 @@ export default function AdminTemplates() {
       link.click()
       link.remove()
       window.URL.revokeObjectURL(url)
-    } catch {
-      alert('Gagal mengunduh template')
+    } catch (err) {
+      if (err.response?.status !== 401) {
+        alert('Gagal mengunduh template')
+      }
     }
   }
 
