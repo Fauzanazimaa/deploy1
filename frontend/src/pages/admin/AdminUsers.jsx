@@ -196,14 +196,14 @@ export default function AdminUsers() {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
                 <tr style={{ background: '#fafafa', borderBottom: '1px solid #f0f0f0' }}>
-                  {['#', 'Username', 'Password', 'Email', 'No WhatsApp', 'Role', 'Status', 'Bergabung', ''].map((h) => (
+                  {['#', 'Username', 'Email', 'No WhatsApp', 'Role', 'Status', 'Bergabung', ''].map((h) => (
                     <th key={h} style={{ padding: '10px 20px', textAlign: h === '' ? 'right' : 'left', fontWeight: 600, color: '#6b7280', fontSize: 12 }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {filtered.length === 0 ? (
-                   <tr><td colSpan={9} style={{ textAlign: 'center', padding: '32px 0', color: '#9ca3af', fontSize: 13 }}>Tidak ada pengguna</td></tr>
+                   <tr><td colSpan={8} style={{ textAlign: 'center', padding: '32px 0', color: '#9ca3af', fontSize: 13 }}>Tidak ada pengguna</td></tr>
                 ) : (
                   filtered.map((u, i) => {
                     const rb = roleBadgeStyle[u.role] || { bg: '#f3f4f6', color: '#374151', border: '#e5e7eb' }
@@ -217,24 +217,6 @@ export default function AdminUsers() {
                             </div>
                             <span style={{ fontWeight: 600, color: '#1a1f2e' }}>{u.username}</span>
                           </div>
-                        </td>
-                        <td style={{ padding: '11px 20px', color: '#6b7280', fontSize: 12 }}>
-                          {u.role === 'admin' ? (
-                            <span style={{ color: '#d1d5db' }}>—</span>
-                          ) : (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                              <span>{visiblePasswords[u.id] ? (u.password_plain || '—') : '••••••'}</span>
-                              {u.password_plain && (
-                                <button
-                                  type="button"
-                                  onClick={() => togglePasswordVisibility(u.id)}
-                                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', padding: 0, display: 'flex', alignItems: 'center' }}
-                                >
-                                  <i className={`bi ${visiblePasswords[u.id] ? 'bi-eye-slash' : 'bi-eye'}`} style={{ fontSize: 14 }}></i>
-                                </button>
-                              )}
-                            </div>
-                          )}
                         </td>
                         <td style={{ padding: '11px 20px', color: '#6b7280', fontSize: 12 }}>{u.email}</td>
                         <td style={{ padding: '11px 20px', color: '#6b7280', fontSize: 12 }}>
