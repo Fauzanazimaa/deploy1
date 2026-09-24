@@ -176,7 +176,7 @@ export default function ContributorSubmissions() {
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                 <thead>
                   <tr style={{ background: '#fafafa', borderBottom: '1px solid #f0f0f0' }}>
-                    {['#', 'Tugas', 'Status', 'Dikirim', 'Ditinjau', 'Aksi'].map((h) => (
+                    {['#', 'Permohonan Data', 'Status', 'Dikirim', 'Ditinjau', 'Aksi'].map((h) => (
                       <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 600, color: '#6b7280', fontSize: 12 }}>{h}</th>
                     ))}
                   </tr>
@@ -283,7 +283,7 @@ export default function ContributorSubmissions() {
             </div>
             <div style={{ padding: '20px' }}>
               <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 14 }}>
-                <strong>Tugas:</strong> {detailSub.task_title} &bull; Dikirim {detailSub.submitted_at ? detailSub.submitted_at.slice(0, 10).split('-').reverse().join('/') : '-'}
+                <strong>Permohonan Data:</strong> {detailSub.task_title} &bull; Dikirim {detailSub.submitted_at ? detailSub.submitted_at.slice(0, 10).split('-').reverse().join('/') : '-'}
               </div>
               <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, padding: '14px 16px', marginBottom: 14, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                 <i className="bi bi-exclamation-triangle-fill" style={{ color: '#dc2626', fontSize: 18, flexShrink: 0, marginTop: 1 }}></i>
@@ -294,7 +294,7 @@ export default function ContributorSubmissions() {
               </div>
               <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10, padding: '12px 16px', fontSize: 12, color: '#3b82f6' }}>
                 <i className="bi bi-info-circle me-2"></i>
-                Silakan perbaiki data sesuai catatan di atas, lalu upload ulang di halaman <strong>Tugas Saya</strong>.
+                Silakan perbaiki data sesuai catatan di atas, lalu upload ulang di halaman <strong>Permohonan Data</strong>.
               </div>
             </div>
             <div style={{ padding: '0 20px 20px', display: 'flex', justifyContent: 'flex-end' }}>

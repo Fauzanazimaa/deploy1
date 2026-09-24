@@ -70,13 +70,13 @@ export default function ContributorDashboard() {
     <div style={{ fontFamily: "'Inter', sans-serif" }}>
       <div style={{ marginBottom: 24 }}>
         <h4 style={{ fontWeight: 700, fontSize: 20, color: '#1a1f2e', margin: 0 }}>Dashboard</h4>
-        <p style={{ color: '#6b7280', fontSize: 13, margin: '4px 0 0' }}>Ringkasan tugas pengumpulan data kamu</p>
+        <p style={{ color: '#6b7280', fontSize: 13, margin: '4px 0 0' }}>Ringkasan permohonan data kamu</p>
       </div>
 
       {/* Stat Cards */}
       <div className="row g-3 mb-4">
         <div className="col-6 col-md-3">
-          <StatCard icon="bi-clipboard2-fill" label="Total Tugas" value={stats?.total_tasks} color="#8b5cf6" />
+          <StatCard icon="bi-clipboard2-fill" label="Total Permohonan" value={stats?.total_tasks} color="#8b5cf6" />
         </div>
         <div className="col-6 col-md-3">
           <StatCard icon="bi-clock-fill" label="Belum Upload" value={stats?.pending_tasks} color={ACCENT} />
@@ -108,7 +108,7 @@ export default function ContributorDashboard() {
             borderBottom: '1px solid #f0f0f0',
           }}
         >
-          <h6 style={{ fontWeight: 600, fontSize: 14, color: '#1a1f2e', margin: 0 }}>Tugas Terbaru</h6>
+          <h6 style={{ fontWeight: 600, fontSize: 14, color: '#1a1f2e', margin: 0 }}>Permohonan Data Terbaru</h6>
           <Link
             to="/contributor/tasks"
             style={{
@@ -131,7 +131,7 @@ export default function ContributorDashboard() {
         {!stats?.recent_tasks?.length ? (
           <div style={{ textAlign: 'center', color: '#9ca3af', padding: '40px 0', fontSize: 13 }}>
             <i className="bi bi-clipboard2 display-5" style={{ display: 'block', marginBottom: 10, opacity: 0.4 }}></i>
-            Belum ada tugas yang diberikan
+            Belum ada permohonan data yang diberikan
           </div>
         ) : (
           <>
@@ -162,7 +162,7 @@ export default function ContributorDashboard() {
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                 <thead>
                   <tr style={{ background: '#fafafa', borderBottom: '1px solid #f0f0f0' }}>
-                    {['Tugas', 'Jenis Data', 'Deadline', 'Status'].map((h) => (
+                    {['Permohonan Data', 'Jenis Data', 'Deadline', 'Status'].map((h) => (
                       <th key={h} style={{ padding: '10px 20px', textAlign: 'left', fontWeight: 600, color: '#6b7280', fontSize: 12 }}>{h}</th>
                     ))}
                   </tr>

@@ -6,7 +6,7 @@ import ThemeToggle from '../../components/ThemeToggle'
 
 const navItems = [
   { to: '/contributor',             icon: 'bi-speedometer2',          label: 'Dashboard',          end: true },
-  { to: '/contributor/tasks',       icon: 'bi-clipboard2-check-fill', label: 'Tugas Saya' },
+  { to: '/contributor/tasks',       icon: 'bi-clipboard2-check-fill', label: 'Permohonan Data' },
   { to: '/contributor/submissions', icon: 'bi-inbox-fill',            label: 'Riwayat' },
   { to: '/contributor/letters',     icon: 'bi-file-earmark-text',     label: 'Surat Permintaan Data' },
 ]
@@ -39,7 +39,7 @@ export default function ContributorLayout() {
 
   const pathLabel = {
     '/contributor':             'Dashboard',
-    '/contributor/tasks':       'Tugas Saya',
+    '/contributor/tasks':       'Permohonan Data',
     '/contributor/submissions': 'Riwayat Pengiriman',
     '/contributor/letters':     'Surat Permintaan Data',
   }

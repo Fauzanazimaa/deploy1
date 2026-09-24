@@ -261,8 +261,8 @@ export default function ContributorTasks() {
     <div style={{ fontFamily: "'Inter', sans-serif" }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
         <div>
-          <h4 style={{ fontWeight: 700, fontSize: 20, color: '#1a1f2e', margin: 0 }}>Tugas Saya</h4>
-          <p style={{ color: '#6b7280', fontSize: 13, margin: '4px 0 0' }}>Daftar semua tugas pengumpulan data yang ditugaskan kepadamu</p>
+          <h4 style={{ fontWeight: 700, fontSize: 20, color: '#1a1f2e', margin: 0 }}>Permohonan Data</h4>
+          <p style={{ color: '#6b7280', fontSize: 13, margin: '4px 0 0' }}>Daftar semua permohonan data yang ditugaskan kepadamu</p>
         </div>
         <button
           onClick={fetchTasks}
@@ -310,7 +310,7 @@ export default function ContributorTasks() {
           </span>
           <input
             style={{ flex: 1, border: 'none', outline: 'none', padding: '0 12px', fontSize: 13, height: 38, fontFamily: "'Inter', sans-serif" }}
-            placeholder="Cari tugas atau jenis data..."
+            placeholder="Cari permohonan data atau jenis data..."
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
@@ -326,7 +326,7 @@ export default function ContributorTasks() {
       ) : filtered.length === 0 ? (
         <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #f0f0f0', textAlign: 'center', padding: '48px 0', color: '#9ca3af', fontSize: 13 }}>
           <i className="bi bi-clipboard2" style={{ fontSize: 40, display: 'block', marginBottom: 12, opacity: 0.4 }}></i>
-          {filterStatus === 'all' ? 'Belum ada tugas yang diberikan.' : `Tidak ada tugas dengan status "${STATUS_MAP[filterStatus]?.label}".`}
+          {filterStatus === 'all' ? 'Belum ada permohonan data yang diberikan.' : `Tidak ada permohonan data dengan status "${STATUS_MAP[filterStatus]?.label}".`}
         </div>
       ) : (
         filtered.map(task => (
