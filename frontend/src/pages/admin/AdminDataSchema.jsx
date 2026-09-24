@@ -913,14 +913,9 @@ export default function AdminDataSchema() {
               const schema = normalizeSchema(dt.fields_schema)
               return (
                 <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #f0f0f0', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-                  <div style={{ borderBottom: '1px solid #f0f0f0', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <h6 style={{ fontWeight: 700, fontSize: 15, color: '#1a1f2e', margin: 0 }}>{dt.name}</h6>
-                      {dt.description && <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>{dt.description}</div>}
-                    </div>
-                    <button onClick={() => openEdit(dt)} style={{ background: '#eff6ff', border: '1px solid #bfdbfe', color: '#3b82f6', borderRadius: 8, padding: '6px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontFamily: "'Inter',sans-serif" }}>
-                      <i className="bi bi-pencil"></i>Edit Schema
-                    </button>
+                  <div style={{ borderBottom: '1px solid #f0f0f0', padding: '14px 20px' }}>
+                    <h6 style={{ fontWeight: 700, fontSize: 15, color: '#1a1f2e', margin: 0 }}>{dt.name}</h6>
+                    {dt.description && <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>{dt.description}</div>}
                   </div>
                   <div style={{ padding: '20px', minWidth: 0 }}>
                     {/* Preview Struktur — load langsung dari file Excel */}
