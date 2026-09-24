@@ -317,3 +317,38 @@ def preview_widget(wid):
 @dashboard_bp.route('/public/widgets', methods=['GET'])
 def public_widgets():
     return jsonify([]), 200
+
+
+@dashboard_bp.route('/public/buku-panduan', methods=['GET'])
+def download_buku_panduan():
+    """
+    Download file PDF Buku Panduan SEJATI
+    """
+    import os
+    CURRENT_DIR = os.path.abspath(os.path.dirname(__file__))
+    BASE_DIR = os.path.abspath(os.path.join(CURRENT_DIR, '..', '..'))
+    BACKEND_DIR = os.path.abspath(os.path.join(CURRENT_DIR, '..'))
+
+    possible_paths = [
+        os.path.join(BACKEND_DIR, 'Buku Panduan SEJATI.pdf'),
+        os.path.join(BASE_DIR, 'asset', 'Buku Panduan SEJATI.pdf'),
+        os.path.join(BASE_DIR, 'frontend', 'public', 'Buku Panduan SEJATI.pdf'),
+        os.path.join(BASE_DIR, 'frontend', 'dist', 'Buku Panduan SEJATI.pdf'),
+    ]
+
+    file_path = None
+    for p in possible_paths:
+        if os.path.exists(p) and os.path.isfile(p):
+            file_path = p
+            break
+
+    if not file_path:
+        return jsonify({'error': 'File Buku Panduan SEJATI tidak ditemukan.'}), 404
+
+    return send_file(
+        file_path,
+        mimetype='application/pdf',
+        as_attachment=True,
+        download_name='Buku Panduan SEJATI.pdf'
+    )
+

@@ -68,7 +68,7 @@ export default function PublicDashboard() {
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <a
-              href="/Buku Panduan SEJATI.pdf"
+              href="/api/public/buku-panduan"
               download="Buku Panduan SEJATI.pdf"
               target="_blank"
               rel="noopener noreferrer"
@@ -148,7 +148,7 @@ export default function PublicDashboard() {
           </p>
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
             <a
-              href="/Buku Panduan SEJATI.pdf"
+              href="/api/public/buku-panduan"
               download="Buku Panduan SEJATI.pdf"
               target="_blank"
               rel="noopener noreferrer"
@@ -263,7 +263,7 @@ export default function PublicDashboard() {
         <div style={{ marginBottom: 12 }}>Data makro bersumber dari Badan Pusat Statistik Kabupaten Sijunjung. Bebas digunakan untuk kepentingan publik.</div>
         <div>
           <a
-            href="/Buku Panduan SEJATI.pdf"
+            href="/api/public/buku-panduan"
             download="Buku Panduan SEJATI.pdf"
             target="_blank"
             rel="noopener noreferrer"

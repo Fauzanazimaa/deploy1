@@ -37,7 +37,7 @@
       "dest": "/frontend/assets/$1"
     },
     {
-      "src": "^/(.+\\.(js|css|ico|png|jpg|jpeg|svg|woff|woff2|ttf|eot|map|json|txt))$",
+      "src": "^/(.+\\.(js|css|ico|png|jpg|jpeg|svg|woff|woff2|ttf|eot|map|json|txt|pdf|xlsx|docx))$",
       "dest": "/frontend/$1"
     },
     {
