@@ -67,6 +67,33 @@ export default function PublicDashboard() {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <a
+              href="/Buku Panduan SEJATI.pdf"
+              download="Buku Panduan SEJATI.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="nav-guide-btn"
+              title="Download Buku Panduan SEJATI"
+              style={{
+                background: 'rgba(255, 255, 255, 0.1)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                color: '#fff',
+                padding: '7px 14px',
+                borderRadius: 20,
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                textDecoration: 'none',
+                fontFamily: "'Inter',sans-serif",
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <i className="bi bi-file-earmark-pdf-fill" style={{ color: '#f87171' }}></i>
+              <span className="d-none d-md-inline">Buku Panduan</span>
+            </a>
             <ThemeToggle darkNav={true} compact={false} />
             <button
               onClick={() => setOpenLogin(openLogin ? null : 'login')}
@@ -116,9 +143,38 @@ export default function PublicDashboard() {
           <p style={{ color: ACCENT, fontWeight: 700, fontSize: 'clamp(12px, 2.2vw, 17px)', margin: '0 0 10px', letterSpacing: '0.03em', textTransform: 'uppercase' }}>
             Sistem Jejaring Pengumpulan Data Statistik Terintegrasi
           </p>
-          <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, margin: '0 auto 12px', lineHeight: 1.6, maxWidth: 640 }}>
+          <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, margin: '0 auto 16px', lineHeight: 1.6, maxWidth: 640 }}>
             Pusat pengumpulan data statistik terpadu dan akses indikator makro Kabupaten Sijunjung
           </p>
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <a
+              href="/Buku Panduan SEJATI.pdf"
+              download="Buku Panduan SEJATI.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hero-guide-btn"
+              style={{
+                background: 'rgba(255, 255, 255, 0.12)',
+                border: '1px solid rgba(255, 255, 255, 0.25)',
+                color: '#ffffff',
+                padding: '9px 22px',
+                borderRadius: 24,
+                fontSize: 13,
+                fontWeight: 600,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                textDecoration: 'none',
+                backdropFilter: 'blur(8px)',
+                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                boxShadow: '0 4px 14px rgba(0,0,0,0.15)'
+              }}
+            >
+              <i className="bi bi-file-earmark-pdf-fill" style={{ color: '#f87171', fontSize: 16 }}></i>
+              <span>Download Buku Panduan SEJATI</span>
+              <i className="bi bi-download" style={{ fontSize: 12, opacity: 0.8 }}></i>
+            </a>
+          </div>
         </div>
       </div>
 
@@ -204,7 +260,32 @@ export default function PublicDashboard() {
         <div style={{ marginBottom: 4, color: 'rgba(255,255,255,0.7)', fontWeight: 600, fontSize: 13 }}>
           SEJATI — Sistem Jejaring Pengumpulan Data Statistik Terintegrasi
         </div>
-        <div>Data makro bersumber dari Badan Pusat Statistik Kabupaten Sijunjung. Bebas digunakan untuk kepentingan publik.</div>
+        <div style={{ marginBottom: 12 }}>Data makro bersumber dari Badan Pusat Statistik Kabupaten Sijunjung. Bebas digunakan untuk kepentingan publik.</div>
+        <div>
+          <a
+            href="/Buku Panduan SEJATI.pdf"
+            download="Buku Panduan SEJATI.pdf"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              color: '#f5a623',
+              textDecoration: 'none',
+              fontSize: 12,
+              fontWeight: 600,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              background: 'rgba(245, 166, 35, 0.1)',
+              padding: '6px 14px',
+              borderRadius: 16,
+              border: '1px solid rgba(245, 166, 35, 0.25)',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            <i className="bi bi-file-earmark-pdf-fill" style={{ color: '#f87171' }}></i>
+            Unduh Buku Panduan SEJATI (PDF)
+          </a>
+        </div>
       </footer>
 
       {/* ── Login Modal Dialog (Centered & Responsive) ── */}
@@ -250,6 +331,18 @@ export default function PublicDashboard() {
         }
         * { box-sizing: border-box; }
         body { margin: 0; overflow-x: hidden; }
+        
+        .nav-guide-btn:hover {
+          background: rgba(255, 255, 255, 0.2) !important;
+          border-color: rgba(255, 255, 255, 0.4) !important;
+        }
+        .hero-guide-btn:hover {
+          background: rgba(255, 255, 255, 0.22) !important;
+          border-color: rgba(245, 166, 35, 0.6) !important;
+          color: #f5a623 !important;
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(245, 166, 35, 0.25) !important;
+        }
         
         .hide-scrollbar::-webkit-scrollbar {
           display: none;
