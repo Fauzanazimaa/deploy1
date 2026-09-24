@@ -630,6 +630,7 @@ export default function AdminDataSchema() {
   const [dataTypes, setDataTypes] = useState([])
   const [templates, setTemplates] = useState([])
   const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
   const [selectedDT, setSelectedDT] = useState(null)
   const [showFormModal, setShowFormModal] = useState(false)
   const [editDT, setEditDT] = useState(null)
@@ -800,6 +801,18 @@ export default function AdminDataSchema() {
     } catch (err) { alert(err.response?.data?.error || 'Gagal menghapus template') }
   }
 
+  const searchLower = search.toLowerCase().trim()
+  const filteredDataTypes = dataTypes.filter(dt => {
+    const tmpl = templateByDT[dt.id]
+    const statusText = tmpl ? 'ada template' : 'belum ada template'
+    return (
+      dt.name.toLowerCase().includes(searchLower) ||
+      (dt.description && dt.description.toLowerCase().includes(searchLower)) ||
+      (tmpl && tmpl.original_filename && tmpl.original_filename.toLowerCase().includes(searchLower)) ||
+      statusText.includes(searchLower)
+    )
+  })
+
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div style={{ fontFamily: "'Inter', sans-serif" }}>
@@ -811,6 +824,21 @@ export default function AdminDataSchema() {
         <button onClick={openCreate} style={{ background: '#f5a623', border: 'none', color: '#fff', borderRadius: 8, padding: '8px 18px', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7, fontFamily: "'Inter',sans-serif" }}>
           <i className="bi bi-plus-lg"></i>Tambah Jenis Data
         </button>
+      </div>
+
+      {/* Search Input Bar */}
+      <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #f0f0f0', padding: '14px 20px', marginBottom: 20, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', border: '1.5px solid #e5e7eb', borderRadius: 8, overflow: 'hidden', background: '#fff', maxWidth: 480 }}>
+          <span style={{ padding: '0 12px', color: '#9ca3af', background: '#f9fafb', borderRight: '1px solid #e5e7eb', height: 38, display: 'flex', alignItems: 'center' }}>
+            <i className="bi bi-search"></i>
+          </span>
+          <input
+            style={{ flex: 1, border: 'none', outline: 'none', padding: '0 12px', fontSize: 13, height: 38, fontFamily: "'Inter', sans-serif" }}
+            placeholder="Cari jenis data, nama template, atau status (misal: ada template)..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+        </div>
       </div>
 
       {loading ? (
@@ -831,7 +859,12 @@ export default function AdminDataSchema() {
           {/* Daftar Jenis Data */}
           <div className="col-md-4">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {dataTypes.map(dt => {
+              {filteredDataTypes.length === 0 ? (
+                <div style={{ background: '#fff', borderRadius: 10, padding: '24px 16px', textAlign: 'center', border: '1px solid #f0f0f0', color: '#9ca3af', fontSize: 12 }}>
+                  <i className="bi bi-search" style={{ fontSize: 24, display: 'block', marginBottom: 8, opacity: 0.4 }}></i>
+                  Tidak ada yang cocok dengan "{search}".
+                </div>
+              ) : filteredDataTypes.map(dt => {
                 const tmpl = templateByDT[dt.id]
                 const isSelected = selectedDT?.id === dt.id
                 const schema = normalizeSchema(dt.fields_schema)
