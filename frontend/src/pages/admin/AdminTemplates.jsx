@@ -12,6 +12,7 @@ export default function AdminTemplates() {
   const [templates, setTemplates] = useState([])
   const [dataTypes, setDataTypes] = useState([])
   const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [showGenerateModal, setShowGenerateModal] = useState(false)
   const [uploadForm, setUploadForm] = useState({ data_type_id: '', file: null, sync_schema: true })
@@ -106,10 +107,24 @@ export default function AdminTemplates() {
     }
   }
 
-  // Jenis data yang belum punya template
-  const dtWithoutTemplate = dataTypes.filter((dt) => !templateByDT[dt.id])
+  const searchLower = search.toLowerCase().trim()
+
   // Jenis data yang sudah punya template
   const dtWithTemplate = dataTypes.filter((dt) => templateByDT[dt.id])
+  const filteredWithTemplate = dtWithTemplate.filter((dt) => {
+    const t = templateByDT[dt.id]
+    return (
+      dt.name.toLowerCase().includes(searchLower) ||
+      (t && t.original_filename && t.original_filename.toLowerCase().includes(searchLower)) ||
+      (t && t.creator_username && t.creator_username.toLowerCase().includes(searchLower))
+    )
+  })
+
+  // Jenis data yang belum punya template
+  const dtWithoutTemplate = dataTypes.filter((dt) => !templateByDT[dt.id])
+  const filteredWithoutTemplate = dtWithoutTemplate.filter((dt) => {
+    return dt.name.toLowerCase().includes(searchLower)
+  })
 
   return (
     <div style={{ fontFamily: "'Inter', sans-serif" }}>
@@ -139,6 +154,19 @@ export default function AdminTemplates() {
         </div>
       )}
 
+      {/* Search Input Bar */}
+      <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #f0f0f0', padding: '14px 20px', marginBottom: 20, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', border: '1.5px solid #e5e7eb', borderRadius: 8, overflow: 'hidden', background: '#fff', maxWidth: 450 }}>
+          <span style={{ padding: '0 12px', color: '#9ca3af', background: '#f9fafb', borderRight: '1px solid #e5e7eb', height: 38, display: 'flex', alignItems: 'center' }}><i className="bi bi-search"></i></span>
+          <input
+            style={{ flex: 1, border: 'none', outline: 'none', padding: '0 12px', fontSize: 13, height: 38, fontFamily: "'Inter', sans-serif" }}
+            placeholder="Cari jenis data atau nama file template..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+      </div>
+
       {loading ? (
         <div style={{ textAlign: 'center', padding: '40px 0' }}>
           <div style={{ width: 36, height: 36, border: '3px solid #f5a62330', borderTopColor: '#f5a623', borderRadius: '50%', animation: 'spin 0.7s linear infinite', display: 'inline-block' }} />
@@ -152,14 +180,14 @@ export default function AdminTemplates() {
       ) : (
         <>
           {/* Sudah ada template */}
-          {dtWithTemplate.length > 0 && (
+          {filteredWithTemplate.length > 0 && (
             <div style={{ marginBottom: 28 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 14, fontSize: 12, fontWeight: 600, color: '#6b7280', letterSpacing: 0.5 }}>
                 <i className="bi bi-check-circle-fill" style={{ color: '#16a34a' }}></i>
-                SUDAH ADA TEMPLATE ({dtWithTemplate.length})
+                SUDAH ADA TEMPLATE ({filteredWithTemplate.length})
               </div>
               <div className="row g-3">
-                {dtWithTemplate.map((dt) => {
+                {filteredWithTemplate.map((dt) => {
                   const t = templateByDT[dt.id]
                   return (
                     <div className="col-md-6 col-lg-4" key={dt.id}>
@@ -200,14 +228,14 @@ export default function AdminTemplates() {
           )}
 
           {/* Belum ada template */}
-          {dtWithoutTemplate.length > 0 && (
+          {filteredWithoutTemplate.length > 0 && (
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 14, fontSize: 12, fontWeight: 600, color: '#6b7280', letterSpacing: 0.5 }}>
                 <i className="bi bi-exclamation-circle" style={{ color: '#f5a623' }}></i>
-                BELUM ADA TEMPLATE ({dtWithoutTemplate.length})
+                BELUM ADA TEMPLATE ({filteredWithoutTemplate.length})
               </div>
               <div className="row g-3">
-                {dtWithoutTemplate.map((dt) => (
+                {filteredWithoutTemplate.map((dt) => (
                   <div className="col-md-6 col-lg-4" key={dt.id}>
                     <div style={{ background: '#fff', borderRadius: 12, border: '1.5px dashed #e5e7eb', overflow: 'hidden', opacity: 0.85 }}>
                       <div style={{ padding: '16px 18px', display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -233,6 +261,13 @@ export default function AdminTemplates() {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {search && filteredWithTemplate.length === 0 && filteredWithoutTemplate.length === 0 && (
+            <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #f0f0f0', textAlign: 'center', padding: '40px 0', color: '#9ca3af', fontSize: 13 }}>
+              <i className="bi bi-search" style={{ fontSize: 32, display: 'block', marginBottom: 10, opacity: 0.35 }}></i>
+              Tidak ditemukan template atau jenis data yang sesuai dengan "{search}".
             </div>
           )}
         </>
@@ -317,317 +352,6 @@ export default function AdminTemplates() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
-      {deleteError && (
-        <div className="alert alert-warning alert-dismissible d-flex align-items-start gap-2 mb-4" role="alert">
-          <i className="bi bi-exclamation-triangle-fill text-warning mt-1 flex-shrink-0"></i>
-          <div>
-            <strong>Tidak dapat dihapus</strong>
-            <div className="small mt-1">{deleteError}</div>
-          </div>
-          <button type="button" className="btn-close ms-auto" onClick={() => setDeleteError('')} />
-        </div>
-      )}
-
-      {loading ? (
-        <div className="text-center py-5"><div className="spinner-border text-primary" /></div>
-      ) : dataTypes.length === 0 ? (
-        <div className="card border-0 shadow-sm text-center py-5">
-          <i className="bi bi-grid-3x3-gap display-4 text-muted mb-3"></i>
-          <p className="text-muted">Belum ada jenis data. Tambahkan jenis data terlebih dahulu.</p>
-        </div>
-      ) : (
-        <>
-          {/* Jenis data yang sudah punya template */}
-          {dtWithTemplate.length > 0 && (
-            <div className="mb-4">
-              <h6 className="text-muted fw-semibold small text-uppercase mb-3">
-                <i className="bi bi-check-circle-fill text-success me-1"></i>
-                Sudah Ada Template ({dtWithTemplate.length})
-              </h6>
-              <div className="row g-3">
-                {dtWithTemplate.map((dt) => {
-                  const t = templateByDT[dt.id]
-                  return (
-                    <div className="col-md-6 col-lg-4" key={dt.id}>
-                      <div className="card border-0 shadow-sm h-100">
-                        <div className="card-body">
-                          <div className="d-flex align-items-start gap-3">
-                            <div
-                              className="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0"
-                              style={{ width: 48, height: 48, background: '#f0fdf4' }}
-                            >
-                              <i className="bi bi-file-earmark-spreadsheet-fill text-success fs-4"></i>
-                            </div>
-                            <div className="overflow-hidden flex-grow-1">
-                              <div className="fw-semibold text-truncate" title={t.original_filename}>
-                                {t.original_filename}
-                              </div>
-                              <div className="mt-1">
-                                <span className="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 small">
-                                  {dt.name}
-                                </span>
-                              </div>
-                              <div className="small text-muted mt-1">
-                                {new Date(t.created_at).toLocaleDateString('id-ID', {
-                                  day: '2-digit', month: 'short', year: 'numeric'
-                                })} • <strong>{t.creator_username}</strong>
-                              </div>
-                              {dt.fields_schema && dt.fields_schema.length > 0 && (
-                                <div className="mt-2 d-flex flex-wrap gap-1">
-                                  {dt.fields_schema.slice(0, 4).map((f, i) => (
-                                    <span key={i} className="badge bg-light text-dark border" style={{ fontSize: '0.7rem' }}>
-                                      {f.label || f.name}
-                                      {f.required && <span className="text-danger ms-1">*</span>}
-                                    </span>
-                                  ))}
-                                  {dt.fields_schema.length > 4 && (
-                                    <span className="badge bg-light text-muted border" style={{ fontSize: '0.7rem' }}>
-                                      +{dt.fields_schema.length - 4} lainnya
-                                    </span>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="card-footer bg-transparent border-top-0 pt-0 pb-3 px-3">
-                          <div className="d-flex gap-2">
-                            <button
-                              className="btn btn-sm btn-outline-success flex-grow-1"
-                              onClick={() => handleDownload(t)}
-                            >
-                              <i className="bi bi-download me-1"></i> Unduh
-                            </button>
-                            <button
-                              className="btn btn-sm btn-outline-primary"
-                              title="Ganti template"
-                              onClick={() => {
-                                setError('')
-                                setUploadForm({ data_type_id: String(dt.id), file: null, sync_schema: true })
-                                setShowUploadModal(true)
-                              }}
-                            >
-                              <i className="bi bi-arrow-repeat"></i>
-                            </button>
-                            <button
-                              className="btn btn-sm btn-outline-danger"
-                              onClick={() => handleDelete(t)}
-                              title="Hapus template"
-                            >
-                              <i className="bi bi-trash"></i>
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Jenis data yang belum punya template */}
-          {dtWithoutTemplate.length > 0 && (
-            <div>
-              <h6 className="text-muted fw-semibold small text-uppercase mb-3">
-                <i className="bi bi-exclamation-circle text-warning me-1"></i>
-                Belum Ada Template ({dtWithoutTemplate.length})
-              </h6>
-              <div className="row g-3">
-                {dtWithoutTemplate.map((dt) => (
-                  <div className="col-md-6 col-lg-4" key={dt.id}>
-                    <div className="card border-0 shadow-sm h-100 border-dashed" style={{ borderStyle: 'dashed !important', opacity: 0.8 }}>
-                      <div className="card-body d-flex align-items-center gap-3">
-                        <div
-                          className="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0"
-                          style={{ width: 48, height: 48, background: '#fafafa' }}
-                        >
-                          <i className="bi bi-file-earmark-spreadsheet text-muted fs-4"></i>
-                        </div>
-                        <div className="flex-grow-1">
-                          <div className="fw-semibold">{dt.name}</div>
-                          <div className="small text-muted">{dt.fields_schema?.length || 0} field terdefinisi</div>
-                        </div>
-                      </div>
-                      <div className="card-footer bg-transparent border-top-0 pt-0 pb-3 px-3">
-                        <div className="d-flex gap-2">
-                          <button
-                            className="btn btn-sm btn-outline-primary flex-grow-1"
-                            onClick={() => {
-                              setError('')
-                              setUploadForm({ data_type_id: String(dt.id), file: null, sync_schema: true })
-                              setShowUploadModal(true)
-                            }}
-                          >
-                            <i className="bi bi-upload me-1"></i> Upload
-                          </button>
-                          <button
-                            className="btn btn-sm btn-outline-secondary"
-                            onClick={() => {
-                              setError('')
-                              setGenerateForm({ data_type_id: String(dt.id) })
-                              setShowGenerateModal(true)
-                            }}
-                          >
-                            <i className="bi bi-magic me-1"></i> Generate
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </>
-      )}
-
-      {/* Upload Modal */}
-      {showUploadModal && (
-        <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }}>
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content border-0 shadow-lg">
-              <div className="modal-header">
-                <h5 className="modal-title fw-bold">Upload Template Excel</h5>
-                <button className="btn-close" onClick={() => setShowUploadModal(false)} />
-              </div>
-              <form onSubmit={handleUpload}>
-                <div className="modal-body">
-                  {error && <div className="alert alert-danger small py-2">{error}</div>}
-
-                  <div className="mb-3">
-                    <label className="form-label fw-semibold small">
-                      Jenis Data <span className="text-danger">*</span>
-                    </label>
-                    <select
-                      className="form-select"
-                      value={uploadForm.data_type_id}
-                      onChange={(e) => setUploadForm({ ...uploadForm, data_type_id: e.target.value })}
-                      required
-                    >
-                      <option value="">-- Pilih jenis data --</option>
-                      {dataTypes.map((dt) => (
-                        <option key={dt.id} value={dt.id}>
-                          {dt.name}
-                          {templateByDT[dt.id] ? ' (akan diganti)' : ''}
-                        </option>
-                      ))}
-                    </select>
-                    {uploadForm.data_type_id && templateByDT[parseInt(uploadForm.data_type_id)] && (
-                      <div className="form-text text-warning">
-                        <i className="bi bi-exclamation-triangle me-1"></i>
-                        Template yang ada akan digantikan dengan file baru.
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="mb-3">
-                    <label className="form-label fw-semibold small">
-                      File Excel <span className="text-danger">*</span>
-                    </label>
-                    <input
-                      type="file"
-                      className="form-control"
-                      accept=".xlsx,.xls"
-                      onChange={(e) => setUploadForm({ ...uploadForm, file: e.target.files[0] })}
-                      required
-                    />
-                    <div className="form-text">Format: .xlsx atau .xls</div>
-                  </div>
-
-                  <div className="form-check form-switch">
-                    <input
-                      className="form-check-input"
-                      type="checkbox"
-                      id="syncSchema"
-                      checked={uploadForm.sync_schema}
-                      onChange={(e) => setUploadForm({ ...uploadForm, sync_schema: e.target.checked })}
-                    />
-                    <label className="form-check-label small" htmlFor="syncSchema">
-                      <strong>Sinkronisasi field schema</strong> dari header Excel
-                      <div className="text-muted" style={{ fontSize: '0.78rem' }}>
-                        Header baris pertama file Excel akan dijadikan daftar field jenis data ini.
-                      </div>
-                    </label>
-                  </div>
-                </div>
-                <div className="modal-footer">
-                  <button type="button" className="btn btn-secondary" onClick={() => setShowUploadModal(false)}>
-                    Batal
-                  </button>
-                  <button type="submit" className="btn btn-primary" disabled={saving}>
-                    {saving
-                      ? <><span className="spinner-border spinner-border-sm me-1" />Mengupload...</>
-                      : <><i className="bi bi-upload me-1"></i>Upload</>}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Generate Modal */}
-      {showGenerateModal && (
-        <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }}>
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content border-0 shadow-lg">
-              <div className="modal-header">
-                <h5 className="modal-title fw-bold">Generate Template dari Jenis Data</h5>
-                <button className="btn-close" onClick={() => setShowGenerateModal(false)} />
-              </div>
-              <form onSubmit={handleGenerate}>
-                <div className="modal-body">
-                  {error && <div className="alert alert-danger small py-2">{error}</div>}
-                  <p className="text-muted small">
-                    Template Excel dibuat otomatis dari field yang sudah didefinisikan di jenis data.
-                    Jika sudah ada template sebelumnya, akan digantikan.
-                  </p>
-                  <div className="mb-3">
-                    <label className="form-label fw-semibold small">
-                      Jenis Data <span className="text-danger">*</span>
-                    </label>
-                    <select
-                      className="form-select"
-                      value={generateForm.data_type_id}
-                      onChange={(e) => setGenerateForm({ data_type_id: e.target.value })}
-                      required
-                    >
-                      <option value="">-- Pilih jenis data --</option>
-                      {dataTypes.map((dt) => (
-                        <option key={dt.id} value={dt.id}>
-                          {dt.name} ({dt.fields_schema?.length || 0} field)
-                          {templateByDT[dt.id] ? ' — akan diganti' : ''}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  {generateForm.data_type_id && dataTypes.find(d => d.id === parseInt(generateForm.data_type_id))?.fields_schema?.length === 0 && (
-                    <div className="alert alert-warning small py-2">
-                      <i className="bi bi-exclamation-triangle me-1"></i>
-                      Jenis data ini belum punya field. Tambahkan field di menu Jenis Data terlebih dahulu.
-                    </div>
-                  )}
-                </div>
-                <div className="modal-footer">
-                  <button type="button" className="btn btn-secondary" onClick={() => setShowGenerateModal(false)}>
-                    Batal
-                  </button>
-                  <button type="submit" className="btn btn-primary" disabled={saving}>
-                    {saving
-                      ? <><span className="spinner-border spinner-border-sm me-1" />Membuat...</>
-                      : <><i className="bi bi-magic me-1"></i>Generate</>}
-                  </button>
-                </div>
-              </form>
-            </div>
           </div>
         </div>
       )}
